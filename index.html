@@ -4931,10 +4931,8 @@ async function sendEmailWithPDF(toEmail, pdfBase64) {
   const date = currentReading.date || new Date().toLocaleString('pt-BR');
   const filename = 'leitura-akashica-' + name.toLowerCase().replace(/\s+/g, '-') + '.pdf';
   
-  // URL DO GOOGLE APPS SCRIPT - TESTADA E FUNCIONANDO
-  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzInaMhe5fCWvB0_CdUyovfN1kcJchd7pwASUME7Df7-g1v8lw63FF0tsqL6pNuXQ8/exec';
-  
-  // Preparar dados para envio
+  // Chamar backend do Vercel (que chama o Google Apps Script)
+  // Isso resolve o problema de CORS!
   const emailData = {
     to: toEmail,
     subject: 'Sua Leitura Akáshica - Portal Akáshico',
@@ -4951,8 +4949,8 @@ Portal Supremo dos Registros Akáshicos`,
     mimeType: 'application/pdf'
   };
 
-  // Enviar via Google Apps Script
-  const response = await fetch(GOOGLE_SCRIPT_URL, {
+  // Enviar via backend Vercel
+  const response = await fetch('/api/email', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
