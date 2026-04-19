@@ -4766,14 +4766,15 @@ async function generatePDFBase64() {
   const pageH = 297;
   const margin = 20;
   const contentW = pageW - margin * 2;
-  const maxY = pageH - 25;
+  const maxY = pageH - 30; // Aumentado margem inferior
   let y = margin;
   let currentPage = 1;
 
-  // Cores - apenas roxo
-  const PRIMARY = [107, 70, 193];
+  // AZUL CLARO - Nova paleta
+  const PRIMARY = [59, 130, 246];      // Azul claro
   const TEXT_DARK = [30, 30, 30];
   const TEXT_LIGHT = [100, 100, 100];
+  const SEPARATOR = [147, 197, 253];   // Azul muito claro para separadores
 
   const SECTION_LABELS = {
     revelation:         'REVELACAO PRINCIPAL',
@@ -4790,7 +4791,7 @@ async function generatePDFBase64() {
     doc.rect(0, 0, pageW, pageH, 'F');
   }
 
-  // Cabeçalho simples
+  // Cabeçalho azul claro
   function addHeader() {
     doc.setFillColor(...PRIMARY);
     doc.rect(0, 0, pageW, 35, 'F');
@@ -4802,13 +4803,13 @@ async function generatePDFBase64() {
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(220, 200, 255);
+    doc.setTextColor(240, 250, 255);
     doc.text('Portal Supremo dos Registros Akashicos', pageW / 2, 28, { align: 'center' });
   }
 
-  // Rodapé simples
+  // Rodapé
   function addFooter(pageNum) {
-    doc.setDrawColor(200, 180, 240);
+    doc.setDrawColor(...SEPARATOR);
     doc.setLineWidth(0.3);
     doc.line(margin, pageH - 18, pageW - margin, pageH - 18);
 
@@ -4828,16 +4829,18 @@ async function generatePDFBase64() {
   }
 
   function ensureSpace(needed) {
-    if (y + needed > maxY) newPage();
+    if (y + needed > maxY) {
+      newPage();
+    }
   }
 
   function writeWrapped(text, opts = {}) {
     const {
-      size = 10.5,
+      size = 11,  // Aumentei de 10.5 para 11
       style = 'normal',
       color = TEXT_DARK,
       align = 'left',
-      lh = 6,
+      lh = 6.5,  // Aumentei de 6 para 6.5
       x = margin,
       w = contentW
     } = opts;
@@ -4847,10 +4850,15 @@ async function generatePDFBase64() {
     doc.setTextColor(...color);
     
     const lines = doc.splitTextToSize(text, w);
+    
+    // Verificar se todas as linhas cabem, senão fazer nova página ANTES
+    const totalHeight = lines.length * lh;
+    if (y + totalHeight > maxY) {
+      newPage();
+    }
+    
     lines.forEach(line => {
-      ensureSpace(lh + 2);
-      const xPos = align === 'center' ? pageW / 2 : x;
-      doc.text(line, xPos, y, { align });
+      doc.text(line, align === 'center' ? pageW / 2 : x, y, { align });
       y += lh;
     });
   }
@@ -4870,7 +4878,7 @@ async function generatePDFBase64() {
   y = 42;
 
   // INFORMAÇÕES DA CONSULTA
-  doc.setFontSize(11);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...PRIMARY);
   doc.text('INFORMACOES DA CONSULTA', pageW / 2, y, { align: 'center' });
@@ -4882,7 +4890,7 @@ async function generatePDFBase64() {
   doc.setLineWidth(0.5);
   doc.line(margin, y, pageW - margin, y);
 
-  y += 8;
+  y += 10;
 
   const col1X = margin;
   const col2X = pageW / 2 + 5;
@@ -4945,10 +4953,10 @@ async function generatePDFBase64() {
   doc.setTextColor(...TEXT_DARK);
   doc.text(state, col2X, y);
 
-  y = startY + 45;
+  y = startY + 48;
 
   // PERGUNTA CENTRAL
-  doc.setFontSize(11);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...PRIMARY);
   doc.text('PERGUNTA CENTRAL', pageW / 2, y, { align: 'center' });
@@ -4960,58 +4968,59 @@ async function generatePDFBase64() {
   doc.setLineWidth(0.5);
   doc.line(margin, y, pageW - margin, y);
 
-  y += 8;
+  y += 10;
 
   writeWrapped(question, { 
-    size: 10.5, 
+    size: 11, 
     style: 'italic', 
     color: TEXT_DARK, 
     align: 'center',
-    lh: 6
+    lh: 6.5
   });
 
-  y += 10;
+  y += 12;
 
   // Linha separadora antes das seções
-  doc.setDrawColor(200, 180, 240);
+  doc.setDrawColor(...SEPARATOR);
   doc.setLineWidth(0.3);
   doc.line(margin + 20, y, pageW - margin - 20, y);
 
-  y += 12;
+  y += 15;
 
   // SEÇÕES
   Object.entries(SECTION_LABELS).forEach(([key, label]) => {
     const text = currentSections[key] || '';
     if (!text) return;
 
-    ensureSpace(20);
+    // Garantir espaço mínimo para o título
+    ensureSpace(25);
 
     // Título da seção CENTRALIZADO
-    doc.setFontSize(11);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...PRIMARY);
     doc.text(label, pageW / 2, y, { align: 'center' });
 
-    y += 8;
+    y += 10;
 
-    // Texto da seção (SEM caixa)
+    // Texto da seção
     writeWrapped(text, { 
-      size: 10.5,
+      size: 11,
       style: 'normal',
       color: TEXT_DARK, 
-      lh: 6,
+      lh: 6.5,
       x: margin,
       w: contentW
     });
 
-    y += 10;
+    y += 12;
 
     // Separador entre seções
-    ensureSpace(6);
-    doc.setDrawColor(200, 180, 240);
+    ensureSpace(8);
+    doc.setDrawColor(...SEPARATOR);
     doc.setLineWidth(0.2);
     doc.line(margin + 30, y, pageW - margin - 30, y);
-    y += 10;
+    y += 12;
   });
 
   addFooter(currentPage);
