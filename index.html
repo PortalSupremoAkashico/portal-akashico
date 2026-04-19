@@ -5160,21 +5160,14 @@ async function generatePDFBase64() {
     const text = cleanText(currentSections[key] || '');
     if (!text) return;
 
-    // Converter para linguagem akáshica
-    const akashicText = toAkashicLanguage(text);
-
-    // CALCULAR ALTURA (incluindo seção akáshica)
+    // CALCULAR ALTURA
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     const textLines = doc.splitTextToSize(text, contentW - 20);
-    const akashicLines = doc.splitTextToSize(akashicText, contentW - 20);
     const lineHeight = 6.5;
     const titleHeight = 15;
-    const akashicLabelHeight = 10;
-    const akashicTextHeight = (akashicLines.length * lineHeight) + 8;
-    const translationLabelHeight = 10;
     const separatorHeight = 15;
-    const totalHeight = titleHeight + akashicLabelHeight + akashicTextHeight + translationLabelHeight + (textLines.length * lineHeight) + separatorHeight;
+    const totalHeight = titleHeight + (textLines.length * lineHeight) + separatorHeight;
 
     // SE NÃO COUBER, NOVA PÁGINA
     if (y + totalHeight > maxY) {
@@ -5188,34 +5181,6 @@ async function generatePDFBase64() {
     doc.text(label, pageW / 2, y, { align: 'center' });
 
     y += 10;
-
-    // LABEL LINGUAGEM AKÁSHICA
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'italic');
-    doc.setTextColor(184, 134, 11); // Dourado
-    doc.text('Linguagem dos Guardiões Akáshicos', pageW / 2, y, { align: 'center' });
-    
-    y += 6;
-
-    // TEXTO AKÁSHICO
-    doc.setFontSize(10);
-    doc.setFont('courier', 'normal');
-    doc.setTextColor(139, 92, 70); // Marrom/argila
-    
-    akashicLines.forEach(line => {
-      doc.text(line, pageW / 2, y, { align: 'center' });
-      y += lineHeight;
-    });
-
-    y += 8;
-
-    // LABEL TRADUÇÃO
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'italic');
-    doc.setTextColor(...TEXT_LIGHT);
-    doc.text('Tradução para o Plano Terrestre', pageW / 2, y, { align: 'center' });
-    
-    y += 6;
 
     // TEXTO PORTUGUÊS CENTRALIZADO
     doc.setFontSize(11);
