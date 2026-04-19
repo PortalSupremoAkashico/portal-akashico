@@ -4770,21 +4770,19 @@ async function generatePDFBase64() {
   let y = margin;
   let currentPage = 1;
 
-  // Cores místicas para cada seção
-  const SECTION_COLORS = {
-    revelation:         { bg: [107, 70, 193], text: [107, 70, 193], light: [230, 220, 255] },
-    earthFuture:        { bg: [59, 130, 246], text: [59, 130, 246], light: [219, 234, 254] },
-    otherCivilizations: { bg: [139, 92, 246], text: [139, 92, 246], light: [237, 233, 254] },
-    technologyFuture:   { bg: [236, 72, 153], text: [236, 72, 153], light: [252, 231, 243] },
-    warning:            { bg: [245, 158, 11], text: [245, 158, 11], light: [254, 243, 199] },
-    action:             { bg: [16, 185, 129], text: [16, 185, 129], light: [209, 250, 229] }
-  };
+  // PALETA ÚNICA - Roxo/Violeta Místico
+  const PRIMARY = [107, 70, 193];      // Roxo principal
+  const PRIMARY_LIGHT = [230, 220, 255]; // Roxo claro
+  const PRIMARY_DARK = [80, 50, 150];   // Roxo escuro
+  const TEXT_DARK = [30, 30, 30];       // Texto principal
+  const TEXT_LIGHT = [100, 100, 100];   // Texto secundário
+  const BORDER = [180, 160, 220];       // Bordas sutis
 
   const SECTION_LABELS = {
     revelation:         'Revelação Principal',
     earthFuture:        'Futuro da Terra',
     otherCivilizations: 'Sabedoria Multidimensional',
-    technologyFuture:   'Futurologia & Tecnologia',
+    technologyFuture:   'Futurologia e Tecnologia',
     warning:            'Aviso Cósmico',
     action:             'Ação Recomendada'
   };
@@ -4798,87 +4796,67 @@ async function generatePDFBase64() {
     action:             '↟'
   };
 
-  // Função para adicionar background sutil com estrelas
-  function addStarBackground() {
-    doc.setFillColor(250, 250, 255);
+  // Background sutil
+  function addBackground() {
+    doc.setFillColor(252, 252, 255);
     doc.rect(0, 0, pageW, pageH, 'F');
-    
-    // Estrelas decorativas sutis
-    doc.setFillColor(230, 225, 245);
-    doc.setDrawColor(230, 225, 245);
-    for (let i = 0; i < 30; i++) {
-      const x = Math.random() * pageW;
-      const y = Math.random() * pageH;
-      const size = 0.3 + Math.random() * 0.4;
-      doc.circle(x, y, size, 'F');
-    }
   }
 
   // Cabeçalho elegante
   function addHeader() {
-    // Gradiente roxo (simulado com retângulos)
-    for (let i = 0; i < 40; i++) {
-      const alpha = 255 - (i * 3);
-      doc.setFillColor(107, 70, 193, alpha);
-      doc.rect(0, i, pageW, 1, 'F');
-    }
+    // Faixa roxa superior
+    doc.setFillColor(...PRIMARY);
+    doc.rect(0, 0, pageW, 35, 'F');
 
     // Bordas douradas
     doc.setDrawColor(218, 165, 32);
     doc.setLineWidth(0.8);
-    doc.rect(8, 8, pageW - 16, 32, 'S');
+    doc.rect(8, 8, pageW - 16, 24, 'S');
     
     doc.setLineWidth(0.3);
-    doc.rect(9.5, 9.5, pageW - 19, 29, 'S');
+    doc.rect(9.5, 9.5, pageW - 19, 21, 'S');
 
-    // Símbolo místico central
-    doc.setFontSize(24);
+    // Símbolo central
+    doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 215, 0);
     doc.text('✦', pageW / 2, 16, { align: 'center' });
 
     // Título
-    doc.setFontSize(20);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
-    doc.text('LEITURA AKÁSHICA', pageW / 2, 26, { align: 'center' });
+    doc.text('LEITURA AKASHICA', pageW / 2, 24, { align: 'center' });
 
     // Subtítulo
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(220, 200, 255);
-    doc.text('Portal Supremo dos Registros Akáshicos', pageW / 2, 35, { align: 'center' });
+    doc.text('Portal Supremo dos Registros Akashicos', pageW / 2, 30, { align: 'center' });
   }
 
-  // Rodapé elegante
+  // Rodapé
   function addFooter(pageNum) {
-    // Linha decorativa
-    doc.setDrawColor(200, 180, 240);
+    doc.setDrawColor(...BORDER);
     doc.setLineWidth(0.3);
     doc.line(margin, pageH - 18, pageW - margin, pageH - 18);
 
-    // Símbolos decorativos
     doc.setFontSize(8);
-    doc.setTextColor(180, 160, 220);
+    doc.setTextColor(...TEXT_LIGHT);
     doc.text('✶', margin, pageH - 10);
     doc.text('✶', pageW - margin - 2, pageH - 10);
 
-    // Texto do rodapé
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(150, 140, 180);
-    doc.text('Portal Akáshico', pageW / 2 - 15, pageH - 10);
-
-    // Número da página
-    doc.setFontSize(8);
-    doc.setTextColor(180, 160, 220);
-    doc.text(`${pageNum}`, pageW / 2 + 15, pageH - 10);
+    doc.setTextColor(...TEXT_LIGHT);
+    doc.text('Portal Akashico', pageW / 2 - 12, pageH - 10);
+    doc.text(String(pageNum), pageW / 2 + 12, pageH - 10);
   }
 
   function newPage() {
     addFooter(currentPage);
     doc.addPage();
-    addStarBackground();
+    addBackground();
     currentPage++;
     y = margin;
   }
@@ -4891,18 +4869,20 @@ async function generatePDFBase64() {
     const {
       size = 10.5,
       style = 'normal',
-      color = [30, 30, 30],
+      color = TEXT_DARK,
       align = 'left',
-      lh = 6.4,
+      lh = 6,
       x = margin,
       w = contentW
     } = opts;
+    
     doc.setFontSize(size);
     doc.setFont('helvetica', style);
     doc.setTextColor(...color);
+    
     const lines = doc.splitTextToSize(text, w);
     lines.forEach(line => {
-      ensureSpace(lh + 1);
+      ensureSpace(lh + 2);
       const xPos = align === 'center' ? pageW / 2 : x;
       doc.text(line, xPos, y, { align });
       y += lh;
@@ -4916,205 +4896,192 @@ async function generatePDFBase64() {
   const theme = currentReading.theme || '';
   const state = currentReading.state || '';
   const question = currentReading.question || '';
-  const level = currentReading.level || '';
 
-  // ══════════════════════════════════════════════════
-  // PÁGINA 1: CAPA E DADOS DO CONSULENTE
-  // ══════════════════════════════════════════════════
-  
-  addStarBackground();
+  // PÁGINA 1 - CAPA
+  addBackground();
   addHeader();
 
-  y = 48;
+  y = 43;
 
-  // Caixa de informações do consulente
-  doc.setFillColor(245, 243, 255);
-  doc.roundedRect(margin, y, contentW, 65, 3, 3, 'F');
-  doc.setDrawColor(180, 160, 220);
+  // Caixa de informações
+  doc.setFillColor(...PRIMARY_LIGHT);
+  doc.roundedRect(margin, y, contentW, 60, 3, 3, 'F');
+  doc.setDrawColor(...BORDER);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, y, contentW, 65, 3, 3, 'S');
+  doc.roundedRect(margin, y, contentW, 60, 3, 3, 'S');
 
   y += 8;
 
-  // Título da caixa
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(107, 70, 193);
-  doc.text('✦  INFORMAÇÕES DA CONSULTA', margin + 5, y);
+  doc.setTextColor(...PRIMARY_DARK);
+  doc.text('✦  INFORMACOES DA CONSULTA', margin + 5, y);
   
   y += 8;
 
-  // Informações do consulente em duas colunas
   const col1X = margin + 8;
   const col2X = pageW / 2 + 5;
-  const infoY = y;
+  const startY = y;
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(100, 80, 140);
+  doc.setTextColor(...TEXT_LIGHT);
   
   // Coluna 1
   doc.text('Consulente:', col1X, y);
-  y += 6;
+  y += 5;
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(50, 50, 50);
+  doc.setTextColor(...TEXT_DARK);
   doc.text(name, col1X, y);
   
-  y += 8;
+  y += 7;
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(100, 80, 140);
+  doc.setTextColor(...TEXT_LIGHT);
   doc.text('Data de Nascimento:', col1X, y);
-  y += 6;
+  y += 5;
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(50, 50, 50);
+  doc.setTextColor(...TEXT_DARK);
   doc.text(birthdate, col1X, y);
 
-  y += 8;
+  y += 7;
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(100, 80, 140);
+  doc.setTextColor(...TEXT_LIGHT);
   doc.text('Tema da Consulta:', col1X, y);
-  y += 6;
+  y += 5;
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(50, 50, 50);
+  doc.setTextColor(...TEXT_DARK);
   doc.text(theme, col1X, y);
 
   // Coluna 2
-  y = infoY;
+  y = startY;
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(100, 80, 140);
+  doc.setTextColor(...TEXT_LIGHT);
   doc.text('Data da Leitura:', col2X, y);
-  y += 6;
+  y += 5;
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(50, 50, 50);
+  doc.setTextColor(...TEXT_DARK);
   doc.text(date, col2X, y);
 
-  y += 8;
+  y += 7;
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(100, 80, 140);
-  doc.text('Horário:', col2X, y);
-  y += 6;
+  doc.setTextColor(...TEXT_LIGHT);
+  doc.text('Horario:', col2X, y);
+  y += 5;
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(50, 50, 50);
+  doc.setTextColor(...TEXT_DARK);
   doc.text(time, col2X, y);
 
-  y += 8;
+  y += 7;
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(100, 80, 140);
+  doc.setTextColor(...TEXT_LIGHT);
   doc.text('Estado Emocional:', col2X, y);
-  y += 6;
+  y += 5;
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(50, 50, 50);
+  doc.setTextColor(...TEXT_DARK);
   doc.text(state, col2X, y);
 
-  y = 48 + 65 + 10;
+  y = 43 + 60 + 8;
 
   // Pergunta em destaque
-  doc.setFillColor(107, 70, 193);
+  doc.setFillColor(...PRIMARY);
   doc.roundedRect(margin, y, contentW, 8, 2, 2, 'F');
   
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(255, 255, 255);
   doc.text('✦  PERGUNTA CENTRAL', margin + 5, y + 5.5);
 
   y += 12;
 
-  // Caixa da pergunta
-  const questionBoxY = y;
+  // Caixa da pergunta - ALTURA FIXA
   doc.setFillColor(255, 255, 255);
-  doc.roundedRect(margin, y, contentW, 35, 3, 3, 'F');
-  doc.setDrawColor(107, 70, 193);
+  doc.roundedRect(margin, y, contentW, 30, 3, 3, 'F');
+  doc.setDrawColor(...PRIMARY);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, y, contentW, 35, 3, 3, 'S');
+  doc.roundedRect(margin, y, contentW, 30, 3, 3, 'S');
 
   y += 8;
-  writeWrapped('"' + question + '"', { 
-    size: 11, 
+  writeWrapped(question, { 
+    size: 10.5, 
     style: 'italic', 
-    color: [60, 40, 100], 
+    color: PRIMARY_DARK, 
     align: 'center',
-    lh: 6.5
+    lh: 5.5,
+    w: contentW - 10
   });
 
-  y = questionBoxY + 40;
+  y = 43 + 60 + 8 + 8 + 30 + 8;
 
-  // Separador decorativo
-  y += 5;
-  doc.setDrawColor(200, 180, 240);
+  // Separador
+  doc.setDrawColor(...BORDER);
   doc.setLineWidth(0.5);
   doc.line(margin + 30, y, pageW - margin - 30, y);
-  
   doc.setFontSize(12);
-  doc.setTextColor(180, 160, 220);
+  doc.setTextColor(...BORDER);
   doc.text('✦', pageW / 2 - 2, y + 1);
 
   y += 10;
 
-  // ══════════════════════════════════════════════════
-  // SEÇÕES DA LEITURA
-  // ══════════════════════════════════════════════════
-
+  // SEÇÕES
   Object.entries(SECTION_LABELS).forEach(([key, label]) => {
     const text = currentSections[key] || '';
     if (!text) return;
 
-    const colors = SECTION_COLORS[key];
     const icon = SECTION_ICONS[key];
 
-    ensureSpace(30);
+    ensureSpace(25);
 
-    // Cabeçalho da seção com cor específica
-    doc.setFillColor(...colors.bg);
-    doc.roundedRect(margin, y, contentW, 12, 2, 2, 'F');
+    // Cabeçalho da seção
+    doc.setFillColor(...PRIMARY);
+    doc.roundedRect(margin, y, contentW, 10, 2, 2, 'F');
 
-    // Ícone e título
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
-    doc.text(`${icon}  ${label.toUpperCase()}`, pageW / 2, y + 8, { align: 'center' });
+    doc.text(icon + '  ' + label.toUpperCase(), pageW / 2, y + 7, { align: 'center' });
 
-    y += 16;
+    y += 14;
 
-    // Caixa de conteúdo
-    const contentStartY = y;
-    
-    // Calcular altura necessária para o texto
+    // CALCULAR ALTURA DO TEXTO ANTES DE DESENHAR CAIXA
     doc.setFontSize(10.5);
     doc.setFont('helvetica', 'normal');
-    const lines = doc.splitTextToSize(text, contentW - 10);
-    const textHeight = lines.length * 6.4 + 10;
+    const textLines = doc.splitTextToSize(text, contentW - 12);
+    const textHeight = textLines.length * 6 + 12;
 
-    // Fundo da caixa
-    doc.setFillColor(...colors.light);
-    doc.roundedRect(margin, y - 3, contentW, textHeight, 3, 3, 'F');
-    doc.setDrawColor(...colors.text);
+    // Verificar se precisa de nova página
+    if (y + textHeight > maxY) {
+      newPage();
+    }
+
+    // Caixa de conteúdo com ALTURA CALCULADA
+    doc.setFillColor(...PRIMARY_LIGHT);
+    doc.roundedRect(margin, y, contentW, textHeight, 3, 3, 'F');
+    doc.setDrawColor(...BORDER);
     doc.setLineWidth(0.3);
-    doc.roundedRect(margin, y - 3, contentW, textHeight, 3, 3, 'S');
+    doc.roundedRect(margin, y, contentW, textHeight, 3, 3, 'S');
 
-    y += 4;
+    y += 6;
 
-    // Texto da seção
+    // Texto
     writeWrapped(text, { 
-      size: 10.5, 
-      color: [30, 30, 30], 
-      lh: 6.4,
-      x: margin + 5,
-      w: contentW - 10
+      size: 10.5,
+      style: 'normal',
+      color: TEXT_DARK, 
+      lh: 6,
+      x: margin + 6,
+      w: contentW - 12
     });
 
-    y += 10;
+    y += 6;
 
     // Separador entre seções
-    if (Object.keys(SECTION_LABELS).indexOf(key) < Object.keys(SECTION_LABELS).length - 1) {
-      ensureSpace(8);
-      doc.setDrawColor(200, 180, 240);
-      doc.setLineWidth(0.3);
-      doc.line(margin + 40, y, pageW - margin - 40, y);
-      y += 8;
-    }
+    ensureSpace(6);
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.2);
+    doc.line(margin + 40, y, pageW - margin - 40, y);
+    y += 8;
   });
 
-  // Rodapé final
   addFooter(currentPage);
 
   // Retornar PDF em base64
