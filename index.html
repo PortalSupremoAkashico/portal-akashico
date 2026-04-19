@@ -3310,6 +3310,15 @@
               </div>
               <div class="row-2">
                 <div>
+                  <label for="sexo">Sexo</label>
+                  <select id="sexo" required disabled>
+                    <option value="" selected>Selecione</option>
+                    <option>Masculino</option>
+                    <option>Feminino</option>
+                    <option>Prefiro Não Informar</option>
+                  </select>
+                </div>
+                <div>
                   <label for="tema">Tema</label>
                   <select id="tema" required disabled>
                     <option value="" selected>Selecione</option>
@@ -3318,6 +3327,8 @@
                     <option>Decisão importante</option><option>Outro</option>
                   </select>
                 </div>
+              </div>
+              <div class="row-2">
                 <div>
                   <label for="estado">Estado interior</label>
                   <select id="estado" required disabled>
@@ -3326,8 +3337,6 @@
                     <option>Cansado</option><option>Esperançoso</option><option>Intenso</option>
                   </select>
                 </div>
-              </div>
-              <div class="row-2">
                 <div>
                   <label for="nivel">Nível</label>
                   <select id="nivel" required disabled>
@@ -3335,6 +3344,8 @@
                     <option>Essencial</option><option>Profunda</option><option>Suprema</option>
                   </select>
                 </div>
+              </div>
+              <div class="row-2">
                 <div>
                   <label for="modoCosmico">Modo</label>
                   <select id="modoCosmico" required disabled>
@@ -3344,6 +3355,7 @@
                     <option>Admissível</option>
                   </select>
                 </div>
+                <div></div>
               </div>
               <div>
                 <label for="pergunta">Pergunta principal</label>
@@ -3628,7 +3640,7 @@ const sealWrap     = document.getElementById('sealWrap');
 const sealSymbol   = document.getElementById('sealSymbol');
 const sealLabel    = document.getElementById('sealLabel');
 
-const fieldIds = ['nome', 'dataNascimento', 'tema', 'estado', 'nivel', 'modoCosmico', 'pergunta'];
+const fieldIds = ['nome', 'dataNascimento', 'sexo', 'tema', 'estado', 'nivel', 'modoCosmico', 'pergunta'];
 const formFields = fieldIds.map(id => document.getElementById(id));
 const startRitualBtn = document.getElementById('startRitualBtn');
 const goToProtocolBtn = document.getElementById('goToProtocolBtn');
@@ -3691,6 +3703,7 @@ function getFormData() {
   return {
     name: document.getElementById('nome').value.trim(),
     birthdate: document.getElementById('dataNascimento').value,
+    gender: document.getElementById('sexo').value,
     theme: document.getElementById('tema').value,
     state: document.getElementById('estado').value,
     level: document.getElementById('nivel').value,
@@ -3702,8 +3715,8 @@ function getFormData() {
 function validateForm() {
   const data = getFormData();
 
-  if (!data.name || !data.theme || !data.state || !data.level || !data.cosmicMode || !data.question) {
-    return { ok: false, message: 'Preencha seu nome, selecione todas as opções e escreva sua pergunta.' };
+  if (!data.name || !data.gender || !data.theme || !data.state || !data.level || !data.cosmicMode || !data.question) {
+    return { ok: false, message: 'Preencha seu nome, sexo, selecione todas as opções e escreva sua pergunta.' };
   }
 
   if (data.name.length < 2) {
@@ -3731,7 +3744,7 @@ function updateSelectPlaceholderState(select) {
 }
 
 function updateSelectPlaceholderStates() {
-  ['tema', 'estado', 'nivel', 'modoCosmico'].forEach(id => {
+  ['sexo', 'tema', 'estado', 'nivel', 'modoCosmico'].forEach(id => {
     updateSelectPlaceholderState(document.getElementById(id));
   });
 }
@@ -4049,9 +4062,9 @@ function buildHistoryContext(name, birthdate) {
 }
 
 
-async function fetchAkashicReading(apiKey, name, birthdate, theme, state, question, level, cosmicMode) {
+async function fetchAkashicReading(apiKey, name, birthdate, gender, theme, state, question, level, cosmicMode) {
   console.log('🌟 INICIANDO LEITURA AKÁSHICA');
-  console.log('📝 Dados:', { name, birthdate, theme, state, question, level, cosmicMode });
+  console.log('📝 Dados:', { name, birthdate, gender, theme, state, question, level, cosmicMode });
   console.log('⏱️ Tempo estimado: 60-120 segundos para 3 fases de processamento');
   console.log('🔒 Chamando backend seguro...');
   
@@ -4065,6 +4078,7 @@ async function fetchAkashicReading(apiKey, name, birthdate, theme, state, questi
       body: JSON.stringify({
         name,
         birthdate,
+        gender,
         theme,
         state,
         question,
@@ -4288,7 +4302,7 @@ document.getElementById('openReadingBtn').addEventListener('click', async functi
     return;
   }
 
-  const { name, birthdate, theme, state, question, level, cosmicMode } = validation.data;
+  const { name, birthdate, gender, theme, state, question, level, cosmicMode } = validation.data;
   this.classList.remove('btn-blink');
   this.classList.remove('btn-solid');
   this.textContent = 'Sintonizando os Registros...';
@@ -4303,11 +4317,12 @@ document.getElementById('openReadingBtn').addEventListener('click', async functi
   try {
     const apiKey = await getApiKey();
     document.getElementById('thinkingText').textContent = 'Acessando os Registros Akáshicos...';
-    currentSections = await fetchAkashicReading(apiKey, name, birthdate, theme, state, question, level, cosmicMode);
+    currentSections = await fetchAkashicReading(apiKey, name, birthdate, gender, theme, state, question, level, cosmicMode);
     currentReading = {
       date: new Date().toLocaleString('pt-BR'),
       name,
       birthdate,
+      gender,
       theme,
       state,
       question,
@@ -5069,6 +5084,24 @@ Portal Supremo dos Registros Akáshicos`,
   
   if (!result.success) {
     throw new Error(result.message || 'Erro ao enviar e-mail');
+  }
+
+  // SALVAR E-MAIL NO BANCO PARA MALA DIRETA
+  try {
+    await fetch('/api/save-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: toEmail,
+        nome: name
+      })
+    });
+    console.log('✅ E-mail salvo para mala direta');
+  } catch (err) {
+    console.warn('⚠️ Erro ao salvar e-mail (não crítico):', err);
+    // Não falha o envio se não conseguir salvar
   }
 
   return { success: true, method: 'gmail-auto' };
