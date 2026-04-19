@@ -1896,6 +1896,115 @@
       }
     }
 
+    /* ════════════════════════════════════════════════════════════════ */
+    /* ESTILOS DA LINGUAGEM AKÁSHICA DOS GUARDIÕES (Cuneiforme)        */
+    /* ════════════════════════════════════════════════════════════════ */
+    
+    .akashic-response {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    
+    .akashic-original {
+      padding: 24px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, rgba(139, 92, 70, 0.2), rgba(101, 67, 33, 0.15));
+      border: 2px solid rgba(184, 134, 11, 0.4);
+      border-left: 6px solid rgba(184, 134, 11, 0.6);
+      position: relative;
+    }
+    
+    .akashic-original::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, rgba(184, 134, 11, 0.6), transparent);
+    }
+    
+    .akashic-translation {
+      padding: 20px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(147, 109, 255, 0.15);
+    }
+    
+    .akashic-label {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      margin-bottom: 4px;
+      color: #d4af37;
+      text-transform: uppercase;
+      text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+    }
+    
+    .akashic-subtitle {
+      text-align: center;
+      font-size: 9px;
+      font-weight: 400;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      color: rgba(212, 175, 55, 0.7);
+      font-style: italic;
+    }
+    
+    .translation-label {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      color: #c4b5fd;
+      opacity: 0.8;
+      text-transform: uppercase;
+    }
+    
+    .akashic-text {
+      font-family: 'Noto Sans Cuneiform', 'Segoe UI Historic', 'Arial Unicode MS', monospace;
+      font-size: 18px;
+      line-height: 2;
+      letter-spacing: 2px;
+      color: #f4e4c1;
+      text-shadow: 
+        0 0 10px rgba(212, 175, 55, 0.6),
+        0 0 20px rgba(184, 134, 11, 0.3);
+      animation: cuneiformGlow 4s ease-in-out infinite;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      text-align: justify;
+      direction: ltr;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+    
+    .translation-text {
+      font-size: 14px;
+      line-height: 1.7;
+      color: rgba(255, 255, 255, 0.9);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    
+    @keyframes cuneiformGlow {
+      0%, 100% {
+        text-shadow: 
+          0 0 10px rgba(212, 175, 55, 0.6),
+          0 0 20px rgba(184, 134, 11, 0.3);
+      }
+      50% {
+        text-shadow: 
+          0 0 15px rgba(212, 175, 55, 0.9),
+          0 0 30px rgba(184, 134, 11, 0.5),
+          0 0 40px rgba(212, 175, 55, 0.2);
+      }
+    }
+
 </style>
 <style>
 .spinner-wrap {
@@ -3560,6 +3669,66 @@
 
     <script>
 // ════════════════════════════════════════════════════════════════════════════════
+// LINGUAGEM AKÁSHICA DOS GUARDIÕES (Inspirada na Escrita Suméria Cuneiforme)
+// ════════════════════════════════════════════════════════════════════════════════
+
+const AKASHIC_ALPHABET = {
+  // Vogais - Símbolos Primordiais
+  'a': '𒀀', 'á': '𒀁', 'ã': '𒀂', 'â': '𒀃',
+  'e': '𒂊', 'é': '𒂋', 'ê': '𒂍',
+  'i': '𒄿', 'í': '𒅀', 
+  'o': '𒍮', 'ó': '𒍯', 'õ': '𒍰', 'ô': '𒍱',
+  'u': '𒌋', 'ú': '𒌌', 'ü': '𒌍',
+  
+  // Consoantes - Símbolos de Poder
+  'b': '𒁀', 'c': '𒆳', 'ç': '𒆴', 'd': '𒁲',
+  'f': '𒌁', 'g': '𒂵', 'h': '𒄩', 'j': '𒅴',
+  'k': '𒆠', 'l': '𒇲', 'm': '𒈠', 'n': '𒉌',
+  'p': '𒉺', 'q': '𒋡', 'r': '𒊒', 's': '𒊓',
+  't': '𒋫', 'v': '𒉿', 'w': '𒉿𒉿', 'x': '𒄑',
+  'y': '𒅀', 'z': '𒍝',
+  
+  // Números - Símbolos Cósmicos
+  '0': '𒑰', '1': '𒐕', '2': '𒐖', '3': '𒐗',
+  '4': '𒐘', '5': '𒐙', '6': '𒐚', '7': '𒐛',
+  '8': '𒐜', '9': '𒐝',
+  
+  // Pontuação - Marcadores Divinos
+  '.': '𒑰', ',': '𒑱', '!': '𒑲', '?': '𒑳',
+  ':': '𒑴', ';': '𒑵', '-': '𒑶', '—': '𒑷',
+  '(': '𒑸', ')': '𒑹', '"': '𒑺', "'": '𒑻',
+  ' ': ' ', '\n': '\n'
+};
+
+// Função para converter texto em Linguagem Akáshica
+function toAkashicLanguage(text) {
+  if (!text) return '';
+  
+  let result = '';
+  for (let char of text.toLowerCase()) {
+    result += AKASHIC_ALPHABET[char] || char;
+  }
+  return result;
+}
+
+// Função para formatar resposta com Akáshico + Tradução
+function formatAkashicResponse(portugueseText) {
+  const akashicText = toAkashicLanguage(portugueseText);
+  
+  return `<div class="akashic-response">
+    <div class="akashic-original">
+      <div class="akashic-label">𒀭 LINGUAGEM DOS GUARDIÕES AKÁSHICOS 𒀭</div>
+      <div class="akashic-subtitle">Escrita Cuneiforme dos Registros Eternos</div>
+      <div class="akashic-text">${akashicText}</div>
+    </div>
+    <div class="akashic-translation">
+      <div class="translation-label">◈ TRADUÇÃO PARA O PLANO TERRESTRE ◈</div>
+      <div class="translation-text">${portugueseText}</div>
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════════════════════════════
 // PORTAL SUPREMO DOS REGISTROS AKÁSHICOS
 // ════════════════════════════════════════════════════════════════════════════════
 //
@@ -4120,7 +4289,10 @@ function setActiveTab(btn, key, title, markText, symbol, label, sealClass) {
   responseBox.style.transform = 'translateY(10px)';
   
   setTimeout(() => {
-    responseBox.textContent = currentSections[key] || DEFAULT_SECTIONS[key];
+    // Usar linguagem Akáshica com tradução
+    const portugueseText = currentSections[key] || DEFAULT_SECTIONS[key];
+    responseBox.innerHTML = formatAkashicResponse(portugueseText);
+    
     panelTitle.textContent = title;
     panelMark.textContent = `✶ ${markText}`;
     sealSymbol.textContent = symbol;
