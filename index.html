@@ -4764,93 +4764,59 @@ async function generatePDFBase64() {
 
   const pageW = 210;
   const pageH = 297;
-  const margin = 18;
+  const margin = 20;
   const contentW = pageW - margin * 2;
   const maxY = pageH - 25;
   let y = margin;
   let currentPage = 1;
 
-  // PALETA ÚNICA - Roxo/Violeta Místico
-  const PRIMARY = [107, 70, 193];      // Roxo principal
-  const PRIMARY_LIGHT = [230, 220, 255]; // Roxo claro
-  const PRIMARY_DARK = [80, 50, 150];   // Roxo escuro
-  const TEXT_DARK = [30, 30, 30];       // Texto principal
-  const TEXT_LIGHT = [100, 100, 100];   // Texto secundário
-  const BORDER = [180, 160, 220];       // Bordas sutis
+  // Cores - apenas roxo
+  const PRIMARY = [107, 70, 193];
+  const TEXT_DARK = [30, 30, 30];
+  const TEXT_LIGHT = [100, 100, 100];
 
   const SECTION_LABELS = {
-    revelation:         'Revelação Principal',
-    earthFuture:        'Futuro da Terra',
-    otherCivilizations: 'Sabedoria Multidimensional',
-    technologyFuture:   'Futurologia e Tecnologia',
-    warning:            'Aviso Cósmico',
-    action:             'Ação Recomendada'
+    revelation:         'REVELACAO PRINCIPAL',
+    earthFuture:        'FUTURO DA TERRA',
+    otherCivilizations: 'SABEDORIA MULTIDIMENSIONAL',
+    technologyFuture:   'FUTUROLOGIA E TECNOLOGIA',
+    warning:            'AVISO COSMICO',
+    action:             'ACAO RECOMENDADA'
   };
 
-  const SECTION_ICONS = {
-    revelation:         '✦',
-    earthFuture:        '◉',
-    otherCivilizations: '✶',
-    technologyFuture:   '⬡',
-    warning:            '⚠',
-    action:             '↟'
-  };
-
-  // Background sutil
+  // Background branco limpo
   function addBackground() {
-    doc.setFillColor(252, 252, 255);
+    doc.setFillColor(255, 255, 255);
     doc.rect(0, 0, pageW, pageH, 'F');
   }
 
-  // Cabeçalho elegante
+  // Cabeçalho simples
   function addHeader() {
-    // Faixa roxa superior
     doc.setFillColor(...PRIMARY);
     doc.rect(0, 0, pageW, 35, 'F');
 
-    // Bordas douradas
-    doc.setDrawColor(218, 165, 32);
-    doc.setLineWidth(0.8);
-    doc.rect(8, 8, pageW - 16, 24, 'S');
-    
-    doc.setLineWidth(0.3);
-    doc.rect(9.5, 9.5, pageW - 19, 21, 'S');
-
-    // Símbolo central
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 215, 0);
-    doc.text('✦', pageW / 2, 16, { align: 'center' });
-
-    // Título
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
-    doc.text('LEITURA AKASHICA', pageW / 2, 24, { align: 'center' });
+    doc.text('LEITURA AKASHICA', pageW / 2, 18, { align: 'center' });
 
-    // Subtítulo
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(220, 200, 255);
-    doc.text('Portal Supremo dos Registros Akashicos', pageW / 2, 30, { align: 'center' });
+    doc.text('Portal Supremo dos Registros Akashicos', pageW / 2, 28, { align: 'center' });
   }
 
-  // Rodapé
+  // Rodapé simples
   function addFooter(pageNum) {
-    doc.setDrawColor(...BORDER);
+    doc.setDrawColor(200, 180, 240);
     doc.setLineWidth(0.3);
     doc.line(margin, pageH - 18, pageW - margin, pageH - 18);
 
     doc.setFontSize(8);
-    doc.setTextColor(...TEXT_LIGHT);
-    doc.text('✶', margin, pageH - 10);
-    doc.text('✶', pageW - margin - 2, pageH - 10);
-
-    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...TEXT_LIGHT);
-    doc.text('Portal Akashico', pageW / 2 - 12, pageH - 10);
-    doc.text(String(pageNum), pageW / 2 + 12, pageH - 10);
+    doc.text('Portal Akashico', pageW / 2 - 10, pageH - 10);
+    doc.text(String(pageNum), pageW / 2 + 10, pageH - 10);
   }
 
   function newPage() {
@@ -4897,29 +4863,28 @@ async function generatePDFBase64() {
   const state = currentReading.state || '';
   const question = currentReading.question || '';
 
-  // PÁGINA 1 - CAPA
+  // PÁGINA 1
   addBackground();
   addHeader();
 
-  y = 43;
+  y = 42;
 
-  // Caixa de informações
-  doc.setFillColor(...PRIMARY_LIGHT);
-  doc.roundedRect(margin, y, contentW, 60, 3, 3, 'F');
-  doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(margin, y, contentW, 60, 3, 3, 'S');
-
-  y += 8;
-
-  doc.setFontSize(10);
+  // INFORMAÇÕES DA CONSULTA
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...PRIMARY_DARK);
-  doc.text('✦  INFORMACOES DA CONSULTA', margin + 5, y);
+  doc.setTextColor(...PRIMARY);
+  doc.text('INFORMACOES DA CONSULTA', pageW / 2, y, { align: 'center' });
   
   y += 8;
 
-  const col1X = margin + 8;
+  // Linha separadora
+  doc.setDrawColor(...PRIMARY);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageW - margin, y);
+
+  y += 8;
+
+  const col1X = margin;
   const col2X = pageW / 2 + 5;
   const startY = y;
 
@@ -4980,106 +4945,73 @@ async function generatePDFBase64() {
   doc.setTextColor(...TEXT_DARK);
   doc.text(state, col2X, y);
 
-  y = 43 + 60 + 8;
+  y = startY + 45;
 
-  // Pergunta em destaque
-  doc.setFillColor(...PRIMARY);
-  doc.roundedRect(margin, y, contentW, 8, 2, 2, 'F');
-  
-  doc.setFontSize(9);
+  // PERGUNTA CENTRAL
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(255, 255, 255);
-  doc.text('✦  PERGUNTA CENTRAL', margin + 5, y + 5.5);
-
-  y += 12;
-
-  // Caixa da pergunta - ALTURA FIXA
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(margin, y, contentW, 30, 3, 3, 'F');
-  doc.setDrawColor(...PRIMARY);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(margin, y, contentW, 30, 3, 3, 'S');
+  doc.setTextColor(...PRIMARY);
+  doc.text('PERGUNTA CENTRAL', pageW / 2, y, { align: 'center' });
 
   y += 8;
+
+  // Linha separadora
+  doc.setDrawColor(...PRIMARY);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageW - margin, y);
+
+  y += 8;
+
   writeWrapped(question, { 
     size: 10.5, 
     style: 'italic', 
-    color: PRIMARY_DARK, 
+    color: TEXT_DARK, 
     align: 'center',
-    lh: 5.5,
-    w: contentW - 10
+    lh: 6
   });
 
-  y = 43 + 60 + 8 + 8 + 30 + 8;
-
-  // Separador
-  doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.5);
-  doc.line(margin + 30, y, pageW - margin - 30, y);
-  doc.setFontSize(12);
-  doc.setTextColor(...BORDER);
-  doc.text('✦', pageW / 2 - 2, y + 1);
-
   y += 10;
+
+  // Linha separadora antes das seções
+  doc.setDrawColor(200, 180, 240);
+  doc.setLineWidth(0.3);
+  doc.line(margin + 20, y, pageW - margin - 20, y);
+
+  y += 12;
 
   // SEÇÕES
   Object.entries(SECTION_LABELS).forEach(([key, label]) => {
     const text = currentSections[key] || '';
     if (!text) return;
 
-    const icon = SECTION_ICONS[key];
+    ensureSpace(20);
 
-    ensureSpace(25);
-
-    // Cabeçalho da seção
-    doc.setFillColor(...PRIMARY);
-    doc.roundedRect(margin, y, contentW, 10, 2, 2, 'F');
-
+    // Título da seção CENTRALIZADO
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(255, 255, 255);
-    doc.text(icon + '  ' + label.toUpperCase(), pageW / 2, y + 7, { align: 'center' });
+    doc.setTextColor(...PRIMARY);
+    doc.text(label, pageW / 2, y, { align: 'center' });
 
-    y += 14;
+    y += 8;
 
-    // CALCULAR ALTURA DO TEXTO ANTES DE DESENHAR CAIXA
-    doc.setFontSize(10.5);
-    doc.setFont('helvetica', 'normal');
-    const textLines = doc.splitTextToSize(text, contentW - 12);
-    const textHeight = textLines.length * 6 + 12;
-
-    // Verificar se precisa de nova página
-    if (y + textHeight > maxY) {
-      newPage();
-    }
-
-    // Caixa de conteúdo com ALTURA CALCULADA
-    doc.setFillColor(...PRIMARY_LIGHT);
-    doc.roundedRect(margin, y, contentW, textHeight, 3, 3, 'F');
-    doc.setDrawColor(...BORDER);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(margin, y, contentW, textHeight, 3, 3, 'S');
-
-    y += 6;
-
-    // Texto
+    // Texto da seção (SEM caixa)
     writeWrapped(text, { 
       size: 10.5,
       style: 'normal',
       color: TEXT_DARK, 
       lh: 6,
-      x: margin + 6,
-      w: contentW - 12
+      x: margin,
+      w: contentW
     });
 
-    y += 6;
+    y += 10;
 
     // Separador entre seções
     ensureSpace(6);
-    doc.setDrawColor(...BORDER);
+    doc.setDrawColor(200, 180, 240);
     doc.setLineWidth(0.2);
-    doc.line(margin + 40, y, pageW - margin - 40, y);
-    y += 8;
+    doc.line(margin + 30, y, pageW - margin - 30, y);
+    y += 10;
   });
 
   addFooter(currentPage);
