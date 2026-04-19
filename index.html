@@ -4775,14 +4775,14 @@ async function generatePDFBase64() {
   const TEXT_LIGHT = [100, 100, 100];
   const SEPARATOR = [147, 197, 253];
 
-  // TÍTULOS COM ACENTOS
+  // TÍTULOS COM ACENTOS PORTUGUESES
   const SECTION_LABELS = {
-    revelation:         'REVELACAO',
+    revelation:         'REVELAÇÃO',
     earthFuture:        'FUTURO',
     otherCivilizations: 'MENTORES',
-    technologyFuture:   'COEXISTENCIA',
-    warning:            'ADVERTENCIA',
-    action:             'ACAO'
+    technologyFuture:   'COEXISTÊNCIA',
+    warning:            'ADVERTÊNCIA',
+    action:             'AÇÃO'
   };
 
   function addBackground() {
@@ -4797,12 +4797,12 @@ async function generatePDFBase64() {
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
-    doc.text('LEITURA AKASHICA', pageW / 2, 18, { align: 'center' });
+    doc.text('LEITURA AKÁSHICA', pageW / 2, 18, { align: 'center' });
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(240, 250, 255);
-    doc.text('Portal Supremo dos Registros Akashicos', pageW / 2, 28, { align: 'center' });
+    doc.text('Portal Supremo dos Registros Akáshicos', pageW / 2, 28, { align: 'center' });
   }
 
   function addFooter(pageNum) {
@@ -4813,7 +4813,7 @@ async function generatePDFBase64() {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...TEXT_LIGHT);
-    doc.text('Portal Akashico', pageW / 2 - 10, pageH - 12);
+    doc.text('Portal Akáshico', pageW / 2 - 10, pageH - 12);
     doc.text(String(pageNum), pageW / 2 + 10, pageH - 12);
   }
 
@@ -4839,11 +4839,11 @@ async function generatePDFBase64() {
 
   y = 42;
 
-  // INFORMAÇÕES
+  // INFORMAÇÕES DA CONSULTA
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...PRIMARY);
-  doc.text('INFORMACOES DA CONSULTA', pageW / 2, y, { align: 'center' });
+  doc.text('INFORMAÇÕES DA CONSULTA', pageW / 2, y, { align: 'center' });
   
   y += 8;
 
@@ -4853,25 +4853,71 @@ async function generatePDFBase64() {
 
   y += 10;
 
-  // Dados centralizados
-  doc.setFontSize(10);
+  // DADOS EM 2 COLUNAS (NÃO CENTRALIZADO)
+  const col1X = margin;
+  const col2X = pageW / 2 + 5;
+  const startY = y;
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...TEXT_LIGHT);
+  
+  // Coluna 1
+  doc.text('Consulente:', col1X, y);
+  y += 5;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...TEXT_DARK);
-  doc.text('Consulente: ' + name, pageW / 2, y, { align: 'center' });
-  y += 6;
-  doc.text('Data de Nascimento: ' + birthdate, pageW / 2, y, { align: 'center' });
-  y += 6;
-  doc.text('Tema: ' + theme, pageW / 2, y, { align: 'center' });
-  y += 6;
-  doc.text('Data: ' + date, pageW / 2, y, { align: 'center' });
-  y += 6;
-  doc.text('Horario: ' + time, pageW / 2, y, { align: 'center' });
-  y += 6;
-  doc.text('Estado Emocional: ' + state, pageW / 2, y, { align: 'center' });
+  doc.text(name, col1X, y);
+  
+  y += 7;
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...TEXT_LIGHT);
+  doc.text('Data de Nascimento:', col1X, y);
+  y += 5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...TEXT_DARK);
+  doc.text(birthdate, col1X, y);
 
-  y += 12;
+  y += 7;
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...TEXT_LIGHT);
+  doc.text('Tema da Consulta:', col1X, y);
+  y += 5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...TEXT_DARK);
+  doc.text(theme, col1X, y);
 
-  // PERGUNTA
+  // Coluna 2
+  y = startY;
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...TEXT_LIGHT);
+  doc.text('Data da Leitura:', col2X, y);
+  y += 5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...TEXT_DARK);
+  doc.text(date, col2X, y);
+
+  y += 7;
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...TEXT_LIGHT);
+  doc.text('Horário:', col2X, y);
+  y += 5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...TEXT_DARK);
+  doc.text(time, col2X, y);
+
+  y += 7;
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...TEXT_LIGHT);
+  doc.text('Estado Emocional:', col2X, y);
+  y += 5;
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...TEXT_DARK);
+  doc.text(state, col2X, y);
+
+  y = startY + 48;
+
+  // PERGUNTA CENTRAL
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...PRIMARY);
