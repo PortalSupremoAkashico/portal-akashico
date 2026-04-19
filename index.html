@@ -4770,12 +4770,12 @@ async function generatePDFBase64() {
   let y = margin;
   let currentPage = 1;
 
-  const PRIMARY = [59, 130, 246];
+  // COR ROXA DO SITE (#6d28d9)
+  const PRIMARY = [109, 40, 217];      // Roxo principal do site
   const TEXT_DARK = [30, 30, 30];
   const TEXT_LIGHT = [100, 100, 100];
-  const SEPARATOR = [147, 197, 253];
+  const SEPARATOR = [167, 139, 250];   // Roxo claro
 
-  // TÍTULOS COM ACENTOS PORTUGUESES
   const SECTION_LABELS = {
     revelation:         'REVELAÇÃO',
     earthFuture:        'FUTURO',
@@ -4801,7 +4801,7 @@ async function generatePDFBase64() {
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(240, 250, 255);
+    doc.setTextColor(220, 200, 255);
     doc.text('Portal Supremo dos Registros Akáshicos', pageW / 2, 28, { align: 'center' });
   }
 
@@ -4825,13 +4825,33 @@ async function generatePDFBase64() {
     y = margin;
   }
 
+  // Função para limpar caracteres problemáticos
+  function cleanText(text) {
+    // Remove caracteres problemáticos de encoding e substitui por versões seguras
+    return text
+      .replace(/[Ã"»]/g, '')  // Remove caracteres corrompidos
+      .replace(/â€"/g, '-')   // Travessão
+      .replace(/â€™/g, "'")   // Apóstrofo
+      .replace(/â€œ/g, '"')   // Aspas abertura
+      .replace(/â€/g, '"')    // Aspas fechamento
+      .replace(/Ã§/g, 'ç')    // ç
+      .replace(/Ã£/g, 'ã')    // ã
+      .replace(/Ã©/g, 'é')    // é
+      .replace(/Ãª/g, 'ê')    // ê
+      .replace(/Ã­/g, 'í')    // í
+      .replace(/Ã³/g, 'ó')    // ó
+      .replace(/Ãº/g, 'ú')    // ú
+      .replace(/Ã/g, 'Á')     // Á
+      .replace(/[^\x00-\x7F]/g, ''); // Remove outros caracteres não-ASCII problemáticos
+  }
+
   const date = currentReading.date || new Date().toLocaleString('pt-BR');
   const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const name = currentReading.name || '';
+  const name = cleanText(currentReading.name || '');
   const birthdate = currentReading.birthdate || '';
   const theme = currentReading.theme || '';
   const state = currentReading.state || '';
-  const question = currentReading.question || '';
+  const question = cleanText(currentReading.question || '');
 
   // PÁGINA 1
   addBackground();
@@ -4853,7 +4873,7 @@ async function generatePDFBase64() {
 
   y += 10;
 
-  // DADOS EM 2 COLUNAS (NÃO CENTRALIZADO)
+  // DADOS EM 2 COLUNAS
   const col1X = margin;
   const col2X = pageW / 2 + 5;
   const startY = y;
@@ -4948,12 +4968,12 @@ async function generatePDFBase64() {
 
   y += 15;
 
-  // SEÇÕES - LÓGICA ROBUSTA
+  // SEÇÕES
   Object.entries(SECTION_LABELS).forEach(([key, label]) => {
-    const text = currentSections[key] || '';
+    const text = cleanText(currentSections[key] || '');
     if (!text) return;
 
-    // CALCULAR ALTURA NECESSÁRIA COM MARGEM DE SEGURANÇA
+    // CALCULAR ALTURA
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     const textLines = doc.splitTextToSize(text, contentW - 20);
@@ -4962,12 +4982,12 @@ async function generatePDFBase64() {
     const separatorHeight = 15;
     const totalHeight = titleHeight + (textLines.length * lineHeight) + separatorHeight;
 
-    // SE NÃO COUBER, FAZER NOVA PÁGINA ANTES DE COMEÇAR
+    // SE NÃO COUBER, NOVA PÁGINA
     if (y + totalHeight > maxY) {
       newPage();
     }
 
-    // AGORA ESCREVER TÍTULO E TEXTO (GARANTIDO QUE ESTÁ NA MESMA PÁGINA)
+    // TÍTULO
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...PRIMARY);
@@ -4975,7 +4995,7 @@ async function generatePDFBase64() {
 
     y += 10;
 
-    // TEXTO CENTRALIZADO - LINHA POR LINHA
+    // TEXTO CENTRALIZADO
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...TEXT_DARK);
