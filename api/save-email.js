@@ -66,10 +66,16 @@ export default async function handler(req, res) {
       
       // SALVAR NO GOOGLE APPS SCRIPT (PERMANENTE!)
       if (GOOGLE_APPS_SCRIPT_URL) {
+        console.log('🔵 URL do Apps Script configurada:', GOOGLE_APPS_SCRIPT_URL);
         try {
+          console.log('🔵 Iniciando chamada ao Google Apps Script...');
+          console.log('🔵 Dados enviados:', { action: 'saveEmail', email, nome: nome || 'Não informado' });
+          
           const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
               action: 'saveEmail',
               email: email,
@@ -77,19 +83,41 @@ export default async function handler(req, res) {
             })
           });
           
-          const result = await response.json();
+          console.log('🔵 Resposta recebida. Status:', response.status);
+          console.log('🔵 Headers da resposta:', JSON.stringify(Object.fromEntries(response.headers.entries())));
+          
+          const responseText = await response.text();
+          console.log('🔵 Resposta (texto):', responseText);
+          
+          let result;
+          try {
+            result = JSON.parse(responseText);
+            console.log('🔵 Resultado (parsed):', JSON.stringify(result));
+          } catch (parseErr) {
+            console.error('❌ Erro ao fazer parse do JSON:', parseErr.message);
+            console.error('❌ Resposta original:', responseText);
+            throw new Error('Resposta inválida do Apps Script');
+          }
           
           if (result.success) {
             console.log('✅ E-mail salvo no Google Sheets (PERMANENTE)');
             return res.status(200).json(result);
+          } else {
+            console.error('❌ Apps Script retornou erro:', result);
           }
         } catch (err) {
-          console.warn('⚠️ Erro ao salvar no Google Sheets:', err);
+          console.error('❌ ERRO ao salvar no Google Sheets:', err.message);
+          console.error('❌ Stack:', err.stack);
+          console.error('❌ Nome do erro:', err.name);
           // Continua para salvar localmente como fallback
         }
+      } else {
+        console.error('❌ GOOGLE_APPS_SCRIPT_URL não está configurada ou está vazia!');
+        console.error('❌ Valor atual:', GOOGLE_APPS_SCRIPT_URL);
       }
       
       // FALLBACK: Salvar localmente (temporário)
+      console.log('⚠️ Salvando localmente em /tmp (fallback)');
       const filePath = '/tmp/email-list.csv';
       const timestamp = new Date().toISOString();
       const newLine = `${email},${nome || 'Não informado'},${timestamp}\n`;
