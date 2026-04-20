@@ -4,7 +4,7 @@ import { existsSync } from 'fs';
 
 // URL do Google Apps Script (o mesmo que envia e-mails!)
 // COLE A URL AQUI: https://script.google.com/macros/s/ABC.../exec
-const GOOGLE_APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL || '';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjgmWDoG6LB0_1LQGGZM4kyxdpZmP2igtNhuES1ET2n35Tz7IkHzVPxKjXIL88-1cw/exec';
 
 export default async function handler(req, res) {
   // CORS
