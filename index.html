@@ -3711,18 +3711,12 @@ function toAkashicLanguage(text) {
   return result;
 }
 
-// Função para formatar resposta com Akáshico + Tradução
+// Função para formatar resposta (APENAS PORTUGUÊS)
 function formatAkashicResponse(portugueseText) {
-  const akashicText = toAkashicLanguage(portugueseText);
-  
   return `<div class="akashic-response">
     <div class="akashic-original">
-      <div class="akashic-label">𒀭 LINGUAGEM DOS GUARDIÕES AKÁSHICOS 𒀭</div>
-      <div class="akashic-subtitle">Escrita Cuneiforme dos Registros Eternos</div>
-      <div class="akashic-text">${akashicText}</div>
-    </div>
-    <div class="akashic-translation">
-      <div class="translation-label">◈ TRADUÇÃO PARA O PLANO TERRESTRE ◈</div>
+      <div class="akashic-label">✧ REVELAÇÃO DOS REGISTROS AKÁSHICOS ✧</div>
+      <div class="akashic-subtitle">Mensagem dos Guardiões Eternos</div>
       <div class="translation-text">${portugueseText}</div>
     </div>
   </div>`;
