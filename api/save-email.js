@@ -2,6 +2,10 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
+// URL do Google Apps Script (o mesmo que envia e-mails!)
+// COLE A URL AQUI: https://script.google.com/macros/s/ABC.../exec
+const GOOGLE_APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL || '';
+
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -12,9 +16,17 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
   
-  // GET: Retorna lista de e-mails (para admin)
+  // GET: Retorna lista de e-mails
   if (req.method === 'GET') {
     try {
+      // Tentar do Google Apps Script primeiro (persistente)
+      if (GOOGLE_APPS_SCRIPT_URL) {
+        const response = await fetch(GOOGLE_APPS_SCRIPT_URL);
+        const data = await response.json();
+        return res.status(200).json(data);
+      }
+      
+      // Fallback: arquivo local (temporário)
       const filePath = '/tmp/email-list.csv';
       
       if (!existsSync(filePath)) {
@@ -52,15 +64,39 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'E-mail obrigatório' });
       }
       
+      // SALVAR NO GOOGLE APPS SCRIPT (PERMANENTE!)
+      if (GOOGLE_APPS_SCRIPT_URL) {
+        try {
+          const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'saveEmail',
+              email: email,
+              nome: nome || 'Não informado'
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            console.log('✅ E-mail salvo no Google Sheets (PERMANENTE)');
+            return res.status(200).json(result);
+          }
+        } catch (err) {
+          console.warn('⚠️ Erro ao salvar no Google Sheets:', err);
+          // Continua para salvar localmente como fallback
+        }
+      }
+      
+      // FALLBACK: Salvar localmente (temporário)
       const filePath = '/tmp/email-list.csv';
       const timestamp = new Date().toISOString();
       const newLine = `${email},${nome || 'Não informado'},${timestamp}\n`;
       
-      // Se arquivo não existe, criar com cabeçalho
       if (!existsSync(filePath)) {
         await writeFile(filePath, 'email,nome,data\n' + newLine);
       } else {
-        // Verificar se e-mail já existe
         const existingData = await readFile(filePath, 'utf-8');
         if (existingData.includes(email)) {
           return res.status(200).json({ 
@@ -69,15 +105,16 @@ export default async function handler(req, res) {
             duplicate: true
           });
         }
-        
-        // Adicionar nova linha
         await writeFile(filePath, existingData + newLine);
       }
       
+      console.log('⚠️ E-mail salvo apenas localmente (será perdido no próximo deploy)');
+      
       return res.status(200).json({ 
         success: true,
-        message: 'E-mail salvo com sucesso',
-        duplicate: false
+        message: 'E-mail salvo (local - temporário)',
+        duplicate: false,
+        warning: 'Configure GOOGLE_APPS_SCRIPT_URL para backup permanente'
       });
       
     } catch (error) {
@@ -91,4 +128,3 @@ export default async function handler(req, res) {
   
   return res.status(405).json({ error: 'Method not allowed' });
 }
-
