@@ -2,8 +2,7 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
-// URL do Google Apps Script (o mesmo que envia e-mails!)
-// COLE A URL AQUI: https://script.google.com/macros/s/ABC.../exec
+// URL do Google Apps Script - HARDCODED (não depende de variável de ambiente)
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjgmWDoG6LB0_1LQGGZM4kyxdpZmP2igtNhuES1ET2n35Tz7IkHzVPxKjXIL88-1cw/exec';
 
 export default async function handler(req, res) {
@@ -19,10 +18,14 @@ export default async function handler(req, res) {
   // GET: Retorna lista de e-mails
   if (req.method === 'GET') {
     try {
+      console.log('📥 GET request recebido para listar e-mails');
+      
       // Tentar do Google Apps Script primeiro (persistente)
       if (GOOGLE_APPS_SCRIPT_URL) {
+        console.log('🔵 Tentando buscar e-mails do Google Sheets...');
         const response = await fetch(GOOGLE_APPS_SCRIPT_URL);
         const data = await response.json();
+        console.log('✅ E-mails recuperados do Google Sheets:', data.count || 0);
         return res.status(200).json(data);
       }
       
@@ -50,7 +53,7 @@ export default async function handler(req, res) {
         csv: csvData
       });
     } catch (error) {
-      console.error('Erro ao ler e-mails:', error);
+      console.error('❌ Erro ao ler e-mails:', error);
       return res.status(500).json({ error: error.message });
     }
   }
@@ -60,7 +63,10 @@ export default async function handler(req, res) {
     try {
       const { email, nome } = req.body;
       
+      console.log('📨 POST request recebido para salvar e-mail:', email);
+      
       if (!email) {
+        console.error('❌ E-mail não fornecido');
         return res.status(400).json({ error: 'E-mail obrigatório' });
       }
       
@@ -87,7 +93,7 @@ export default async function handler(req, res) {
           console.log('🔵 Headers da resposta:', JSON.stringify(Object.fromEntries(response.headers.entries())));
           
           const responseText = await response.text();
-          console.log('🔵 Resposta (texto):', responseText);
+          console.log('🔵 Resposta (texto):', responseText.substring(0, 500)); // Primeiros 500 chars
           
           let result;
           try {
@@ -95,15 +101,17 @@ export default async function handler(req, res) {
             console.log('🔵 Resultado (parsed):', JSON.stringify(result));
           } catch (parseErr) {
             console.error('❌ Erro ao fazer parse do JSON:', parseErr.message);
-            console.error('❌ Resposta original:', responseText);
-            throw new Error('Resposta inválida do Apps Script');
+            console.error('❌ Resposta original:', responseText.substring(0, 1000));
+            throw new Error('Resposta inválida do Apps Script: ' + responseText.substring(0, 200));
           }
           
           if (result.success) {
             console.log('✅ E-mail salvo no Google Sheets (PERMANENTE)');
+            console.log('✅ Total de e-mails na planilha:', result.total || 'desconhecido');
             return res.status(200).json(result);
           } else {
-            console.error('❌ Apps Script retornou erro:', result);
+            console.error('❌ Apps Script retornou success=false:', result.message);
+            throw new Error(result.message || 'Erro desconhecido do Apps Script');
           }
         } catch (err) {
           console.error('❌ ERRO ao salvar no Google Sheets:', err.message);
@@ -146,7 +154,7 @@ export default async function handler(req, res) {
       });
       
     } catch (error) {
-      console.error('Erro ao salvar e-mail:', error);
+      console.error('❌ Erro geral ao salvar e-mail:', error);
       return res.status(500).json({ 
         success: false, 
         error: error.message 
