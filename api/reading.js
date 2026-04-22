@@ -17,6 +17,23 @@ export default async function handler(req, res) {
   try {
     const { name, birthdate, theme, state, question, level, cosmicMode, gender } = req.body;
     
+    // Calcula idade baseada na data de nascimento
+    let age = null;
+    let ageText = '';
+    if (birthdate) {
+      const birth = new Date(birthdate);
+      const today = new Date();
+      age = today.getFullYear() - birth.getFullYear();
+      const monthDiff = today.getMonth() - birth.getMonth();
+      
+      // Ajusta se ainda não fez aniversário este ano
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+        age--;
+      }
+      
+      ageText = `IDADE ATUAL: ${age} anos (calculada automaticamente - use APENAS esta idade se mencionar idade)`;
+    }
+    
     // Pega a chave da API das variáveis de ambiente (SEGURO!)
     const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
     
@@ -178,11 +195,14 @@ ESTILO DE RESPOSTA:
     
     const prompt = `CONSULENTE: ${name}
 DATA DE NASCIMENTO: ${birthdate}
+${ageText}
 SEXO: ${gender || 'Não informado'}
 TEMA: ${theme}
 ESTADO EMOCIONAL: ${state}
 PERGUNTA: ${question}
 NÍVEL: ${level}
+
+IMPORTANTE: Se você mencionar a idade do consulente na sua resposta, use APENAS a idade calculada acima (${age} anos). NUNCA calcule idade manualmente ou use outra idade.
 
 Forneça uma leitura profunda e personalizada em formato JSON com estas seções:
 {
