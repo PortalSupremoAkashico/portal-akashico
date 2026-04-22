@@ -177,6 +177,15 @@ REGRAS CRÍTICAS DE TEMPORALIDADE:
 - Use prazos amplos: "nos próximos anos", "em ciclos futuros"
 - Foque em PADRÕES e TENDÊNCIAS, não em datas específicas
 
+REGRAS CRÍTICAS DE TAMANHO E PROFUNDIDADE:
+1. TEXTOS LONGOS E COMPLETOS - cada seção deve ter MÍNIMO 250-400 palavras
+2. SEJA EXTREMAMENTE DESCRITIVO - desenvolva cada ideia completamente
+3. APROFUNDE CADA PONTO - não seja superficial ou genérico
+4. USE PARÁGRAFOS LONGOS - desenvolva raciocínios complexos
+5. EXEMPLOS CONCRETOS - dê múltiplos exemplos e analogias
+6. CONEXÕES PROFUNDAS - conecte diferentes aspectos da vida da pessoa
+7. NARRATIVA RICA - conte uma história, não apenas liste pontos
+
 DIRETRIZES DE REALISMO (CRÍTICO):
 1. SEJA EXTREMAMENTE ESPECÍFICO E PRÁTICO - não generalidades vazias
 2. USE LINGUAGEM ASSERTIVA - "está claro que", "os registros mostram"
@@ -191,7 +200,9 @@ ESTILO DE RESPOSTA:
 - Varie entre: direto/compassivo, técnico/poético, prático/filosófico
 - Cada leitura deve ter um "tom" único
 - Misture ciência + espiritualidade de forma natural
-- NUNCA repita frases ou estruturas de leituras anteriores`;
+- NUNCA repita frases ou estruturas de leituras anteriores
+- Escreva parágrafos LONGOS e DESENVOLVIDOS
+- Não tenha pressa - desenvolva cada pensamento completamente`;
     
     const prompt = `CONSULENTE: ${name}
 DATA DE NASCIMENTO: ${birthdate}
@@ -241,7 +252,7 @@ Forneça uma leitura profunda e personalizada em formato JSON com estas seções
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 6000,
+        max_tokens: 12000,
         system: systemPrompts[primary] + '\n\n' + baseSystemPrompt,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -268,7 +279,7 @@ Forneça uma leitura profunda e personalizada em formato JSON com estas seções
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 6000,
+        max_tokens: 12000,
         system: systemPrompts[secondary] + '\n\n' + baseSystemPrompt,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -325,20 +336,30 @@ SINTETIZE as duas perspectivas em UMA leitura coesa que:
    - MÁXIMO realismo e credibilidade
    - ZERO esoterismo excessivo ou "viagem"
 
+5. **TAMANHO E PROFUNDIDADE (CRÍTICO):**
+   - Cada seção JSON deve ter MÍNIMO 250-400 palavras
+   - Desenvolva COMPLETAMENTE cada ideia
+   - Use parágrafos LONGOS e DESENVOLVIDOS
+   - NÃO seja superficial - aprofunde cada ponto
+   - Dê múltiplos exemplos e analogias
+   - Conte uma HISTÓRIA rica e envolvente
+   - TEXTOS COMPLETOS, não resumos
+
 IMPORTANTE: 
 - Reduza referências a extraterrestres/astrologia (ZERO se possível)
 - Seja EXTREMAMENTE específico para ${name}
 - Dê conselhos PRÁTICOS e ACIONÁVEIS
 - Cada leitura deve ter tom único (não genérico)
+- ESCREVA MUITO - mínimo 250 palavras por seção
 
 Formato JSON:
 {
-  "revelation": "...",
-  "earthFuture": "...",
-  "otherCivilizations": "...",
-  "technologyFuture": "...",
-  "warning": "...",
-  "action": "..."
+  "revelation": "... (TEXTO LONGO, 250-400 palavras)",
+  "earthFuture": "... (TEXTO LONGO, 250-400 palavras)",
+  "otherCivilizations": "... (TEXTO LONGO, 250-400 palavras)",
+  "technologyFuture": "... (TEXTO LONGO, 250-400 palavras)",
+  "warning": "... (TEXTO LONGO, 250-400 palavras)",
+  "action": "... (TEXTO LONGO, 250-400 palavras)"
 }`;
     
     const response3 = await fetch('https://api.anthropic.com/v1/messages', {
@@ -350,7 +371,7 @@ Formato JSON:
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 8000,
+        max_tokens: 16000,
         system: baseSystemPrompt,
         messages: [{ role: 'user', content: synthesisPrompt }]
       })
