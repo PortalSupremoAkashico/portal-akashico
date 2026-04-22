@@ -1945,7 +1945,7 @@
     
     .akashic-subtitle {
       text-align: center;
-      font-size: 13px;
+      font-size: 17px;
       font-weight: 400;
       letter-spacing: 1px;
       margin-bottom: 16px;
@@ -3414,7 +3414,7 @@
                 </div>
                 <div>
                   <label for="dataNascimento">Data de nascimento</label>
-                  <input id="dataNascimento" type="text" placeholder="DD/MM/AAAA" maxlength="10" disabled />
+                  <input id="dataNascimento" type="text" placeholder="dd/mm/aaaa" maxlength="10" disabled />
                 </div>
               </div>
               <div class="row-2">
@@ -3716,7 +3716,7 @@ function formatAkashicResponse(portugueseText) {
   return `<div class="akashic-response">
     <div class="akashic-original">
       <div class="akashic-label">✧ REVELAÇÃO DOS REGISTROS AKÁSHICOS ✧</div>
-      <div class="akashic-subtitle">Mensagem dos Guardiões Eternos</div>
+      <div class="akashic-subtitle">Mensagem dos Guardiões Akáshicos</div>
       <div class="translation-text">${portugueseText}</div>
     </div>
   </div>`;
@@ -4321,7 +4321,7 @@ formFields.forEach(field => {
 document.getElementById('pergunta').setAttribute('maxlength', '1200');
 document.getElementById('nome').setAttribute('maxlength', '80');
 
-// Formatação automática de data DD/MM/AAAA
+// Formatação automática de data dd/mm/aaaa
 const dataNascimentoInput = document.getElementById('dataNascimento');
 dataNascimentoInput.addEventListener('input', (e) => {
   let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não é número
@@ -4345,7 +4345,7 @@ dataNascimentoInput.addEventListener('blur', (e) => {
   const match = value.match(regex);
   
   if (!match) {
-    alert('Data inválida! Use o formato DD/MM/AAAA');
+    alert('Data inválida! Use o formato dd/mm/aaaa');
     e.target.value = '';
     return;
   }
