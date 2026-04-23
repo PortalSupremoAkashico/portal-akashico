@@ -2775,7 +2775,7 @@
   (function(){
     const canvas = document.getElementById('universeCanvas');
     const ctx = canvas.getContext('2d');
-    let W, H, stars=[], nebulae=[], galaxies=[], planets=[], spaceships=[], starClusters=[], t=0;
+    let W, H, stars=[], nebulae=[], galaxies=[], spaceships=[], starClusters=[], t=0;
     const startTime = Date.now(); // Tempo de início do programa
     function resize(){
       W = canvas.width  = window.innerWidth;
@@ -2842,120 +2842,8 @@
         const [r,g,b] = cols[i%cols.length];
         nebulae.push({ x:rand(0,W), y:rand(0,H), rx:rand(W*.15,W*.5), ry:rand(H*.12,H*.4), alpha:rand(0.08,0.18), angle:rand(0,Math.PI), r,g,b, driftX:rand(-0.03,0.03), driftY:rand(-0.02,0.02), rotSpeed:rand(-0.00005,0.00005), pulseSpeed:rand(0.0003,0.0008), pulsePhase:rand(0,Math.PI*2) });
       }
-      // Planetas ROCHOSOS sólidos (tipo Terra)
-      planets = [];
-      const planetData = [
-        { colors: [[70,140,200],[40,100,160]], size: rand(18,32), hasRing: false, name: 'Terra-Azul' }, // Oceânico azul
-        { colors: [[100,180,120],[60,140,80]], size: rand(16,30), hasRing: false, name: 'Terra-Verde' }, // Verde com vegetação
-        { colors: [[120,160,180],[80,120,140]], size: rand(17,31), hasRing: false, name: 'Terra-Oceano' }, // Mundo aquático
-        { colors: [[200,150,100],[160,110,70]], size: rand(15,28), hasRing: false, name: 'Terra-Deserto' }, // Desértico marrom
-        { colors: [[255,120,50],[200,80,30]], size: rand(20,35), hasRing: false, name: 'Marte' }, // Marte rochoso vermelho
-        { colors: [[220,200,150],[180,160,120]], size: rand(30,50), hasRing: true, name: 'Saturno' }, // ÚNICO com anéis (raro!)
-      ];
-      
-      // Inicia com 2-3 planetas em posições ESPAÇADAS
-      for(let i=0; i<rand(2,3); i++){
-        const planet = planetData[Math.floor(Math.random()*planetData.length)];
-        let x, y, tooClose;
-        let attempts = 0;
-        
-        // Garante distância mínima entre planetas
-        do {
-          tooClose = false;
-          x = rand(0, W);
-          y = rand(H*0.1, H*0.9);
-          
-          // Verifica distância de outros planetas
-          for(let p of planets){
-            const dx = x - p.x;
-            const dy = y - p.y;
-            const distance = Math.sqrt(dx*dx + dy*dy);
-            const minDistance = 300; // Distância mínima entre planetas
-            
-            if(distance < minDistance){
-              tooClose = true;
-              break;
-            }
-          }
-          attempts++;
-        } while(tooClose && attempts < 50);
-        
-        if(!tooClose){
-          planets.push({
-            x: x,
-            y: y,
-            size: planet.size,
-            colors: planet.colors,
-            hasRing: planet.hasRing,
-            ringAngle: rand(0, Math.PI),
-            pulseSpeed: rand(0.0002, 0.0005),
-            pulsePhase: rand(0, Math.PI*2),
-            glowSpeed: rand(0.0003, 0.0008),
-            glowPhase: rand(0, Math.PI*2),
-            rotationSpeed: rand(-0.00003, 0.00003),
-            rotation: 0,
-            dx: rand(0.8, 1.5),
-            planetType: planet
-          });
-        }
-      }
       
       spaceships = [];
-    }
-    function createPlanet() {
-      // Cria novos planetas ocasionalmente COM VERIFICAÇÃO DE DISTÂNCIA
-      if(Math.random() < 0.002 && planets.length < 4) {
-        const elapsedSeconds = (Date.now() - startTime) / 1000;
-        
-        let planetData = [
-          { colors: [[70,140,200],[40,100,160]], size: rand(18,32), hasRing: false, name: 'Terra-Azul' },
-          { colors: [[100,180,120],[60,140,80]], size: rand(16,30), hasRing: false, name: 'Terra-Verde' },
-          { colors: [[120,160,180],[80,120,140]], size: rand(17,31), hasRing: false, name: 'Terra-Oceano' },
-          { colors: [[200,150,100],[160,110,70]], size: rand(15,28), hasRing: false, name: 'Terra-Deserto' },
-          { colors: [[255,120,50],[200,80,30]], size: rand(20,35), hasRing: false, name: 'Marte' },
-        ];
-        
-        // Só adiciona Saturno após 10 segundos
-        if(elapsedSeconds >= 10){
-          planetData.push({ colors: [[220,200,150],[180,160,120]], size: rand(30,50), hasRing: true, name: 'Saturno' });
-        }
-        
-        const planet = planetData[Math.floor(Math.random()*planetData.length)];
-        
-        // Verifica se não há outro planeta muito próximo
-        const y = rand(H*0.1, H*0.9);
-        let tooClose = false;
-        
-        for(let p of planets){
-          const dy = Math.abs(y - p.y);
-          const minDistance = 250; // Distância mínima vertical
-          
-          if(dy < minDistance){
-            tooClose = true;
-            break;
-          }
-        }
-        
-        // Só adiciona se não estiver muito próximo
-        if(!tooClose){
-          planets.push({
-            x: -planet.size - 100,
-            y: y,
-            size: planet.size,
-            colors: planet.colors,
-            hasRing: planet.hasRing,
-            ringAngle: rand(0, Math.PI),
-            pulseSpeed: rand(0.0002, 0.0005),
-            pulsePhase: rand(0, Math.PI*2),
-            glowSpeed: rand(0.0003, 0.0008),
-            glowPhase: rand(0, Math.PI*2),
-            rotationSpeed: rand(-0.00003, 0.00003),
-            rotation: 0,
-            dx: rand(0.8, 1.5),
-            planetType: planet
-          });
-        }
-      }
     }
     function createSpaceship() {
       if(Math.random() < 0.004 && spaceships.length < 2) {
@@ -3274,73 +3162,6 @@
         }
       });
     }
-    function drawPlanets(){
-      planets.forEach((p, idx)=>{
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rotation);
-        
-        // Pulsação e brilho
-        const pulse = Math.sin(t*p.pulseSpeed + p.pulsePhase)*0.1 + 1;
-        const glow = Math.sin(t*p.glowSpeed + p.glowPhase)*0.3 + 0.7;
-        const size = p.size * pulse;
-        
-        // Anéis (se tiver) - desenhar ATRÁS do planeta
-        if(p.hasRing){
-          ctx.save();
-          ctx.rotate(p.ringAngle);
-          ctx.scale(1, 0.3);
-          
-          const ringGrad = ctx.createRadialGradient(0,0,size*1.3,0,0,size*2.2);
-          ringGrad.addColorStop(0, `rgba(${p.colors[0][0]}, ${p.colors[0][1]}, ${p.colors[0][2]}, 0)`);
-          ringGrad.addColorStop(0.4, `rgba(${p.colors[0][0]+30}, ${p.colors[0][1]+30}, ${p.colors[0][2]+30}, 0.7)`);
-          ringGrad.addColorStop(0.6, `rgba(${p.colors[0][0]+20}, ${p.colors[0][1]+20}, ${p.colors[0][2]+20}, 0.8)`);
-          ringGrad.addColorStop(0.85, `rgba(${p.colors[0][0]}, ${p.colors[0][1]}, ${p.colors[0][2]}, 0.5)`);
-          ringGrad.addColorStop(1, `rgba(${p.colors[0][0]}, ${p.colors[0][1]}, ${p.colors[0][2]}, 0)`);
-          
-          ctx.fillStyle = ringGrad;
-          ctx.beginPath();
-          ctx.arc(0, 0, size*2.2, 0, Math.PI*2);
-          ctx.fill();
-          ctx.restore();
-        }
-        
-        // Atmosfera/brilho externo (halo suave)
-        const atmosGrad = ctx.createRadialGradient(0,0,size*0.8,0,0,size*1.5);
-        atmosGrad.addColorStop(0, `rgba(${p.colors[1][0]}, ${p.colors[1][1]}, ${p.colors[1][2]}, 0)`);
-        atmosGrad.addColorStop(0.7, `rgba(${p.colors[1][0]}, ${p.colors[1][1]}, ${p.colors[1][2]}, ${0.2*glow})`);
-        atmosGrad.addColorStop(1, `rgba(${p.colors[1][0]}, ${p.colors[1][1]}, ${p.colors[1][2]}, 0)`);
-        ctx.fillStyle = atmosGrad;
-        ctx.beginPath();
-        ctx.arc(0, 0, size*1.5, 0, Math.PI*2);
-        ctx.fill();
-        
-        // Corpo do planeta OPACO (alpha = 1)
-        const planetGrad = ctx.createRadialGradient(-size*0.3, -size*0.3, size*0.1, 0, 0, size);
-        planetGrad.addColorStop(0, `rgb(${p.colors[0][0]+50}, ${p.colors[0][1]+50}, ${p.colors[0][2]+50})`); // OPACO
-        planetGrad.addColorStop(0.5, `rgb(${p.colors[0][0]+20}, ${p.colors[0][1]+20}, ${p.colors[0][2]+20})`); // OPACO
-        planetGrad.addColorStop(0.8, `rgb(${p.colors[0][0]}, ${p.colors[0][1]}, ${p.colors[0][2]})`); // OPACO
-        planetGrad.addColorStop(1, `rgb(${p.colors[1][0]}, ${p.colors[1][1]}, ${p.colors[1][2]})`); // OPACO
-        
-        ctx.fillStyle = planetGrad;
-        ctx.shadowBlur = 25;
-        ctx.shadowColor = `rgba(${p.colors[0][0]}, ${p.colors[0][1]}, ${p.colors[0][2]}, ${0.5*glow})`;
-        ctx.beginPath();
-        ctx.arc(0, 0, size, 0, Math.PI*2);
-        ctx.fill();
-        
-        ctx.restore();
-        
-        // Movimento horizontal (esquerda → direita)
-        p.x += p.dx;
-        p.rotation += p.rotationSpeed;
-        
-        // Remove planetas que saíram da tela
-        if(p.x > W + p.size + 100) {
-          planets.splice(idx, 1);
-        }
-      });
-    }
     function drawVignette(){
       const v=ctx.createRadialGradient(W*.5,H*.5,H*.2,W*.5,H*.5,Math.max(W,H)*.75);
       v.addColorStop(0,'transparent'); v.addColorStop(1,'rgba(2,1,8,0.72)');
@@ -3354,8 +3175,6 @@
       drawStarClusters();
       drawNebulae();
       drawStars();
-      createPlanet();
-      drawPlanets();
       createSpaceship();
       drawSpaceships();
       drawVignette(); 
