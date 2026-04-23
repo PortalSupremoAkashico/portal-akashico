@@ -3431,8 +3431,8 @@
                   <label for="tema">Tema</label>
                   <select id="tema" required disabled>
                     <option value="" selected>Selecione</option>
-                    <option>Propósito</option><option>Relacionamentos</option><option>Saúde emocional</option>
-                    <option>Prosperidade</option><option>Missão espiritual</option><option>Caminho de alma</option>
+                    <option>Propósito</option><option>Relacionamentos</option><option>Saúde mental</option>
+                    <option>Prosperidade</option><option>Profissão</option><option>Espiritualidade</option><option>Saúde</option>
                     <option>Decisão importante</option><option>Outro</option>
                   </select>
                 </div>
@@ -3444,24 +3444,6 @@
                     <option value="" selected>Selecione</option>
                     <option>Calmo</option><option>Sensível</option><option>Confuso</option>
                     <option>Cansado</option><option>Esperançoso</option><option>Intenso</option>
-                  </select>
-                </div>
-                <div>
-                  <label for="nivel">Nível</label>
-                  <select id="nivel" required disabled>
-                    <option value="" selected>Selecione</option>
-                    <option>Essencial</option><option>Profunda</option><option>Suprema</option>
-                  </select>
-                </div>
-              </div>
-              <div class="row-2">
-                <div>
-                  <label for="modoCosmico">Modo</label>
-                  <select id="modoCosmico" required disabled>
-                    <option value="" selected>Selecione</option>
-                    <option>Desativado</option><option>Contemplativo</option>
-                    <option>Simbólico</option><option>Visionário</option>
-                    <option>Admissível</option>
                   </select>
                 </div>
                 <div></div>
@@ -3544,9 +3526,7 @@
               <div class="pill" id="pillTema">Tema: —</div>
               <div class="pill" id="pillEstado">Estado: —</div>
               <div class="pill" id="pillEnergia">Frequência: repouso</div>
-              <div class="pill" id="pillNivel">Nível: —</div>
               <div class="pill" id="pillPortal">Portal: selado</div>
-              <div class="pill" id="pillCosmic">Modo: inativo</div>
             </div>
           </div>
         </div>
@@ -3794,16 +3774,14 @@ const journalList  = document.getElementById('journalList');
 const pillTema     = document.getElementById('pillTema');
 const pillEstado   = document.getElementById('pillEstado');
 const pillEnergia  = document.getElementById('pillEnergia');
-const pillNivel    = document.getElementById('pillNivel');
 const pillPortal   = document.getElementById('pillPortal');
-const pillCosmic   = document.getElementById('pillCosmic');
 const panelTitle   = document.getElementById('panelTitle');
 const panelMark    = document.getElementById('panelMark');
 const sealWrap     = document.getElementById('sealWrap');
 const sealSymbol   = document.getElementById('sealSymbol');
 const sealLabel    = document.getElementById('sealLabel');
 
-const fieldIds = ['nome', 'dataNascimento', 'sexo', 'tema', 'estado', 'nivel', 'modoCosmico', 'pergunta'];
+const fieldIds = ['nome', 'dataNascimento', 'sexo', 'tema', 'estado', 'pergunta'];
 const formFields = fieldIds.map(id => document.getElementById(id));
 const startRitualBtn = document.getElementById('startRitualBtn');
 const goToProtocolBtn = document.getElementById('goToProtocolBtn');
@@ -3814,7 +3792,6 @@ const confirmClearBtn = document.getElementById('confirmClearBtn');
 
 let currentReading = null;
 let currentSections = null;
-let audioCtx = null;
 
 function safeGetStorage(key, fallback = '') {
   try {
@@ -3869,8 +3846,8 @@ function getFormData() {
     gender: document.getElementById('sexo').value,
     theme: document.getElementById('tema').value,
     state: document.getElementById('estado').value,
-    level: document.getElementById('nivel').value,
-    cosmicMode: document.getElementById('modoCosmico').value,
+    level: 'Profunda', // Valor fixo padrão
+    cosmicMode: 'Desativado', // Valor fixo padrão
     question: document.getElementById('pergunta').value.trim()
   };
 }
@@ -3878,7 +3855,7 @@ function getFormData() {
 function validateForm() {
   const data = getFormData();
 
-  if (!data.name || !data.gender || !data.theme || !data.state || !data.level || !data.cosmicMode || !data.question) {
+  if (!data.name || !data.gender || !data.theme || !data.state || !data.question) {
     return { ok: false, message: 'Preencha seu nome, sexo, selecione todas as opções e escreva sua pergunta.' };
   }
 
@@ -3907,7 +3884,7 @@ function updateSelectPlaceholderState(select) {
 }
 
 function updateSelectPlaceholderStates() {
-  ['sexo', 'tema', 'estado', 'nivel', 'modoCosmico'].forEach(id => {
+  ['sexo', 'tema', 'estado'].forEach(id => {
     updateSelectPlaceholderState(document.getElementById(id));
   });
 }
@@ -3931,8 +3908,6 @@ function restoreDraft() {
       document.getElementById('dataNascimento').value = data.birthdate || '';
       document.getElementById('tema').value = data.theme || '';
       document.getElementById('estado').value = data.state || '';
-      document.getElementById('nivel').value = data.level || '';
-      document.getElementById('modoCosmico').value = data.cosmicMode || '';
       document.getElementById('pergunta').value = data.question || '';
     }
   } catch (error) {}
@@ -3946,8 +3921,6 @@ function updatePillsFromForm() {
   const data = getFormData();
   pillTema.textContent = `Tema: ${data.theme || '—'}`;
   pillEstado.textContent = `Estado: ${data.state || '—'}`;
-  pillNivel.textContent = `Nível: ${data.level || '—'}`;
-  pillCosmic.textContent = `Modo: ${data.cosmicMode || 'inativo'}`;
 }
 
 function updateFlowButtons() {
@@ -4402,24 +4375,6 @@ document.getElementById('startRitualBtn').addEventListener('click', function() {
   this.classList.add('btn-solid');
   setStatus(ritualStatus, 'ok', 'Etapa ritual: O campo está aberto e a frequência ativada. Respire fundo.');
 
-  try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(432, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 1.5);
-    gain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 8.5);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 10);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 10);
-  } catch (error) {}
-
   pillEnergia.textContent = 'Frequência: 432Hz ✦';
 
   // Vai imediatamente para o formulário e foca no campo nome
@@ -4504,9 +4459,7 @@ document.getElementById('openReadingBtn').addEventListener('click', async functi
     setStatus(openStatus, 'ok', 'Consulta canalizada com sucesso!');
     pillTema.textContent = `Tema: ${theme}`;
     pillEstado.textContent = `Estado: ${state}`;
-    pillNivel.textContent = `Nível: ${level}`;
     pillPortal.textContent = 'Portal: Conectado ✦';
-    pillCosmic.textContent = `Modo: ${cosmicMode}`;
     pillEnergia.textContent = 'Frequência: ativa ✦';
 
     this.classList.add('btn-solid');
@@ -4587,8 +4540,6 @@ document.getElementById('resetAppBtn').addEventListener('click', function() {
   document.getElementById('pergunta').value = '';
   document.getElementById('tema').selectedIndex = 0;
   document.getElementById('estado').selectedIndex = 0;
-  document.getElementById('nivel').selectedIndex = 0;
-  document.getElementById('modoCosmico').selectedIndex = 0;
 
   updateSelectPlaceholderStates();
   enableFormFields(false);
@@ -4602,9 +4553,7 @@ document.getElementById('resetAppBtn').addEventListener('click', function() {
   pillTema.textContent = 'Tema: —';
   pillEstado.textContent = 'Estado: —';
   pillEnergia.textContent = 'Frequência: repouso';
-  pillNivel.textContent = 'Nível: —';
   pillPortal.textContent = 'Portal: selado';
-  pillCosmic.textContent = 'Modo: inativo';
 
   responseBox.textContent = 'Sua leitura aparecerá aqui quando a consulta for aberta.';
   panelTitle.textContent = 'Painel Sagrado';
@@ -4773,8 +4722,6 @@ document.getElementById('openArchivedBtn').addEventListener('click', function() 
   currentSections = normalizeSections(entry.sections);
   pillTema.textContent = `Tema: ${entry.theme || '—'}`;
   pillEstado.textContent = `Estado: ${entry.state || '—'}`;
-  pillNivel.textContent = `Nível: ${entry.level || '—'}`;
-  pillCosmic.textContent = `Modo: ${entry.mode || 'inativo'}`;
   pillPortal.textContent = 'Portal: Arquivo Aberto ✦';
   pillEnergia.textContent = 'Frequência: arquivo ✦';
 
