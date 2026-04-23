@@ -2005,6 +2005,25 @@
       }
     }
 
+/* ===== CONTROLE DE FLUXO DE TELAS ===== */
+    #abertura-consulta { display: none; }
+    #consulta { display: none; }
+
+    .section-fade-in {
+      animation: sectionReveal 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    @keyframes sectionReveal {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Quando apenas o card ritual está visível, ele ocupa largura total */
+    #section1Grid.single-card {
+      grid-template-columns: 1fr;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
 </style>
 <style>
 .spinner-wrap {
@@ -3187,11 +3206,11 @@
   <main class="container">
 
     <!-- SECÇÃO 1: RITUAL + FORMULÁRIO -->
-    <div class="section">
-      <div class="grid-2" style="gap:16px;">
+    <div class="section" id="section1">
+      <div class="grid-2" id="section1Grid" style="gap:16px;">
 
         <!-- RITUAL -->
-        <div class="card">
+        <div class="card" id="ritualCard">
           <div class="card-body">
             <div style="text-align:center;padding:8px 0 4px;">
               <div class="header-badge">Inteligência Universal</div>
@@ -3283,7 +3302,7 @@
     </div>
 
     <!-- SECÇÃO 2: PROTOCOLO + SELO -->
-    <div class="section">
+    <div class="section" id="section2" style="display:none;">
       <div class="grid-2" style="gap:16px;">
 
         <!-- PROTOCOLO -->
@@ -3811,6 +3830,9 @@ updateSelectPlaceholderStates();
 updatePillsFromForm();
 updateFlowButtons();
 
+// Inicia o grid da seção 1 em modo single-card (apenas ritual visível)
+document.getElementById('section1Grid').classList.add('single-card');
+
 function stripCodeFences(text = '') {
   return String(text)
     .replace(/^```(?:json)?\s*/i, '')
@@ -4196,14 +4218,27 @@ document.getElementById('startRitualBtn').addEventListener('click', function() {
 
   pillEnergia.textContent = 'Frequência: 432Hz ✦';
 
+  // Esconde o card ritual e expande o formulário
+  const ritualCard = document.getElementById('ritualCard');
+  const formCard = document.getElementById('abertura-consulta');
+  const grid = document.getElementById('section1Grid');
+
+  ritualCard.style.display = 'none';
+  grid.classList.remove('single-card');
+
+  formCard.style.display = '';
+  formCard.classList.add('section-fade-in');
+
   // Vai imediatamente para o formulário e foca no campo nome
   enableFormFields(true);
   updateFlowButtons();
-  document.getElementById('abertura-consulta').scrollIntoView({ behavior: 'smooth' });
+  setTimeout(() => {
+    formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
   setTimeout(() => {
     const nomeField = document.getElementById('nome');
     if (nomeField) nomeField.focus();
-  }, 600);
+  }, 700);
   setStatus(openStatus, '', 'Preencha os campos com calma. O botão do protocolo acende quando a consulta estiver pronta.');
 
   // Após 10s apaga a frequência
@@ -4223,7 +4258,15 @@ document.getElementById('goToProtocolBtn').addEventListener('click', function() 
 
   this.classList.remove('btn-blink');
   this.classList.add('btn-solid');
-  document.getElementById('protocolo').scrollIntoView({ behavior: 'smooth' });
+
+  // Revela a seção 2 (protocolo + selo)
+  const section2 = document.getElementById('section2');
+  section2.style.display = '';
+  section2.classList.add('section-fade-in');
+
+  setTimeout(() => {
+    document.getElementById('protocolo').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
 
   openReadingBtn.disabled = false;
   openReadingBtn.classList.add('btn-blink');
@@ -4250,7 +4293,15 @@ document.getElementById('openReadingBtn').addEventListener('click', async functi
   document.getElementById('spinnerWrap').classList.add('ativo');
   startThinkingText();
   document.getElementById('responseBox').style.display = 'none';
-  document.getElementById('consulta').scrollIntoView({ behavior: 'smooth' });
+
+  // Revela a seção de consulta
+  const consultaSection = document.getElementById('consulta');
+  consultaSection.style.display = '';
+  consultaSection.classList.add('section-fade-in');
+
+  setTimeout(() => {
+    consultaSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
   setStatus(openStatus, '', 'Aguarde... A Inteligência Universal está decodificando sua resposta.');
   responseBox.textContent = 'Sua leitura está sendo canalizada. Mantenha a respiração tranquila por alguns instantes.';
 
@@ -4394,6 +4445,22 @@ document.getElementById('resetAppBtn').addEventListener('click', function() {
   openReadingBtn.textContent = '✦ Abrir Consulta';
 
   openArchivedBtn.classList.remove('btn-solid');
+
+  // Volta ao estado inicial: mostra apenas o card ritual
+  const ritualCard = document.getElementById('ritualCard');
+  const formCard = document.getElementById('abertura-consulta');
+  const section2 = document.getElementById('section2');
+  const consultaSection = document.getElementById('consulta');
+  const grid = document.getElementById('section1Grid');
+
+  ritualCard.style.display = '';
+  formCard.style.display = 'none';
+  formCard.classList.remove('section-fade-in');
+  section2.style.display = 'none';
+  section2.classList.remove('section-fade-in');
+  consultaSection.style.display = 'none';
+  consultaSection.classList.remove('section-fade-in');
+  grid.classList.add('single-card');
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
