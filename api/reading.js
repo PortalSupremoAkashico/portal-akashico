@@ -172,6 +172,27 @@ EVITE: Previsões específicas de curto prazo. Foque em padrões de longo prazo 
     
     const baseSystemPrompt = `${genderInstructions}
 
+REGRAS CRÍTICAS DE PERSONALIZAÇÃO (MÁXIMA PRIORIDADE):
+1. USE TODOS OS DADOS DO FORMULÁRIO - Nome: ${name}, Idade: ${age} anos, Tema: ${theme}, Estado: ${state}
+2. MENCIONE O NOME DO CONSULENTE repetidamente - "${name}, você está..." / "Para você, ${name}..."
+3. CONECTE COM A PERGUNTA EXATA - Responda DIRETAMENTE à pergunta: "${question}"
+4. INTEGRE O TEMA ESCOLHIDO - Se tema é "${theme}", TODA a leitura deve focar nisso
+5. RECONHEÇA O ESTADO EMOCIONAL - Se está "${state}", adapte o tom e abordagem
+6. USE A IDADE DE FORMA RELEVANTE - ${age} anos é uma fase específica da vida, mencione isso
+7. SEJA ULTRA-ESPECÍFICO - Não generalidades. Cada frase deve ser PARA ${name} especificamente
+8. CREDIBILIDADE MÁXIMA - O consulente deve sentir: "Isso é EXATAMENTE para mim, baseado no que eu disse"
+
+EXEMPLOS DE PERSONALIZAÇÃO CORRETA:
+✅ "${name}, aos ${age} anos, você está em um momento crucial para ${theme}..."
+✅ "Sua pergunta sobre ${question} revela que..."
+✅ "Considerando que você se sente ${state}, é natural que..."
+✅ "Para alguém de ${age} anos focado em ${theme}, o caminho é..."
+
+EXEMPLOS DE PERSONALIZAÇÃO ERRADA:
+❌ "Você está em transição..." (genérico demais)
+❌ "Muitas pessoas enfrentam isso..." (não é sobre ${name}!)
+❌ "Este é um momento importante..." (qual momento? seja específico!)
+
 REGRAS CRÍTICAS DE TEMPORALIDADE:
 - NUNCA mencione eventos em menos de 1 ano
 - Use prazos amplos: "nos próximos anos", "em ciclos futuros"
@@ -345,12 +366,28 @@ SINTETIZE as duas perspectivas em UMA leitura coesa que:
    - Conte uma HISTÓRIA rica e envolvente
    - TEXTOS COMPLETOS, não resumos
 
+6. **PERSONALIZAÇÃO EXTREMA (OBRIGATÓRIO):**
+   - CONSULENTE: ${name}
+   - IDADE: ${age} anos (SEMPRE relevante!)
+   - TEMA ESCOLHIDO: ${theme} (FOQUE 100% nisso!)
+   - ESTADO EMOCIONAL: ${state} (ADAPTE o tom!)
+   - PERGUNTA EXATA: "${question}" (RESPONDA diretamente!)
+   
+   REGRAS ABSOLUTAS:
+   - Mencione "${name}" pelo menos 3-5 vezes em CADA seção
+   - Relacione com a idade ${age} anos de forma específica
+   - Toda seção deve conectar com "${theme}"
+   - Reconheça o estado "${state}" e adapte linguagem
+   - RESPONDA a pergunta "${question}" de múltiplos ângulos
+   - Consulente deve sentir: "ISSO FOI ESCRITO PARA MIM!"
+
 IMPORTANTE: 
 - Reduza referências a extraterrestres/astrologia (ZERO se possível)
 - Seja EXTREMAMENTE específico para ${name}
 - Dê conselhos PRÁTICOS e ACIONÁVEIS
 - Cada leitura deve ter tom único (não genérico)
 - ESCREVA MUITO - mínimo 250 palavras por seção
+- USE OS DADOS DO FORMULÁRIO EM TODAS AS SEÇÕES
 
 Formato JSON:
 {
