@@ -4226,7 +4226,7 @@ document.getElementById('startRitualBtn').addEventListener('click', function() {
   ritualCard.style.display = 'none';
   grid.classList.remove('single-card');
 
-  formCard.style.display = '';
+  formCard.style.display = 'block';
   formCard.classList.add('section-fade-in');
 
   // Vai imediatamente para o formulário e foca no campo nome
@@ -4261,7 +4261,7 @@ document.getElementById('goToProtocolBtn').addEventListener('click', function() 
 
   // Revela a seção 2 (protocolo + selo)
   const section2 = document.getElementById('section2');
-  section2.style.display = '';
+  section2.style.display = 'block';
   section2.classList.add('section-fade-in');
 
   setTimeout(() => {
@@ -4296,7 +4296,7 @@ document.getElementById('openReadingBtn').addEventListener('click', async functi
 
   // Revela a seção de consulta
   const consultaSection = document.getElementById('consulta');
-  consultaSection.style.display = '';
+  consultaSection.style.display = 'block';
   consultaSection.classList.add('section-fade-in');
 
   setTimeout(() => {
