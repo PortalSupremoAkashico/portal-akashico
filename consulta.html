@@ -3634,7 +3634,7 @@ const DEFAULT_SECTIONS = {
   action: 'A ação prática recomendada agora é respirar, recentrar-se e repetir a consulta com uma pergunta mais específica.'
 };
 
-const API_TIMEOUT_MS = 180000; // 3 minutos
+const API_TIMEOUT_MS = 120000; // 2 minutos
 const ritualStatus = document.getElementById('ritualStatus');
 const openStatus   = document.getElementById('openStatus');
 const responseBox  = document.getElementById('responseBox');
@@ -4092,7 +4092,14 @@ async function fetchAkashicReading(apiKey, name, birthdate, gender, theme, state
     });
     
     if (!response.ok) {
-      throw new Error(`Erro no backend: ${response.statusText}`);
+      let errMsg = `Erro ${response.status}`;
+      try {
+        const errData = await response.json();
+        errMsg = errData.error || errMsg;
+      } catch {
+        errMsg = (await response.text().catch(() => '')) || errMsg;
+      }
+      throw new Error(errMsg);
     }
     
     const data = await response.json();
