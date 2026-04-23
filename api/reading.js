@@ -7,12 +7,16 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
     const { name, birthdate, theme, state, question, level, cosmicMode, gender } = req.body;
+
+    // Extrai apenas o primeiro nome para uso nas respostas
+    const firstName = name ? name.trim().split(/\s+/)[0] : name;
 
     const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
     if (!ANTHROPIC_API_KEY) {
@@ -38,11 +42,11 @@ export default async function handler(req, res) {
     // Gênero
     let genderInstructions = '';
     if (gender === 'Masculino') {
-      genderInstructions = 'IMPORTANTE: Trate o consulente no masculino (ele, o consulente, etc).';
+      genderInstructions = `IMPORTANTE: Trate o consulente no masculino (ele, o consulente, etc). Refira-se a ele APENAS como "${firstName}", nunca pelo nome completo.`;
     } else if (gender === 'Feminino') {
-      genderInstructions = 'IMPORTANTE: Trate a consulente no feminino (ela, a consulente, etc).';
+      genderInstructions = `IMPORTANTE: Trate a consulente no feminino (ela, a consulente, etc). Refira-se a ela APENAS como "${firstName}", nunca pelo nome completo.`;
     } else {
-      genderInstructions = 'IMPORTANTE: Use linguagem neutra. Refira-se apenas como "você", "a pessoa", "o ser", evitando pronomes ele/ela.';
+      genderInstructions = `IMPORTANTE: Use linguagem neutra. Refira-se apenas como "você", "a pessoa", "o ser", evitando pronomes ele/ela. Quando usar o nome, use APENAS "${firstName}", nunca o nome completo.`;
     }
 
     // ═══════════════════════════════════════════════
@@ -88,17 +92,26 @@ EVITE: Previsões de curto prazo. Foque em padrões de longo prazo (2+ anos).`
     // ═══════════════════════════════════════════════
     // BASE PROMPT — personalização máxima
     // ═══════════════════════════════════════════════
+    const currentYear = new Date().getFullYear();
+
     const baseSystemPrompt = `${genderInstructions}
 
 REGRAS CRÍTICAS DE PERSONALIZAÇÃO (MÁXIMA PRIORIDADE):
-1. USE TODOS OS DADOS — Nome: ${name}, ${age ? `Idade: ${age} anos` : ''}, Tema: ${theme}, Estado: ${state}
-2. MENCIONE O NOME "${name}" repetidamente — "${name}, você está..." / "Para você, ${name}..."
-3. CONECTE COM A PERGUNTA EXATA — Responda DIRETAMENTE: "${question}"
-4. INTEGRE O TEMA — Se tema é "${theme}", TODA a leitura deve focar nisso
-5. RECONHEÇA O ESTADO EMOCIONAL — Se está "${state}", adapte o tom e abordagem
-${age ? `6. USE A IDADE — ${age} anos é uma fase específica, mencione de forma relevante` : ''}
-7. SEJA ULTRA-ESPECÍFICO — Cada frase deve ser PARA ${name} especificamente
-8. CREDIBILIDADE — O consulente deve sentir: "Isso é EXATAMENTE para mim"
+1. USE TODOS OS DADOS — Nome: ${firstName}, ${age ? `Idade: ${age} anos` : ''}, Tema: ${theme}, Estado: ${state}
+2. MENCIONE O PRIMEIRO NOME "${firstName}" repetidamente — "${firstName}, você está..." / "Para você, ${firstName}..."
+3. USE APENAS O PRIMEIRO NOME — NUNCA escreva o nome completo do consulente, somente "${firstName}"
+4. CONECTE COM A PERGUNTA EXATA — Responda DIRETAMENTE: "${question}"
+5. INTEGRE O TEMA — Se tema é "${theme}", TODA a leitura deve focar nisso
+6. RECONHEÇA O ESTADO EMOCIONAL — Se está "${state}", adapte o tom e abordagem
+${age ? `7. USE A IDADE — ${age} anos é uma fase específica, mencione de forma relevante` : ''}
+8. SEJA ULTRA-ESPECÍFICO — Cada frase deve ser PARA ${firstName} especificamente
+9. CREDIBILIDADE — O consulente deve sentir: "Isso é EXATAMENTE para mim"
+
+REGRA ABSOLUTA SOBRE DATAS E ANOS (CRÍTICO — SEM EXCEÇÕES):
+- JAMAIS mencione o ano ${currentYear} ou qualquer ano anterior a ${currentYear} nas respostas
+- PROIBIDO usar: "${currentYear}", "${currentYear - 1}", "${currentYear - 2}", ou qualquer ano ≤ ${currentYear}
+- Para indicar tempo, use SEMPRE expressões relativas: "nos próximos meses", "nos próximos anos", "em breve", "no futuro próximo", "daqui a alguns anos", "na próxima fase", "no ciclo que se abre"
+- Se precisar falar de tendências futuras, use "nos próximos 2 a 5 anos", "na próxima década", etc.
 
 REGRAS DE TAMANHO E PROFUNDIDADE (CRÍTICO):
 - Cada seção JSON deve ter MÍNIMO 300-500 palavras
@@ -107,16 +120,24 @@ REGRAS DE TAMANHO E PROFUNDIDADE (CRÍTICO):
 - Conte uma HISTÓRIA rica e envolvente
 - TEXTOS COMPLETOS, jamais resumos superficiais
 
+REGRAS DE CARACTERES E IDIOMA:
+- Escreva SEMPRE em português do Brasil correto e completo
+- Use TODOS os caracteres especiais necessários: ã, ç, á, é, í, ó, ú, â, ê, ô, à, ü, ñ, etc.
+- NUNCA substitua caracteres acentuados por versões sem acento
+
 PALAVRAS PROIBIDAS: "arquétipo", "arquétipos"
 NUNCA cite autores, livros, versículos ou fontes específicas por nome.`;
 
-    const prompt = `CONSULENTE: ${name}
+    const prompt = `CONSULENTE: ${firstName}
 DATA DE NASCIMENTO: ${birthdate || 'Não informada'}
 ${ageText}
 SEXO: ${gender || 'Não informado'}
 TEMA: ${theme}
 ESTADO EMOCIONAL: ${state}
 PERGUNTA: ${question}
+
+LEMBRETE: Use APENAS o primeiro nome "${firstName}" ao se referir ao consulente. NUNCA escreva o nome completo.
+LEMBRETE: NUNCA mencione o ano ${currentYear} ou anos anteriores. Use sempre expressões de tempo relativas e futuras.
 
 Forneça uma leitura profunda e personalizada em formato JSON com estas seções:
 {
@@ -206,13 +227,17 @@ INSTRUÇÃO CRÍTICA — SINTETIZE em UMA leitura coesa:
    - Tom maduro, sóbrio e confiável
 
 4. PERSONALIZAÇÃO EXTREMA (OBRIGATÓRIO):
-   - CONSULENTE: ${name}
+   - CONSULENTE: ${firstName} (USE APENAS O PRIMEIRO NOME — nunca o nome completo)
    ${age ? `- IDADE: ${age} anos (SEMPRE relevante!)` : ''}
    - TEMA: ${theme} (FOQUE 100% nisso!)
    - ESTADO EMOCIONAL: ${state} (ADAPTE o tom!)
    - PERGUNTA EXATA: "${question}" (RESPONDA diretamente!)
-   - Mencione "${name}" pelo menos 3-5 vezes em CADA seção
+   - Mencione "${firstName}" pelo menos 3-5 vezes em CADA seção
    - Consulente deve sentir: "ISSO FOI ESCRITO PARA MIM!"
+
+5. REGRA ABSOLUTA DE DATAS:
+   - JAMAIS use o ano ${currentYear} ou qualquer ano ≤ ${currentYear}
+   - Use SEMPRE expressões relativas: "nos próximos meses", "nos próximos anos", "em breve", "no futuro próximo", "daqui a alguns anos", "na próxima fase"
 
 5. TAMANHO (CRÍTICO):
    - Cada seção: MÍNIMO 300-500 palavras
@@ -267,8 +292,8 @@ Formato JSON:
       const cleaned = refinedText
         .replace(/^```(?:json)?\s*/i, '')
         .replace(/```\s*$/i, '')
-        .replace(/[""]/g, '"')
-        .replace(/['']/g, "'")
+        .replace(/[\u201C\u201D]/g, '"')   // aspas curvas duplas → retas
+        .replace(/[\u2018\u2019]/g, "'")   // aspas curvas simples → retas
         .replace(/,\s*([}\]])/g, '$1')
         .trim();
 
@@ -303,7 +328,8 @@ Formato JSON:
     });
 
     console.log('✅ Leitura completa gerada com sucesso!');
-    return res.status(200).json({ success: true, sections });
+    const responseBody = JSON.stringify({ success: true, sections });
+    return res.status(200).send(responseBody);
 
   } catch (error) {
     console.error('❌ Erro geral:', error.message);
