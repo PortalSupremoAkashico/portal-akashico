@@ -2017,13 +2017,6 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Quando apenas o card ritual está visível, ele ocupa largura total */
-    #section1Grid.single-card {
-      grid-template-columns: 1fr;
-      max-width: 640px;
-      margin: 0 auto;
-    }
-
 </style>
 <style>
 .spinner-wrap {
@@ -3207,7 +3200,6 @@
 
     <!-- SECÇÃO 1: RITUAL + FORMULÁRIO -->
     <div class="section" id="section1">
-      <div class="grid-2" id="section1Grid" style="gap:16px;">
 
         <!-- RITUAL -->
         <div class="card" id="ritualCard">
@@ -3298,12 +3290,10 @@
           </div>
         </div>
 
-      </div>
     </div>
 
     <!-- SECÇÃO 2: PROTOCOLO + SELO -->
     <div class="section" id="section2" style="display:none;">
-      <div class="grid-2" style="gap:16px;">
 
         <!-- PROTOCOLO -->
         <div class="card" id="protocolo">
@@ -3369,7 +3359,6 @@
           </div>
         </div>
 
-      </div>
     </div>
 
     <!-- SECÇÃO 3: CONSULTA -->
@@ -3830,9 +3819,6 @@ updateSelectPlaceholderStates();
 updatePillsFromForm();
 updateFlowButtons();
 
-// Inicia o grid da seção 1 em modo single-card (apenas ritual visível)
-document.getElementById('section1Grid').classList.add('single-card');
-
 function stripCodeFences(text = '') {
   return String(text)
     .replace(/^```(?:json)?\s*/i, '')
@@ -4218,18 +4204,14 @@ document.getElementById('startRitualBtn').addEventListener('click', function() {
 
   pillEnergia.textContent = 'Frequência: 432Hz ✦';
 
-  // Esconde o card ritual e expande o formulário
+  // Esconde o card ritual e mostra o formulário
   const ritualCard = document.getElementById('ritualCard');
   const formCard = document.getElementById('abertura-consulta');
-  const grid = document.getElementById('section1Grid');
 
   ritualCard.style.display = 'none';
-  grid.classList.remove('single-card');
-
   formCard.style.display = 'block';
   formCard.classList.add('section-fade-in');
 
-  // Vai imediatamente para o formulário e foca no campo nome
   enableFormFields(true);
   updateFlowButtons();
   setTimeout(() => {
@@ -4241,7 +4223,6 @@ document.getElementById('startRitualBtn').addEventListener('click', function() {
   }, 700);
   setStatus(openStatus, '', 'Preencha os campos com calma. O botão do protocolo acende quando a consulta estiver pronta.');
 
-  // Após 10s apaga a frequência
   setTimeout(() => {
     if (!currentReading) pillEnergia.textContent = 'Frequência: repouso';
   }, 10000);
@@ -4259,13 +4240,16 @@ document.getElementById('goToProtocolBtn').addEventListener('click', function() 
   this.classList.remove('btn-blink');
   this.classList.add('btn-solid');
 
+  // Esconde toda a seção 1 (ritual + formulário)
+  document.getElementById('section1').style.display = 'none';
+
   // Revela a seção 2 (protocolo + selo)
   const section2 = document.getElementById('section2');
   section2.style.display = 'block';
   section2.classList.add('section-fade-in');
 
   setTimeout(() => {
-    document.getElementById('protocolo').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, 100);
 
   openReadingBtn.disabled = false;
@@ -4449,10 +4433,11 @@ document.getElementById('resetAppBtn').addEventListener('click', function() {
   // Volta ao estado inicial: mostra apenas o card ritual
   const ritualCard = document.getElementById('ritualCard');
   const formCard = document.getElementById('abertura-consulta');
+  const section1 = document.getElementById('section1');
   const section2 = document.getElementById('section2');
   const consultaSection = document.getElementById('consulta');
-  const grid = document.getElementById('section1Grid');
 
+  section1.style.display = 'block';
   ritualCard.style.display = '';
   formCard.style.display = 'none';
   formCard.classList.remove('section-fade-in');
@@ -4460,7 +4445,6 @@ document.getElementById('resetAppBtn').addEventListener('click', function() {
   section2.classList.remove('section-fade-in');
   consultaSection.style.display = 'none';
   consultaSection.classList.remove('section-fade-in');
-  grid.classList.add('single-card');
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
