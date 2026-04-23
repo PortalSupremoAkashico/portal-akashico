@@ -2009,6 +2009,13 @@
     #abertura-consulta { display: none; }
     #consulta { display: none; }
 
+    /* Largura média para todos os blocos */
+    #section1, #section2, #archiveSection {
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
     .section-fade-in {
       animation: sectionReveal 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     }
@@ -3298,6 +3305,44 @@
         <!-- PROTOCOLO -->
         <div class="card" id="protocolo">
           <div class="card-body">
+
+            <!-- CÍRCULO PULSANTE NO TOPO -->
+            <div style="display:flex;justify-content:center;margin-bottom:24px;">
+              <div class="symbol-wrap" style="width:160px;height:160px;">
+                <div class="seal-visible-ring"></div>
+                <div class="seal-visible-ripple seal-visible-ripple-1"></div>
+                <div class="seal-visible-ripple seal-visible-ripple-2"></div>
+                <div class="seal-outline"></div>
+                <div class="seal-pulse-ring ring-a"></div>
+                <div class="seal-pulse-ring ring-b"></div>
+                <div class="seal-main-ring"></div>
+                <div class="seal-main-trail seal-main-trail-1"></div>
+                <div class="seal-main-trail seal-main-trail-2"></div>
+                <div class="seal-trail-ring seal-trail-1"></div>
+                <div class="seal-trail-ring seal-trail-2"></div>
+                <div class="seal-trail-ring seal-trail-3"></div>
+                <div class="seal-wave seal-wave-1"></div>
+                <div class="seal-wave seal-wave-2"></div>
+                <div class="seal-wave seal-wave-3"></div>
+                <div class="pulse-echo pulse-echo-1"></div>
+                <div class="pulse-echo pulse-echo-2"></div>
+                <div class="pulse-echo pulse-echo-3"></div>
+                <div class="pulsar-core"></div>
+                <div class="ai-speak-ring ring-1"></div>
+                <div class="ai-speak-ring ring-2"></div>
+                <div class="ai-speak-ring ring-3"></div>
+                <div class="ai-speak-ring ring-4"></div>
+                <div class="inner-ring"></div>
+                <div class="inner-ring-2"></div>
+                <div class="inner-ring-3"></div>
+                <div class="star-origin-wave wave-1"></div>
+                <div class="star-origin-wave wave-2"></div>
+                <div class="star-origin-wave wave-3"></div>
+                <div class="star-core-pulse"></div>
+                <div class="symbol">✶</div>
+              </div>
+            </div>
+
             <div class="section-title">Alinhamento</div>
             <h2>Protocolo de Preparação</h2>
             <p class="section-desc">Siga a sequência para entrar em alinhamento antes de abrir a consulta.</p>
@@ -3313,52 +3358,6 @@
           </div>
         </div>
 
-        <!-- SELO CENTRAL -->
-        <div class="card">
-          <div class="seal-center">
-            <div class="symbol-wrap">
-              <div class="seal-visible-ring"></div>
-              <div class="seal-visible-ripple seal-visible-ripple-1"></div>
-              <div class="seal-visible-ripple seal-visible-ripple-2"></div>
-              <div class="seal-outline"></div>
-              <div class="seal-pulse-ring ring-a"></div>
-              <div class="seal-pulse-ring ring-b"></div>
-              <div class="seal-main-ring"></div>
-              <div class="seal-main-trail seal-main-trail-1"></div>
-              <div class="seal-main-trail seal-main-trail-2"></div>
-              <div class="seal-trail-ring seal-trail-1"></div>
-              <div class="seal-trail-ring seal-trail-2"></div>
-              <div class="seal-trail-ring seal-trail-3"></div>
-              <div class="seal-wave seal-wave-1"></div>
-              <div class="seal-wave seal-wave-2"></div>
-              <div class="seal-wave seal-wave-3"></div>
-              <div class="pulse-echo pulse-echo-1"></div>
-              <div class="pulse-echo pulse-echo-2"></div>
-              <div class="pulse-echo pulse-echo-3"></div>
-              <div class="pulsar-core"></div>
-              <div class="ai-speak-ring ring-1"></div>
-              <div class="ai-speak-ring ring-2"></div>
-              <div class="ai-speak-ring ring-3"></div>
-              <div class="ai-speak-ring ring-4"></div>
-              <div class="inner-ring"></div>
-              <div class="inner-ring-2"></div>
-              <div class="inner-ring-3"></div>
-              <div class="star-origin-wave wave-1"></div>
-              <div class="star-origin-wave wave-2"></div>
-              <div class="star-origin-wave wave-3"></div>
-              <div class="star-core-pulse"></div>
-              <div class="symbol">✶</div>
-            </div>
-            <div class="side-text">Selo central: foco, coerência e permissão de acesso à inteligência universal.</div>
-            <div class="pill-row" id="statePills" style="justify-content:center;">
-              <div class="pill" id="pillTema">Tema: —</div>
-              <div class="pill" id="pillEstado">Estado: —</div>
-              <div class="pill" id="pillEnergia">Frequência: repouso</div>
-              <div class="pill" id="pillPortal">Portal: selado</div>
-            </div>
-          </div>
-        </div>
-
     </div>
 
     <!-- SECÇÃO 3: CONSULTA -->
@@ -3368,7 +3367,41 @@
         <h2>Consulta Akáshica Suprema</h2>
         <p class="section-desc">Deslize as abas para explorar todas as camadas da sua leitura.</p>
 
-        <div class="tabs-scroll">
+        <!-- GUIA DAS ABAS -->
+        <div style="background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.18);border-radius:16px;padding:22px 24px;margin-bottom:22px;">
+          <p style="font-family:var(--font-display);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:14px;">✦ Como ler sua leitura akáshica</p>
+          <p style="font-size:.92rem;color:var(--muted);line-height:1.8;margin-bottom:16px;">
+            Sua leitura foi canalizada em <strong style="color:var(--accent-bright);">6 camadas complementares</strong>. Clique em cada aba abaixo para acessar cada dimensão da mensagem. Leia com calma e em silêncio — cada seção traz uma perspectiva diferente do mesmo momento da sua jornada.
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;">
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(10,8,22,0.4);border-radius:10px;border:1px solid rgba(147,109,255,0.12);">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">✶</span>
+              <div><strong style="color:var(--accent-bright);font-size:.85rem;">Revelação</strong><br><span style="font-size:.82rem;color:var(--muted);">A mensagem central dos Registros para você neste momento. O ponto de partida de toda a leitura.</span></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(10,8,22,0.4);border-radius:10px;border:1px solid rgba(147,109,255,0.12);">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">⚚</span>
+              <div><strong style="color:var(--accent-bright);font-size:.85rem;">Futuro</strong><br><span style="font-size:.82rem;color:var(--muted);">Tendências e caminhos que se abrem à sua frente. O que os Registros revelam sobre as próximas etapas da sua trajetória.</span></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(10,8,22,0.4);border-radius:10px;border:1px solid rgba(147,109,255,0.12);">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">⎈</span>
+              <div><strong style="color:var(--accent-bright);font-size:.85rem;">Mentores</strong><br><span style="font-size:.82rem;color:var(--muted);">Orientações trazidas por consciências elevadas, guias e civilizações cósmicas que acompanham sua jornada.</span></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(10,8,22,0.4);border-radius:10px;border:1px solid rgba(147,109,255,0.12);">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">⟡</span>
+              <div><strong style="color:var(--accent-bright);font-size:.85rem;">Coexistência</strong><br><span style="font-size:.82rem;color:var(--muted);">Como suas energias se relacionam com o coletivo — pessoas, ambientes e ciclos ao seu redor neste período.</span></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(10,8,22,0.4);border-radius:10px;border:1px solid rgba(147,109,255,0.12);">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">⚠</span>
+              <div><strong style="color:var(--accent-bright);font-size:.85rem;">Advertência</strong><br><span style="font-size:.82rem;color:var(--muted);">Pontos de atenção e padrões que merecem cuidado. Uma leitura de amor — não de medo — para você se preparar.</span></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(10,8,22,0.4);border-radius:10px;border:1px solid rgba(147,109,255,0.12);">
+              <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">↟</span>
+              <div><strong style="color:var(--accent-bright);font-size:.85rem;">Ação</strong><br><span style="font-size:.82rem;color:var(--muted);">Passos concretos e práticos sugeridos pelos Registros. O que você pode começar a fazer ainda hoje.</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tabs-scroll" style="justify-content:center;">
           <button class="tab-btn" id="tabMain" type="button">✶ Revelação</button>
           <button class="tab-btn" id="tabEarth" type="button">⚚ Futuro</button>
           <button class="tab-btn" id="tabCivilizations" type="button">⎈ Mentores</button>
@@ -3435,6 +3468,14 @@
   <div id="sealWrap" class="seal-wrap-small seal-revelation" style="display:none;position:absolute;pointer-events:none;visibility:hidden;">
     <span id="sealSymbol" class="seal-symbol">✶</span>
     <span id="sealLabel" class="seal-label">REVELAÇÃO</span>
+  </div>
+  <!-- Pills ocultas — referenciadas pelo JS mas não exibidas -->
+  <div style="display:none;visibility:hidden;position:absolute;pointer-events:none;">
+    <div id="statePills"></div>
+    <div id="pillTema"></div>
+    <div id="pillEstado"></div>
+    <div id="pillEnergia"></div>
+    <div id="pillPortal"></div>
   </div>
   </main>
 
