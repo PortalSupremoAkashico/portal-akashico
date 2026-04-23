@@ -3700,6 +3700,10 @@ const confirmClearBtn = document.getElementById('confirmClearBtn');
 let currentReading = null;
 let currentSections = null;
 
+// Cache do PDF: começa a ser gerado em background quando a leitura termina,
+// pra que o botão "Enviar por E-mail" tenha o PDF pronto no clique.
+let cachedPDFPromise = null;
+
 function safeGetStorage(key, fallback = '') {
   try {
     const value = localStorage.getItem(key);
@@ -4415,6 +4419,15 @@ document.getElementById('openReadingBtn').addEventListener('click', async functi
     saveToJournal(currentReading);
     document.getElementById('sendEmailBtn').disabled = false;
 
+    // Dispara geração do PDF em background enquanto o consulente lê as abas.
+    // Assim, ao clicar "Enviar por E-mail", o PDF já estará pronto (ou quase).
+    // Não usa await — roda em paralelo ao fluxo visual.
+    cachedPDFPromise = generatePDFBase64().catch(err => {
+      console.warn('⚠️ Pré-geração do PDF falhou (será tentada de novo no envio):', err);
+      cachedPDFPromise = null; // força regeneração no clique
+      return null;
+    });
+
     // Abre automaticamente a primeira aba (Revelação)
     setActiveTab(document.getElementById('tabMain'), 'revelation', 'Painel da Revelação', 'Revelação Ativa', '✶', 'REVELAÇÃO', 'seal-revelation');
     document.getElementById('consulta').scrollIntoView({ behavior: 'smooth' });
@@ -4528,6 +4541,9 @@ document.getElementById('resetAppBtn').addEventListener('click', function() {
   openReadingBtn.classList.remove('btn-solid', 'btn-blink');
   openReadingBtn.disabled = true;
   openReadingBtn.textContent = '✦ Abrir Consulta';
+
+  // Invalida o PDF cacheado — a próxima leitura vai gerar um novo
+  cachedPDFPromise = null;
 
   openArchivedBtn.classList.remove('btn-solid');
 
@@ -4826,9 +4842,18 @@ confirmSendBtn.addEventListener('click', async function() {
   emailStatus.style.display = 'block';
   
   try {
-    // Gerar PDF em base64
-    const pdfBase64 = await generatePDFBase64();
-    
+    // Usa PDF pré-gerado se disponível; senão, gera na hora (fallback).
+    let pdfBase64;
+    if (cachedPDFPromise) {
+      emailStatus.textContent = '📨 Enviando seu PDF...';
+      pdfBase64 = await cachedPDFPromise;
+    }
+    // Se o cache falhou/não existe, gera na hora.
+    if (!pdfBase64) {
+      emailStatus.textContent = '📨 Gerando e enviando o PDF...';
+      pdfBase64 = await generatePDFBase64();
+    }
+
     // Enviar automaticamente via Gmail
     const result = await sendEmailWithPDF(email, pdfBase64);
     
@@ -5151,8 +5176,10 @@ Portal Supremo dos Registros Akáshicos`,
     mimeType: 'application/pdf'
   };
 
-  // Enviar via backend Vercel
-  const response = await fetch('/api/email', {
+  // Dispara o envio do e-mail E o salvamento pra mala direta EM PARALELO.
+  // O usuário só espera pelo mais lento dos dois (geralmente o envio).
+  // Se o save-email falhar, NÃO afeta o envio principal (é opcional).
+  const sendPromise = fetch('/api/email', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -5160,33 +5187,35 @@ Portal Supremo dos Registros Akáshicos`,
     body: JSON.stringify(emailData)
   });
 
+  const savePromise = fetch('/api/save-email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email: toEmail,
+      nome: name
+    })
+  }).catch(err => {
+    // Falha no save-email é silenciosa — não afeta o envio
+    console.warn('⚠️ Erro ao salvar e-mail para mala direta (não crítico):', err);
+    return null;
+  });
+
+  // Aguarda os dois em paralelo
+  const [response, saveResponse] = await Promise.all([sendPromise, savePromise]);
+
   if (!response.ok) {
     throw new Error(`Erro HTTP: ${response.status}`);
   }
 
   const result = await response.json();
-  
+
   if (!result.success) {
     throw new Error(result.message || 'Erro ao enviar e-mail');
   }
 
-  // SALVAR E-MAIL NO BANCO PARA MALA DIRETA
-  try {
-    await fetch('/api/save-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: toEmail,
-        nome: name
-      })
-    });
-    console.log('✅ E-mail salvo para mala direta');
-  } catch (err) {
-    console.warn('⚠️ Erro ao salvar e-mail (não crítico):', err);
-    // Não falha o envio se não conseguir salvar
-  }
+  if (saveResponse) console.log('✅ E-mail salvo para mala direta');
 
   return { success: true, method: 'gmail-auto' };
 }
