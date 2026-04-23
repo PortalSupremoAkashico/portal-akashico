@@ -4366,17 +4366,25 @@ document.getElementById('openReadingBtn').addEventListener('click', async functi
     pillEnergia.textContent = 'Frequência: ativa ✦';
 
     this.classList.add('btn-solid');
-    document.querySelectorAll('.tab-btn').forEach(tab => {
-      tab.classList.remove('btn-solid');
-      tab.classList.add('btn-blink');
-    });
 
     // Auto-save silently
     saveToJournal(currentReading);
     document.getElementById('sendEmailBtn').disabled = false;
 
+    // Abre automaticamente a primeira aba (Revelação)
     setActiveTab(document.getElementById('tabMain'), 'revelation', 'Painel da Revelação', 'Revelação Ativa', '✶', 'REVELAÇÃO', 'seal-revelation');
     document.getElementById('consulta').scrollIntoView({ behavior: 'smooth' });
+
+    // Faz os outros 5 botões piscarem (o tabMain já foi ativado pelo setActiveTab)
+    setTimeout(() => {
+      document.querySelectorAll('.tab-btn').forEach(tab => {
+        if (!tab.classList.contains('btn-solid')) {
+          tab.classList.remove('btn-blink');
+          void tab.offsetWidth; // força reflow para reiniciar animação
+          tab.classList.add('btn-blink');
+        }
+      });
+    }, 100);
 
 
   } catch (error) {
