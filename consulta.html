@@ -3414,7 +3414,7 @@
 
           <div class="panel-head">
             <div class="panel-title" id="panelTitle">Painel Sagrado</div>
-            <div class="panel-mark" id="panelMark">✶ Revelação em repouso</div>
+            <div class="panel-mark" id="panelMark" style="display:none;">✶ Revelação em repouso</div>
           </div>
           <div id="spinnerWrap" class="spinner-wrap">
             <div style="font-size: 1.2rem; color: #c4b5fd; text-align: center;">
@@ -4115,6 +4115,7 @@ function setActiveTab(btn, key, title, markText, symbol, label, sealClass) {
     return;
   }
 
+  // Remove btn-solid de todas, marca a clicada como sólida e para seu piscar
   document.querySelectorAll('.tab-btn').forEach(tab => tab.classList.remove('btn-solid'));
   btn.classList.remove('btn-blink');
   btn.classList.add('btn-solid');
