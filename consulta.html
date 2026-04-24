@@ -3256,31 +3256,36 @@
     <!-- SECÇÃO 1: RITUAL + FORMULÁRIO -->
     <div class="section" id="section1">
 
-        <!-- AUTH: ENTRAR / CADASTRO -->
+        <!-- AUTH -->
         <div class="card" id="authCard">
           <div class="card-body" style="text-align:center;">
             <div class="header-badge" style="margin-bottom:14px;">Inteligência Universal</div>
             <h1 style="font-size:clamp(1.1rem,3vw,1.7rem);margin-bottom:10px;">Portal Supremo dos<br>Registros Akáshicos</h1>
             <p class="lead" style="font-size:clamp(.82rem,2vw,.95rem);margin:0 auto 24px;">Um templo digital para conduzir você por uma experiência profunda de preparação energética, abertura simbólica e leitura intuitiva da Inteligência Universal.</p>
 
-            <!-- Abas ENTRAR / CADASTRO -->
-            <div id="authTabs" style="display:flex;gap:0;border-radius:12px;overflow:hidden;border:1px solid rgba(196,181,253,.22);margin-bottom:24px;">
-              <button id="tabEntrar" onclick="showAuthTab('entrar')" style="flex:1;padding:12px;background:rgba(139,92,246,.28);border:none;color:#e5ddfb;font-size:.95rem;font-weight:600;letter-spacing:.06em;cursor:pointer;transition:background .2s;">✦ ENTRAR</button>
-              <button id="tabCadastro" onclick="showAuthTab('cadastro')" style="flex:1;padding:12px;background:rgba(255,255,255,.04);border:none;color:rgba(221,214,245,.55);font-size:.95rem;font-weight:600;letter-spacing:.06em;cursor:pointer;transition:background .2s;">⊕ CADASTRO</button>
-            </div>
-
-            <!-- Painel ENTRAR -->
-            <div id="painelEntrar" class="stack">
+            <!-- E-MAIL + DOIS BOTÕES -->
+            <div class="stack" id="authMain">
               <div>
                 <label for="loginEmail" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">E-mail</label>
-                <input id="loginEmail" type="email" placeholder="seu@email.com" autocomplete="email" />
+                <input id="loginEmail" type="email" placeholder="seu@email.com" autocomplete="email"
+                  onkeydown="if(event.key==='Enter') handleEntrar()" />
               </div>
-              <div id="loginStatus" class="status"></div>
-              <button id="btnEntrar" type="button" onclick="handleEntrar()">✦ Entrar no Portal</button>
+              <div id="authStatus" class="status"></div>
+              <div style="display:flex;gap:10px;">
+                <button type="button" onclick="handleEntrar()"
+                  style="flex:1;background:linear-gradient(135deg,rgba(139,92,246,.35),rgba(109,40,217,.25));border:1px solid rgba(196,181,253,.3);">
+                  ✦ ENTRAR NO PORTAL
+                </button>
+                <button type="button" onclick="abrirCadastro()"
+                  style="flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(196,181,253,.18);color:rgba(221,214,245,.8);">
+                  ⊕ CADASTRO
+                </button>
+              </div>
             </div>
 
-            <!-- Painel CADASTRO -->
-            <div id="painelCadastro" class="stack" style="display:none;">
+            <!-- FORMULÁRIO DE CADASTRO (expandido abaixo, oculto por padrão) -->
+            <div id="painelCadastro" class="stack" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid rgba(196,181,253,.14);">
+              <p style="font-size:.85rem;color:rgba(196,181,253,.7);margin:0 0 4px;text-align:left;">Preencha seus dados para criar seu perfil akáshico:</p>
               <div class="row-2">
                 <div>
                   <label for="cadNome" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Nome completo</label>
@@ -3307,7 +3312,13 @@
                 </div>
               </div>
               <div id="cadastroStatus" class="status"></div>
-              <button id="btnCadastrar" type="button" onclick="handleCadastro()">⊕ Criar Cadastro</button>
+              <div style="display:flex;gap:10px;">
+                <button type="button" onclick="handleCadastro()" style="flex:1;">⊕ Criar Cadastro</button>
+                <button type="button" onclick="fecharCadastro()"
+                  style="flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(196,181,253,.15);color:rgba(221,214,245,.6);">
+                  Cancelar
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -4639,21 +4650,24 @@ function saveStoredUser(obj) {
   try { localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(obj)); } catch {}
 }
 
-function showAuthTab(tab) {
-  const isEntrar = tab === 'entrar';
-  document.getElementById('painelEntrar').style.display  = isEntrar ? '' : 'none';
-  document.getElementById('painelCadastro').style.display = isEntrar ? 'none' : '';
-  document.getElementById('tabEntrar').style.background  = isEntrar ? 'rgba(139,92,246,.28)' : 'rgba(255,255,255,.04)';
-  document.getElementById('tabEntrar').style.color       = isEntrar ? '#e5ddfb' : 'rgba(221,214,245,.55)';
-  document.getElementById('tabCadastro').style.background = isEntrar ? 'rgba(255,255,255,.04)' : 'rgba(139,92,246,.28)';
-  document.getElementById('tabCadastro').style.color      = isEntrar ? 'rgba(221,214,245,.55)' : '#e5ddfb';
+function abrirCadastro() {
+  // Copia o e-mail digitado pro campo do cadastro
+  const email = document.getElementById('loginEmail').value.trim();
+  if (email) document.getElementById('cadEmail').value = email;
+  document.getElementById('painelCadastro').style.display = '';
+  document.getElementById('cadastroStatus').textContent = '';
+  document.getElementById('cadNome').focus();
+  // Scroll suave até o formulário
+  setTimeout(() => document.getElementById('painelCadastro').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
+function fecharCadastro() {
+  document.getElementById('painelCadastro').style.display = 'none';
+  document.getElementById('cadastroStatus').textContent = '';
 }
 
 function enterPortal(user) {
-  // Salva/atualiza usuário no storage
   saveStoredUser(user);
-
-  // Esconde auth, mostra o restante da section1 (ritual + formulário)
   document.getElementById('authCard').style.display = 'none';
   document.getElementById('ritualCard').style.display = '';
   document.getElementById('abertura-consulta').style.display = '';
@@ -4661,30 +4675,32 @@ function enterPortal(user) {
 
 function handleEntrar() {
   const email = document.getElementById('loginEmail').value.trim();
-  const status = document.getElementById('loginStatus');
+  const status = document.getElementById('authStatus');
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     setStatus(status, 'error', 'Digite um e-mail válido.');
     return;
   }
 
-  // Verifica se há cadastro salvo para este e-mail
   const saved = getStoredUser();
+
   if (saved.email && saved.email.toLowerCase() === email.toLowerCase()) {
-    setStatus(status, 'ok', `Bem-vindo de volta, ${saved.nome ? saved.nome.split(' ')[0] : 'viajante'}!`);
-    setTimeout(() => enterPortal(saved), 600);
+    // E-mail cadastrado — entra direto
+    const firstName = saved.nome ? saved.nome.trim().split(/\s+/)[0] : 'viajante';
+    setStatus(status, 'ok', `Bem-vindo de volta, ${firstName}! Abrindo o portal...`);
+    setTimeout(() => enterPortal(saved), 700);
   } else {
-    // E-mail não cadastrado — entra mesmo assim com só o email (nome/data/sexo ficam vazios)
-    setStatus(status, 'ok', 'Acesso concedido. Seja bem-vindo!');
-    setTimeout(() => enterPortal({ email, nome: '', data: '', sexo: '' }), 600);
+    // E-mail não cadastrado — pede cadastro
+    setStatus(status, 'warn', 'E-mail não encontrado. Faça seu cadastro para continuar.');
+    abrirCadastro();
   }
 }
 
-function handleCadastro() {
-  const nome  = document.getElementById('cadNome').value.trim();
-  const data  = document.getElementById('cadData').value.trim();
-  const sexo  = document.getElementById('cadSexo').value;
-  const email = document.getElementById('cadEmail').value.trim();
+async function handleCadastro() {
+  const nome   = document.getElementById('cadNome').value.trim();
+  const data   = document.getElementById('cadData').value.trim();
+  const sexo   = document.getElementById('cadSexo').value;
+  const email  = document.getElementById('cadEmail').value.trim();
   const status = document.getElementById('cadastroStatus');
 
   if (!nome || nome.length < 2) {
@@ -4696,17 +4712,40 @@ function handleCadastro() {
     return;
   }
 
+  setStatus(status, '', 'Registrando seu perfil akáshico...');
+  document.getElementById('btnCadastrar') && (document.querySelector('#painelCadastro button').disabled = true);
+
+  // Salva no Google Sheets via /api/save-email (mala direta)
+  try {
+    await fetch('/api/save-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, nome, data_nascimento: data, sexo })
+    });
+  } catch (err) {
+    console.warn('⚠️ Não foi possível salvar na planilha (não crítico):', err.message);
+  }
+
   const user = { nome, data, sexo, email };
-  setStatus(status, 'ok', `Cadastro realizado! Bem-vindo, ${nome.split(' ')[0]}!`);
-  setTimeout(() => enterPortal(user), 600);
+  const firstName = nome.split(/\s+/)[0];
+  setStatus(status, 'ok', `Cadastro realizado! Bem-vindo, ${firstName}!`);
+  setTimeout(() => enterPortal(user), 700);
 }
 
-// Ao carregar: se já tem usuário salvo, preenche o e-mail no login automaticamente
+// Ao carregar: preenche e-mail se já existir cadastro
 (function initAuth() {
   const saved = getStoredUser();
   if (saved.email) {
     document.getElementById('loginEmail').value = saved.email;
   }
+
+  // Formata data no campo cadData
+  document.getElementById('cadData').addEventListener('input', (e) => {
+    let v = e.target.value.replace(/\D/g, '');
+    if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2);
+    if (v.length >= 5) v = v.slice(0, 5) + '/' + v.slice(5, 9);
+    e.target.value = v;
+  });
 })();
 
 window.addEventListener('offline', () => {
