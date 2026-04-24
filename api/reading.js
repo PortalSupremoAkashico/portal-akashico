@@ -7,10 +7,12 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   try {
     const { name, birthdate, theme, state, question, level, cosmicMode, gender } = req.body;
@@ -20,6 +22,7 @@ export default async function handler(req, res) {
 
     const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
     if (!ANTHROPIC_API_KEY) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(500).json({ success: false, error: 'API key não configurada no servidor.' });
     }
 
@@ -160,7 +163,7 @@ Forneça uma leitura profunda e personalizada em formato JSON com estas seções
     console.log(`🎯 Perspectivas: ${primary.toUpperCase()} + ${secondary.toUpperCase()} | Espiritual: ${spiritualComplement.toUpperCase()}`);
 
     // ═══════════════════════════════════════════════
-    // FASE 1 + FASE 2 — PARALELAS (economiza ~40s)
+    // FASE 1 + FASE 2 — PARALELAS (IDÊNTICAS ao original, não-streaming)
     // ═══════════════════════════════════════════════
     console.log('🔵 Fases 1 e 2 iniciando em paralelo...');
 
@@ -197,9 +200,9 @@ Forneça uma leitura profunda e personalizada em formato JSON com estas seções
     console.log('✅ Fases 1 e 2 concluídas');
 
     // ═══════════════════════════════════════════════
-    // FASE 3 — SÍNTESE FINAL
+    // FASE 3 — SÍNTESE FINAL COM STREAMING
     // ═══════════════════════════════════════════════
-    console.log('🔵 Fase 3: Síntese final...');
+    console.log('🔵 Fase 3: Síntese final com streaming...');
 
     const synthesisPrompt = `Você recebeu duas perspectivas PRINCIPAIS sobre a mesma consulta:
 
@@ -259,6 +262,7 @@ Formato JSON:
   "action": "..."
 }`;
 
+    // Faz a requisição com stream: true — modelo, max_tokens, system e prompt IDÊNTICOS ao original
     const resp3 = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -270,72 +274,81 @@ Formato JSON:
         model: 'claude-sonnet-4-20250514',
         max_tokens: 16000,
         system: baseSystemPrompt,
-        messages: [{ role: 'user', content: synthesisPrompt }]
+        messages: [{ role: 'user', content: synthesisPrompt }],
+        stream: true
       })
     });
 
+    // Se a Fase 3 falhar ANTES do streaming, ainda conseguimos retornar JSON
     if (!resp3.ok) {
       const errBody = await resp3.text().catch(() => resp3.statusText);
-      throw new Error(`API error ${resp3.status} (fase3): ${errBody.slice(0, 200)}`);
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(500).json({
+        success: false,
+        error: `API error ${resp3.status} (fase3): ${errBody.slice(0, 200)}`
+      });
     }
 
-    const data3 = await resp3.json();
-    const refinedText = data3?.content?.[0]?.text?.trim() || reading1;
+    // Configura resposta como stream de texto
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (typeof res.flushHeaders === 'function') res.flushHeaders();
 
-    console.log('✅ Fase 3 concluída');
+    // Lê SSE da Anthropic e reencaminha apenas o texto dos deltas
+    const reader = resp3.body.getReader();
+    const decoder = new TextDecoder();
+    let sseBuffer = '';
 
-    // ═══════════════════════════════════════════════
-    // EXTRAI E VALIDA O JSON
-    // ═══════════════════════════════════════════════
-    let sections;
     try {
-      const cleaned = refinedText
-        .replace(/^```(?:json)?\s*/i, '')
-        .replace(/```\s*$/i, '')
-        .replace(/[\u201C\u201D]/g, '"')   // aspas curvas duplas → retas
-        .replace(/[\u2018\u2019]/g, "'")   // aspas curvas simples → retas
-        .replace(/,\s*([}\]])/g, '$1')
-        .trim();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      const firstBrace = cleaned.indexOf('{');
-      const lastBrace = cleaned.lastIndexOf('}');
-      if (firstBrace === -1 || lastBrace === -1) throw new Error('JSON não encontrado');
-      sections = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
-    } catch (parseErr) {
-      // Fallback: tenta extrair do reading1
-      try {
-        const fb = reading1.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-        const f1 = fb.indexOf('{'), l1 = fb.lastIndexOf('}');
-        sections = JSON.parse(fb.slice(f1, l1 + 1));
-      } catch {
-        throw new Error(`Não foi possível interpretar a leitura: ${parseErr.message}`);
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split('\n');
+        sseBuffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const dataStr = line.slice(6).trim();
+          if (!dataStr || dataStr === '[DONE]') continue;
+
+          try {
+            const event = JSON.parse(dataStr);
+            if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+              const textDelta = event.delta.text;
+              if (textDelta) {
+                res.write(textDelta);
+              }
+            }
+          } catch (parseErr) {
+            // Linha SSE malformada — ignora silenciosamente
+          }
+        }
       }
+      console.log('✅ Fase 3 (stream) concluída');
+      res.end();
+    } catch (streamErr) {
+      console.error('❌ Erro durante streaming da Fase 3:', streamErr.message);
+      // Marcador inline que o frontend reconhece (headers já enviados, não dá pra status 500)
+      res.write('\n\n__AKASHIC_STREAM_ERROR__:' + (streamErr.message || 'Erro durante streaming'));
+      res.end();
     }
-
-    const defaults = {
-      revelation: 'A revelação chegou em silêncio. Refaça a consulta em alguns instantes.',
-      earthFuture: 'A visão do futuro não foi recebida por inteiro nesta tentativa.',
-      otherCivilizations: 'Os ecos dos mentores ainda não puderam ser traduzidos nesta leitura.',
-      technologyFuture: 'A camada de coexistência não foi decodificada completamente.',
-      warning: 'Nenhum aviso específico além do convite à prudência e ao discernimento.',
-      action: 'Respire, recentre-se e repita a consulta com uma pergunta mais específica.'
-    };
-
-    Object.keys(defaults).forEach(key => {
-      if (!sections[key] || typeof sections[key] !== 'string' || !sections[key].trim()) {
-        sections[key] = defaults[key];
-      }
-    });
-
-    console.log('✅ Leitura completa gerada com sucesso!');
-    const responseBody = JSON.stringify({ success: true, sections });
-    return res.status(200).send(responseBody);
 
   } catch (error) {
     console.error('❌ Erro geral:', error.message);
-    return res.status(500).json({
-      success: false,
-      error: error.message || 'Erro interno do servidor.'
-    });
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Erro interno do servidor.'
+      });
+    } else {
+      try {
+        res.write('\n\n__AKASHIC_STREAM_ERROR__:' + (error.message || 'Erro'));
+        res.end();
+      } catch {}
+    }
   }
 }
