@@ -4213,11 +4213,12 @@ async function fetchAkashicReading(apiKey, name, birthdate, gender, theme, state
 // Promise que resolve quando o loop do typewriter termina de renderizar tudo
 function waitForTypewriterDrain() {
   return new Promise(resolve => {
-    const maxWaitMs = 6000; // teto de segurança — nunca trava mais que 6s
+    const maxWaitMs = 6000;
     const start = performance.now();
     (function check() {
-      const done = streamingState.streamEnded && STREAM_KEY_ORDER.every(k =>
-        (streamingState.displayedByKey[k] || 0) >= (streamingState.targetByKey[k] || '').length
+      const key = streamingState.visibleKey;
+      const done = streamingState.streamEnded && (
+        !key || (streamingState.displayedByKey[key] || 0) >= (streamingState.targetByKey[key] || '').length
       );
       if (done || (performance.now() - start) > maxWaitMs) resolve();
       else setTimeout(check, 40);
@@ -4355,15 +4356,12 @@ const STREAM_KEY_ORDER = ['revelation', 'earthFuture', 'otherCivilizations', 'te
 
 let streamingState = {
   started: false,
-  autoAdvanceKey: null,     // última chave que AUTO-ativamos
-  userOverrode: false,      // usuário clicou manualmente em alguma aba
-  // ── fila do typewriter ──
-  displayedByKey: {},       // quanto texto JÁ foi renderizado por chave
-  targetByKey: {},          // texto COMPLETO já recebido do servidor por chave
-  visibleKey: null,         // chave atualmente exibida no painel (pra typewriter)
-  typeRAF: null,            // id do requestAnimationFrame em curso
-  lastFrameTs: 0,           // timestamp do último frame (pra cadência)
-  streamEnded: false        // true quando o backend terminou de mandar tudo
+  displayedByKey: {},   // chars já renderizados por chave
+  targetByKey: {},      // texto completo recebido do servidor por chave
+  visibleKey: null,     // chave atualmente exibida (typewriter escreve só ela)
+  typeRAF: null,
+  lastFrameTs: 0,
+  streamEnded: false
 };
 
 // Velocidade do typewriter (chars por segundo). Ajustável — mais alto = mais rápido.
@@ -4466,12 +4464,13 @@ function startTypewriterLoop() {
       setTranslationText(target.slice(0, newDisplayed));
     }
 
-    // Continua o loop até stream acabar E tudo ter sido renderizado
-    const allKeysDone = state.streamEnded && STREAM_KEY_ORDER.every(k =>
-      (state.displayedByKey[k] || 0) >= (state.targetByKey[k] || '').length
-    );
+    // Loop para quando: stream acabou E a aba visível foi totalmente renderizada.
+    // As outras abas renderizam on-demand quando o usuário as clicar.
+    const visKey = state.visibleKey;
+    const visibleDone = !visKey ||
+      (state.displayedByKey[visKey] || 0) >= (state.targetByKey[visKey] || '').length;
 
-    if (allKeysDone) {
+    if (state.streamEnded && visibleDone) {
       state.typeRAF = null;
       return;
     }
@@ -4489,56 +4488,25 @@ function stopTypewriterLoop() {
 }
 
 function handleStreamProgress(progress) {
-  const { sections, completed, currentKey } = progress;
+  const { sections } = progress;
 
-  // Primeira vez: ativa UI de streaming e inicia loop do typewriter
+  // Primeira vez: ativa UI, inicia typewriter na Revelação e SOMENTE ela
   if (!streamingState.started) {
     streamingState.started = true;
     initStreamingUI();
+    advanceLiveTab('revelation');   // ativa painel da Revelação
     startTypewriterLoop();
   }
 
-  // Atualiza alvos de texto (o que o servidor já mandou) pra cada chave
+  // Atualiza os alvos de todas as chaves — o texto chega em background
+  // mas só a aba visível (revelation, ou a que o usuário clicar) escreve na tela
   Object.keys(sections).forEach(k => {
     if (sections[k] != null) {
       streamingState.targetByKey[k] = sections[k];
-      // Mantém currentSections sincronizado pra cliques manuais mostrarem o texto acumulado
       if (currentSections) currentSections[k] = sections[k];
     }
   });
-
-  // Determina chave-alvo (qual aba deveria estar visível agora)
-  let target = currentKey;
-  if (!target) {
-    for (let i = STREAM_KEY_ORDER.length - 1; i >= 0; i--) {
-      if (completed[STREAM_KEY_ORDER[i]]) { target = STREAM_KEY_ORDER[i]; break; }
-    }
-  }
-  if (!target) target = 'revelation';
-
-  // Detecta override do usuário
-  const visible = getVisibleStreamKey();
-  if (streamingState.autoAdvanceKey && visible && visible !== streamingState.autoAdvanceKey) {
-    streamingState.userOverrode = true;
-  }
-
-  if (streamingState.userOverrode) {
-    // Respeita escolha do usuário — troca a visibleKey pra aba que ele escolheu
-    const userKey = visible || target;
-    if (streamingState.visibleKey !== userKey) {
-      streamingState.visibleKey = userKey;
-      // Mostra o que já foi digitado naquela aba (mantém a posição, não reinicia)
-      const disp = streamingState.displayedByKey[userKey] || 0;
-      const tgt = streamingState.targetByKey[userKey] || '';
-      setTranslationText(tgt.slice(0, disp));
-    }
-  } else {
-    // Auto-avanço: quando o modelo começa uma nova seção, avançamos a aba
-    if (target !== streamingState.autoAdvanceKey) {
-      streamingState.autoAdvanceKey = target;
-      advanceLiveTab(target);
-    }
-  }
+  // Nota: sem auto-avanço. As outras abas ficam mudas até o usuário clicar nelas.
 }
 
 function finalizeStreamingTypewriter() {
@@ -4550,8 +4518,6 @@ function resetStreamingState() {
   stopTypewriterLoop();
   streamingState = {
     started: false,
-    autoAdvanceKey: null,
-    userOverrode: false,
     displayedByKey: {},
     targetByKey: {},
     visibleKey: null,
@@ -4572,22 +4538,33 @@ function setActiveTab(btn, key, title, markText, symbol, label, sealClass) {
   btn.classList.remove('btn-blink');
   btn.classList.add('btn-solid');
 
-  // Transição suave de conteúdo
+  // Atualiza cabeçalho do painel
+  panelTitle.textContent = title;
+  panelMark.textContent = `✶ ${markText}`;
+  sealSymbol.textContent = symbol;
+  sealLabel.textContent = label;
+  sealWrap.className = `seal-wrap-small ${sealClass}`;
+
+  // ── Modo streaming: typewriter escreve a partir do zero para esta aba ──
+  if (streamingState.started) {
+    // Zera o contador pra esta aba — o loop vai escrever letra por letra
+    streamingState.displayedByKey[key] = 0;
+    streamingState.visibleKey = key;
+    // Limpa o painel
+    setTranslationText('');
+    // Garante que o loop está rodando (pode ter parado se a aba anterior já terminou)
+    startTypewriterLoop();
+    return;
+  }
+
+  // ── Modo normal (sem streaming): fade suave com texto já pronto ──
   responseBox.style.opacity = '0';
   responseBox.style.transform = 'translateY(10px)';
-  
+
   setTimeout(() => {
-    // Usar linguagem Akáshica com tradução
     const portugueseText = currentSections[key] || DEFAULT_SECTIONS[key];
     responseBox.innerHTML = formatAkashicResponse(portugueseText);
-    
-    panelTitle.textContent = title;
-    panelMark.textContent = `✶ ${markText}`;
-    sealSymbol.textContent = symbol;
-    sealLabel.textContent = label;
-    sealWrap.className = `seal-wrap-small ${sealClass}`;
-    
-    // Fade in suave
+
     setTimeout(() => {
       responseBox.style.opacity = '1';
       responseBox.style.transform = 'translateY(0)';
