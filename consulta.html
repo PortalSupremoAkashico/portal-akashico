@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+crypto.subtle<!DOCTYPE html>
 <!--
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║      PORTAL AKÁSHICO - ENVIO AUTOMÁTICO GMAIL CONFIGURADO E FUNCIONANDO!     ║
@@ -3268,6 +3268,11 @@
               <div>
                 <label for="loginEmail" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">E-mail</label>
                 <input id="loginEmail" type="email" placeholder="seu@email.com" autocomplete="email"
+                  onkeydown="if(event.key==='Enter') document.getElementById('loginSenha').focus()" />
+              </div>
+              <div>
+                <label for="loginSenha" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Senha</label>
+                <input id="loginSenha" type="password" placeholder="Sua senha" autocomplete="current-password"
                   onkeydown="if(event.key==='Enter') handleEntrar()" />
               </div>
               <div id="authStatus" class="status"></div>
@@ -3307,7 +3312,16 @@
                   <input id="cadEmail" type="email" placeholder="seu@email.com" autocomplete="email" />
                 </div>
               </div>
-              <div id="cadastroStatus" class="status"></div>
+              <div class="row-2">
+                <div>
+                  <label for="cadSenha" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Senha</label>
+                  <input id="cadSenha" type="password" placeholder="Crie uma senha" autocomplete="new-password" />
+                </div>
+                <div>
+                  <label for="cadSenhaConf" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Confirmar senha</label>
+                  <input id="cadSenhaConf" type="password" placeholder="Repita a senha" autocomplete="new-password" />
+                </div>
+              </div>
               <div style="display:flex;gap:10px;">
                 <button type="button" onclick="handleCadastro()" style="flex:1;">⊕ Criar Cadastro</button>
                 <button type="button" onclick="fecharCadastro()"
@@ -3343,7 +3357,7 @@
             <div class="actions">
               <button id="startRitualBtn" class="btn-blink" type="button">✦ Iniciar Protocolo Akáshico</button>
             </div>
-            <div id="ritualStatus" class="status">BEM VINDO AO PORTAL</div>
+            <div id="ritualStatus" class="status" style="text-align:center;color:#7dd3fc;font-weight:600;letter-spacing:.08em;">BEM VINDO AO PORTAL</div>
           </div>
         </div>
 
@@ -4637,6 +4651,14 @@ document.getElementById('cadData').addEventListener('input', (e) => {
 
 const STORAGE_KEY_USER = 'akashic_user';
 
+// Hash da senha com SHA-256 via Web Crypto API (nativa, sem dependências)
+async function hashPassword(password) {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 function getStoredUser() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY_USER) || '{}'); }
   catch { return {}; }
@@ -4669,35 +4691,49 @@ function enterPortal(user) {
   document.getElementById('abertura-consulta').style.display = '';
 }
 
-function handleEntrar() {
+async function handleEntrar() {
   const email = document.getElementById('loginEmail').value.trim();
+  const senha = document.getElementById('loginSenha').value;
   const status = document.getElementById('authStatus');
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     setStatus(status, 'error', 'Digite um e-mail válido.');
     return;
   }
+  if (!senha) {
+    setStatus(status, 'error', 'Digite sua senha.');
+    document.getElementById('loginSenha').focus();
+    return;
+  }
 
   const saved = getStoredUser();
 
   if (saved.email && saved.email.toLowerCase() === email.toLowerCase()) {
-    // E-mail cadastrado — entra direto
+    if (saved.senha) {
+      const senhaHash = await hashPassword(senha);
+      if (senhaHash !== saved.senha) {
+        setStatus(status, 'error', 'Senha incorreta.');
+        document.getElementById('loginSenha').focus();
+        return;
+      }
+    }
     const firstName = saved.nome ? saved.nome.trim().split(/\s+/)[0] : 'viajante';
     setStatus(status, 'ok', `Bem-vindo de volta, ${firstName}! Abrindo o portal...`);
     setTimeout(() => enterPortal(saved), 700);
   } else {
-    // E-mail não cadastrado — pede cadastro
     setStatus(status, 'warn', 'E-mail não encontrado. Faça seu cadastro para continuar.');
     abrirCadastro();
   }
 }
 
 async function handleCadastro() {
-  const nome   = document.getElementById('cadNome').value.trim();
-  const data   = document.getElementById('cadData').value.trim();
-  const sexo   = document.getElementById('cadSexo').value;
-  const email  = document.getElementById('cadEmail').value.trim();
-  const status = document.getElementById('cadastroStatus');
+  const nome      = document.getElementById('cadNome').value.trim();
+  const data      = document.getElementById('cadData').value.trim();
+  const sexo      = document.getElementById('cadSexo').value;
+  const email     = document.getElementById('cadEmail').value.trim();
+  const senha     = document.getElementById('cadSenha').value;
+  const senhaConf = document.getElementById('cadSenhaConf').value;
+  const status    = document.getElementById('cadastroStatus');
 
   if (!nome || nome.length < 2) {
     setStatus(status, 'error', 'Digite seu nome completo.');
@@ -4707,11 +4743,23 @@ async function handleCadastro() {
     setStatus(status, 'error', 'Digite um e-mail válido.');
     return;
   }
+  if (!senha || senha.length < 4) {
+    setStatus(status, 'error', 'A senha deve ter pelo menos 4 caracteres.');
+    document.getElementById('cadSenha').focus();
+    return;
+  }
+  if (senha !== senhaConf) {
+    setStatus(status, 'error', 'As senhas não conferem.');
+    document.getElementById('cadSenhaConf').focus();
+    return;
+  }
 
   setStatus(status, '', 'Registrando seu perfil akáshico...');
-  document.getElementById('btnCadastrar') && (document.querySelector('#painelCadastro button').disabled = true);
 
-  // Salva no Google Sheets via /api/save-email (mala direta)
+  // Hash da senha antes de salvar — a senha em texto nunca toca o storage
+  const senhaHash = await hashPassword(senha);
+
+  // Salva no Google Sheets via /api/save-email (mala direta — sem senha)
   try {
     await fetch('/api/save-email', {
       method: 'POST',
@@ -4722,7 +4770,7 @@ async function handleCadastro() {
     console.warn('⚠️ Não foi possível salvar na planilha (não crítico):', err.message);
   }
 
-  const user = { nome, data, sexo, email };
+  const user = { nome, data, sexo, email, senha: senhaHash };
   const firstName = nome.split(/\s+/)[0];
   setStatus(status, 'ok', `Cadastro realizado! Bem-vindo, ${firstName}!`);
   setTimeout(() => enterPortal(user), 700);
@@ -4995,6 +5043,7 @@ document.getElementById('resetAppBtn').addEventListener('click', function() {
 
   setStatus(openStatus, '', 'Formulário limpo. Nenhuma consulta aberta ainda.');
   setStatus(ritualStatus, '', 'BEM VINDO AO PORTAL');
+  ritualStatus.style.cssText += ';text-align:center;color:#7dd3fc;font-weight:600;letter-spacing:.08em;';
 
   pillTema.textContent = 'Tema: —';
   pillEstado.textContent = 'Estado: —';
