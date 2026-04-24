@@ -4914,13 +4914,8 @@ async function handleCadastro() {
   setTimeout(() => enterPortal(user), 700);
 }
 
-// Ao carregar: preenche e-mail se já existir cadastro
-(function initAuth() {
-  const saved = getStoredUser();
-  if (saved.email) {
-    document.getElementById('loginEmail').value = saved.email;
-  }
-
+// Ao carregar: sempre mostra tela de login, só pré-preenche o email se já cadastrado
+document.addEventListener('DOMContentLoaded', function initAuth() {
   // Formata data no campo cadData
   document.getElementById('cadData').addEventListener('input', (e) => {
     let v = e.target.value.replace(/\D/g, '');
@@ -4928,7 +4923,7 @@ async function handleCadastro() {
     if (v.length >= 5) v = v.slice(0, 5) + '/' + v.slice(5, 9);
     e.target.value = v;
   });
-})();
+});
 
 window.addEventListener('offline', () => {
   if (!currentReading) {
