@@ -3535,6 +3535,7 @@
           <button id="sendEmailBtn" type="button" disabled>📧 Enviar por E-mail</button>
           <button id="resetAppBtn" type="button">Nova Consulta</button>
         </div>
+        <div id="emailStatus" class="email-status" style="display:none;margin-top:10px;text-align:center;"></div>
       </div>
     </div>
 
@@ -3615,7 +3616,6 @@
         </button>
       </div>
       
-      <div id="emailStatus" class="email-status"></div>
     </div>
   </div>
 
@@ -5504,19 +5504,59 @@ const cancelEmailBtn = document.getElementById('cancelEmailBtn');
 const confirmSendBtn = document.getElementById('confirmSendBtn');
 const emailStatus = document.getElementById('emailStatus');
 
-document.getElementById('sendEmailBtn').addEventListener('click', function() {
+document.getElementById('sendEmailBtn').addEventListener('click', async function() {
   if (!currentReading || !currentSections) {
     alert('Abra uma consulta primeiro para enviar por e-mail.');
     return;
   }
-  
-  // Abrir modal
-  emailModalOverlay.classList.add('active');
-  emailInput.value = '';
-  emailInput.focus();
-  emailStatus.style.display = 'none';
-  emailStatus.className = 'email-status';
-  document.getElementById('emailPreview').style.display = 'none'; // Esconder prévia
+
+  // Usa o e-mail do cadastro direto — sem abrir modal
+  const user = getStoredUser();
+  const email = user.email || '';
+
+  if (!email) {
+    alert('Nenhum e-mail cadastrado. Faça login para enviar.');
+    return;
+  }
+
+  // Desabilita o botão e mostra feedback imediato
+  this.disabled = true;
+  this.textContent = '⏳ Enviando PDF...';
+
+  // Mostra confirmação visual no painel
+  emailStatus.className = 'email-status info';
+  emailStatus.textContent = '📨 Enviando sua leitura para ' + email + '...';
+  emailStatus.style.display = 'block';
+
+  try {
+    let pdfBase64;
+    if (cachedPDFPromise) {
+      pdfBase64 = await cachedPDFPromise;
+    }
+    if (!pdfBase64) {
+      pdfBase64 = await generatePDFBase64();
+    }
+
+    await sendEmailWithPDF(email, pdfBase64);
+
+    // Confirmação de sucesso
+    emailStatus.className = 'email-status success';
+    emailStatus.textContent = '✅ Leitura enviada para ' + email + '!';
+    this.textContent = '✅ PDF Enviado';
+
+    // Reabilita o botão após 4 segundos
+    setTimeout(() => {
+      this.disabled = false;
+      this.textContent = '📧 Enviar por E-mail';
+    }, 4000);
+
+  } catch (error) {
+    console.error('Erro ao enviar e-mail:', error);
+    emailStatus.className = 'email-status error';
+    emailStatus.textContent = '❌ Erro ao enviar: ' + (error.message || 'Tente novamente.');
+    this.disabled = false;
+    this.textContent = '📧 Enviar por E-mail';
+  }
 });
 
 // Fechar modal
