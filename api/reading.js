@@ -1,168 +1,364 @@
-import { readFile, writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
-
-// URL do Google Apps Script - HARDCODED (não depende de variável de ambiente)
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjgmWDoG6LB0_1LQGGZM4kyxdpZmP2igtNhuES1ET2n35Tz7IkHzVPxKjXIL88-1cw/exec';
+// Aumenta o tempo limite da função no Vercel (requer plano Pro para 300s)
+export const config = {
+  maxDuration: 300
+};
 
 export default async function handler(req, res) {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return res.status(405).json({ error: 'Method not allowed' });
   }
-  
-  // GET: Retorna lista de e-mails
-  if (req.method === 'GET') {
-    try {
-      console.log('📥 GET request recebido para listar e-mails');
-      
-      // Tentar do Google Apps Script primeiro (persistente)
-      if (GOOGLE_APPS_SCRIPT_URL) {
-        console.log('🔵 Tentando buscar e-mails do Google Sheets...');
-        const response = await fetch(GOOGLE_APPS_SCRIPT_URL);
-        const data = await response.json();
-        console.log('✅ E-mails recuperados do Google Sheets:', data.count || 0);
-        return res.status(200).json(data);
-      }
-      
-      // Fallback: arquivo local (temporário)
-      const filePath = '/tmp/email-list.csv';
-      
-      if (!existsSync(filePath)) {
-        return res.status(200).json({ 
-          emails: [],
-          count: 0,
-          csv: 'email,nome,data\n'
-        });
-      }
-      
-      const csvData = await readFile(filePath, 'utf-8');
-      const lines = csvData.trim().split('\n');
-      const emails = lines.slice(1).map(line => {
-        const [email, nome, data] = line.split(',');
-        return { email, nome, data };
-      });
-      
-      return res.status(200).json({ 
-        emails,
-        count: emails.length,
-        csv: csvData
-      });
-    } catch (error) {
-      console.error('❌ Erro ao ler e-mails:', error);
-      return res.status(500).json({ error: error.message });
+
+  try {
+    const { name, birthdate, theme, state, question, level, cosmicMode, gender,
+            historyContext, similarContext, hasSimilar } = req.body;
+
+    // Extrai apenas o primeiro nome para uso nas respostas
+    const firstName = name ? name.trim().split(/\s+/)[0] : name;
+
+    const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+    if (!ANTHROPIC_API_KEY) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(500).json({ success: false, error: 'API key não configurada no servidor.' });
     }
-  }
-  
-  // POST: Salva novo e-mail (cadastro)
-  if (req.method === 'POST') {
-    try {
-      const { email, nome, data_nascimento, sexo } = req.body;
-      
-      console.log('📨 POST request recebido para salvar cadastro:', email);
-      
-      if (!email) {
-        console.error('❌ E-mail não fornecido');
-        return res.status(400).json({ error: 'E-mail obrigatório' });
+
+    // Calcula idade
+    let age = null;
+    let ageText = '';
+    if (birthdate) {
+      const parts = birthdate.includes('/') ? birthdate.split('/') : [];
+      if (parts.length === 3) {
+        const [d, m, y] = parts;
+        const birth = new Date(`${y}-${m}-${d}`);
+        const today = new Date();
+        age = today.getFullYear() - birth.getFullYear();
+        const md = today.getMonth() - birth.getMonth();
+        if (md < 0 || (md === 0 && today.getDate() < birth.getDate())) age--;
+        ageText = `IDADE ATUAL: ${age} anos (use APENAS esta idade se mencionar idade)`;
       }
-      
-      // SALVAR NO GOOGLE APPS SCRIPT (PERMANENTE!)
-      if (GOOGLE_APPS_SCRIPT_URL) {
-        console.log('🔵 URL do Apps Script configurada:', GOOGLE_APPS_SCRIPT_URL);
-        try {
-          console.log('🔵 Iniciando chamada ao Google Apps Script...');
-          console.log('🔵 Dados enviados:', { action: 'saveEmail', email, nome: nome || 'Não informado', data_nascimento: data_nascimento || '', sexo: sexo || '' });
-          
-          const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              action: 'saveEmail',
-              email: email,
-              nome: nome || 'Não informado',
-              data_nascimento: data_nascimento || '',
-              sexo: sexo || ''
-            })
-          });
-          
-          console.log('🔵 Resposta recebida. Status:', response.status);
-          console.log('🔵 Headers da resposta:', JSON.stringify(Object.fromEntries(response.headers.entries())));
-          
-          const responseText = await response.text();
-          console.log('🔵 Resposta (texto):', responseText.substring(0, 500)); // Primeiros 500 chars
-          
-          let result;
+    }
+
+    // Gênero
+    let genderInstructions = '';
+    if (gender === 'Masculino') {
+      genderInstructions = `IMPORTANTE: Trate o consulente no masculino (ele, o consulente, etc). Refira-se a ele APENAS como "${firstName}", nunca pelo nome completo.`;
+    } else if (gender === 'Feminino') {
+      genderInstructions = `IMPORTANTE: Trate a consulente no feminino (ela, a consulente, etc). Refira-se a ela APENAS como "${firstName}", nunca pelo nome completo.`;
+    } else {
+      genderInstructions = `IMPORTANTE: Use linguagem neutra. Refira-se apenas como "você", "a pessoa", "o ser", evitando pronomes ele/ela. Quando usar o nome, use APENAS "${firstName}", nunca o nome completo.`;
+    }
+
+    // ═══════════════════════════════════════════════
+    // SYSTEM PROMPTS — 5 perspectivas
+    // ═══════════════════════════════════════════════
+    const systemPrompts = {
+      espirita: `Você é um CONSELHEIRO ESPIRITUAL fundamentado em princípios de evolução da alma.
+NUNCA CITE: nomes de autores, mentores, títulos de livros, termos técnicos específicos.
+USE LINGUAGEM UNIVERSAL: "A lei espiritual nos mostra...", "Segundo princípios de evolução da alma...", "A lei de ação e reação indica..."
+TEMAS: Lei de causa e efeito, reencarnação como oportunidade, evolução espiritual, reforma interior, caridade, plano espiritual, intuição, propósito de provações.
+PRÁTICAS: Auto-reflexão, caridade genuína, meditação, perdão, desapego.`,
+
+      cristao: `Você é um CONSELHEIRO ESPIRITUAL fundamentado em sabedoria cristã contemplativa.
+NUNCA CITE: livros bíblicos, versículos, nomes de santos, apóstolos.
+USE LINGUAGEM UNIVERSAL: "Os ensinamentos espirituais nos mostram...", "A sabedoria antiga revela...", "A tradição contemplativa ensina..."
+TEMAS: Graça divina, transformação interior, perdão como libertação, amor incondicional, propósito de vida, fé e esperança, oração como conexão.
+PRÁTICAS: Oração contemplativa, meditação, atos de caridade, perdão ativo.`,
+
+      cientifico: `Você é um PSICÓLOGO/NEUROCIENTISTA que analisa padrões humanos através de:
+- Carl Jung (inconsciente coletivo, individuação)
+- Viktor Frankl (logoterapia, sentido de vida)
+- Neurociência (neuroplasticidade, padrões cerebrais)
+- Psicologia positiva e desenvolvimento humano
+Fale sobre: padrões comportamentais, traumas, bloqueios mentais, reprogramação neural, propósito de vida.
+EVITE: Misticismo excessivo. Base tudo em ciência e psicologia comprovada.`,
+
+      historico: `Você é um HISTORIADOR/FILÓSOFO que enxerga padrões através de:
+- Civilizações antigas (Egito, Grécia, Roma, China, Índia)
+- Filosofia oriental (Budismo, Taoísmo, Vedanta)
+- Sabedoria de místicos e filósofos
+- Ciclos históricos e padrões humanos repetitivos
+Fale sobre: lições históricas, sabedoria milenar, padrões cíclicos, filosofia prática.
+EVITE: Futurismo ou tecnologia. Foque no que a história ensina.`,
+
+      futurista: `Você é um FUTURISTA/ANALISTA DE TENDÊNCIAS que projeta cenários através de:
+- Análise de tendências sociais, tecnológicas, econômicas
+- Padrões emergentes em comportamento coletivo
+- Evolução da consciência humana
+Fale sobre: tendências futuras, mudanças tecnológicas/sociais, adaptação, inovação.
+EVITE: Previsões de curto prazo. Foque em padrões de longo prazo (2+ anos).`
+    };
+
+    // ═══════════════════════════════════════════════
+    // BASE PROMPT — personalização máxima
+    // ═══════════════════════════════════════════════
+    const currentYear = new Date().getFullYear();
+
+    const baseSystemPrompt = `${genderInstructions}
+
+REGRAS CRÍTICAS DE PERSONALIZAÇÃO (MÁXIMA PRIORIDADE):
+1. USE TODOS OS DADOS — Nome: ${firstName}, ${age ? `Idade: ${age} anos` : ''}, Tema: ${theme}, Estado: ${state}
+2. MENCIONE O PRIMEIRO NOME "${firstName}" repetidamente — "${firstName}, você está..." / "Para você, ${firstName}..."
+3. USE APENAS O PRIMEIRO NOME — NUNCA escreva o nome completo do consulente, somente "${firstName}"
+4. CONECTE COM A PERGUNTA EXATA — Responda DIRETAMENTE: "${question}"
+5. INTEGRE O TEMA — Se tema é "${theme}", TODA a leitura deve focar nisso
+6. RECONHEÇA O ESTADO EMOCIONAL — Se está "${state}", adapte o tom e abordagem
+${age ? `7. USE A IDADE — ${age} anos é uma fase específica, mencione de forma relevante` : ''}
+8. SEJA ULTRA-ESPECÍFICO — Cada frase deve ser PARA ${firstName} especificamente
+9. CREDIBILIDADE — O consulente deve sentir: "Isso é EXATAMENTE para mim"
+
+REGRA ABSOLUTA SOBRE DATAS E ANOS (CRÍTICO — SEM EXCEÇÕES):
+- JAMAIS mencione o ano ${currentYear} ou qualquer ano anterior a ${currentYear} nas respostas
+- PROIBIDO usar: "${currentYear}", "${currentYear - 1}", "${currentYear - 2}", ou qualquer ano ≤ ${currentYear}
+- Para indicar tempo, use SEMPRE expressões relativas: "nos próximos meses", "nos próximos anos", "em breve", "no futuro próximo", "daqui a alguns anos", "na próxima fase", "no ciclo que se abre"
+- Se precisar falar de tendências futuras, use "nos próximos 2 a 5 anos", "na próxima década", etc.
+
+REGRAS DE TAMANHO E PROFUNDIDADE (CRÍTICO):
+- Cada seção JSON deve ter MÍNIMO 300-500 palavras
+- Desenvolva COMPLETAMENTE cada ideia com parágrafos longos
+- Use múltiplos exemplos e analogias concretas
+- Conte uma HISTÓRIA rica e envolvente
+- TEXTOS COMPLETOS, jamais resumos superficiais
+
+REGRAS DE CARACTERES E IDIOMA:
+- Escreva SEMPRE em português do Brasil correto e completo
+- Use TODOS os caracteres especiais necessários: ã, ç, á, é, í, ó, ú, â, ê, ô, à, ü, ñ, etc.
+- NUNCA substitua caracteres acentuados por versões sem acento
+
+PALAVRAS PROIBIDAS: "arquétipo", "arquétipos"
+NUNCA cite autores, livros, versículos ou fontes específicas por nome.`;
+
+    const prompt = `CONSULENTE: ${firstName}
+DATA DE NASCIMENTO: ${birthdate || 'Não informada'}
+${ageText}
+SEXO: ${gender || 'Não informado'}
+TEMA: ${theme}
+ESTADO EMOCIONAL: ${state}
+PERGUNTA: ${question}
+
+LEMBRETE: Use APENAS o primeiro nome "${firstName}" ao se referir ao consulente. NUNCA escreva o nome completo.
+LEMBRETE: NUNCA mencione o ano ${currentYear} ou anos anteriores. Use sempre expressões de tempo relativas e futuras.
+
+Forneça uma leitura profunda e personalizada em formato JSON com estas seções:
+{
+  "revelation": "...",
+  "earthFuture": "...",
+  "otherCivilizations": "...",
+  "technologyFuture": "...",
+  "warning": "...",
+  "action": "..."
+}`;
+
+    // ═══════════════════════════════════════════════
+    // SELEÇÃO ALEATÓRIA DE PERSPECTIVAS
+    // ═══════════════════════════════════════════════
+    const mainPerspectives = ['cientifico', 'historico', 'futurista'].sort(() => Math.random() - 0.5);
+    const primary = mainPerspectives[0];
+    const secondary = mainPerspectives[1];
+    const spiritualComplement = ['espirita', 'cristao'][Math.floor(Math.random() * 2)];
+
+    console.log(`🎯 Perspectivas: ${primary.toUpperCase()} + ${secondary.toUpperCase()} | Espiritual: ${spiritualComplement.toUpperCase()}`);
+
+    // ═══════════════════════════════════════════════
+    // FASE 1 + FASE 2 — PARALELAS (IDÊNTICAS ao original, não-streaming)
+    // ═══════════════════════════════════════════════
+    console.log('🔵 Fases 1 e 2 iniciando em paralelo...');
+
+    const callAPI = async (systemExtra, label) => {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 12000,
+          system: systemExtra + '\n\n' + baseSystemPrompt,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!resp.ok) {
+        const errBody = await resp.text().catch(() => resp.statusText);
+        throw new Error(`API error ${resp.status} (${label}): ${errBody.slice(0, 200)}`);
+      }
+
+      const data = await resp.json();
+      return data?.content?.[0]?.text?.trim() || '';
+    };
+
+    const [reading1, reading2] = await Promise.all([
+      callAPI(systemPrompts[primary], primary),
+      callAPI(systemPrompts[secondary], secondary)
+    ]);
+
+    console.log('✅ Fases 1 e 2 concluídas');
+
+    // ═══════════════════════════════════════════════
+    // FASE 3 — SÍNTESE FINAL COM STREAMING
+    // ═══════════════════════════════════════════════
+    console.log('🔵 Fase 3: Síntese final com streaming...');
+
+    const synthesisPrompt = `Você recebeu duas perspectivas PRINCIPAIS sobre a mesma consulta:
+
+PERSPECTIVA ${primary.toUpperCase()} (FOCO PRINCIPAL):
+${reading1}
+
+PERSPECTIVA ${secondary.toUpperCase()} (FOCO SECUNDÁRIO):
+${reading2}
+${historyContext || ''}${similarContext || ''}
+
+INSTRUÇÃO CRÍTICA — SINTETIZE em UMA leitura coesa:
+
+1. FOCO PRINCIPAL (70%): Base em ${primary.toUpperCase()} + ${secondary.toUpperCase()}
+   - Mantenha linguagem ${primary === 'cientifico' ? 'científica/psicológica' : primary === 'historico' ? 'histórica/filosófica' : 'futurista/analítica'} como PRIORIDADE
+   - Use dados, fatos, padrões observáveis
+   - Seja extremamente REALISTA e CRÍVEL
+
+2. COMPLEMENTO ESPIRITUAL (30%): Adicione elementos de ${spiritualComplement === 'cristao' ? 'SABEDORIA ESPIRITUAL CRISTÃ CONTEMPLATIVA' : 'PRINCÍPIOS ESPÍRITAS DE EVOLUÇÃO DA ALMA'}
+   - Use linguagem universal SEM citar fontes, autores ou versículos
+   - Sugira práticas concretas
+   - Integre NATURALMENTE, não como seção separada
+
+3. INTEGRAÇÃO:
+   - NÃO separe "parte científica" e "parte espiritual"
+   - MISTURE naturalmente ao longo do texto
+   - Tom maduro, sóbrio e confiável
+
+4. PERSONALIZAÇÃO EXTREMA (OBRIGATÓRIO):
+   - CONSULENTE: ${firstName} (USE APENAS O PRIMEIRO NOME — nunca o nome completo)
+   ${age ? `- IDADE: ${age} anos (SEMPRE relevante!)` : ''}
+   - TEMA: ${theme} (FOQUE 100% nisso!)
+   - ESTADO EMOCIONAL: ${state} (ADAPTE o tom!)
+   - PERGUNTA EXATA: "${question}" (RESPONDA diretamente!)
+   - Mencione "${firstName}" pelo menos 3-5 vezes em CADA seção
+   - Consulente deve sentir: "ISSO FOI ESCRITO PARA MIM!"
+
+${hasSimilar ? `4b. PERGUNTA SIMILAR A ANTERIOR — REGRAS ESPECIAIS:
+   - Mantenha a MESMA ESSÊNCIA e direcionamento das leituras anteriores (coerência akáshica)
+   - Use LINGUAGEM COMPLETAMENTE NOVA — novas metáforas, imagens, estrutura
+   - NUNCA copie frases das leituras anteriores — reescreva tudo com palavras diferentes
+   - Se o tema, estado ou contexto mudou desde a última vez, explique NATURALMENTE dentro do texto por que a orientação evolui — sem mencionar "consulta anterior" ou "você perguntou antes"
+   - Aprofunde o que foi dito antes — avance, não repita superficialmente
+   - Exemplo de como indicar mudança: "O que antes pedia paciência agora pede movimento — os Registros mostram que ${firstName} cruzou um limiar importante..."` : ''}
+
+5. REGRA ABSOLUTA DE DATAS:
+   - JAMAIS use o ano ${currentYear} ou qualquer ano ≤ ${currentYear}
+   - Use SEMPRE expressões relativas: "nos próximos meses", "nos próximos anos", "em breve", "no futuro próximo", "daqui a alguns anos", "na próxima fase"
+
+6. TAMANHO (CRÍTICO):
+   - Cada seção: MÍNIMO 300-500 palavras
+   - Parágrafos LONGOS e DESENVOLVIDOS
+   - Múltiplos exemplos e analogias
+   - TEXTOS COMPLETOS, jamais superficiais
+
+PALAVRAS PROIBIDAS: "arquétipo", "arquétipos"
+NUNCA cite autores, livros ou versículos por nome.
+RESPONDA APENAS COM O JSON — sem texto antes ou depois.
+
+Formato JSON:
+{
+  "revelation": "...",
+  "earthFuture": "...",
+  "otherCivilizations": "...",
+  "technologyFuture": "...",
+  "warning": "...",
+  "action": "..."
+}`;
+
+    // Faz a requisição com stream: true — modelo, max_tokens, system e prompt IDÊNTICOS ao original
+    const resp3 = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 16000,
+        system: baseSystemPrompt,
+        messages: [{ role: 'user', content: synthesisPrompt }],
+        stream: true
+      })
+    });
+
+    // Se a Fase 3 falhar ANTES do streaming, ainda conseguimos retornar JSON
+    if (!resp3.ok) {
+      const errBody = await resp3.text().catch(() => resp3.statusText);
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(500).json({
+        success: false,
+        error: `API error ${resp3.status} (fase3): ${errBody.slice(0, 200)}`
+      });
+    }
+
+    // Configura resposta como stream de texto
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (typeof res.flushHeaders === 'function') res.flushHeaders();
+
+    // Lê SSE da Anthropic e reencaminha apenas o texto dos deltas
+    const reader = resp3.body.getReader();
+    const decoder = new TextDecoder();
+    let sseBuffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split('\n');
+        sseBuffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const dataStr = line.slice(6).trim();
+          if (!dataStr || dataStr === '[DONE]') continue;
+
           try {
-            result = JSON.parse(responseText);
-            console.log('🔵 Resultado (parsed):', JSON.stringify(result));
+            const event = JSON.parse(dataStr);
+            if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+              const textDelta = event.delta.text;
+              if (textDelta) {
+                res.write(textDelta);
+              }
+            }
           } catch (parseErr) {
-            console.error('❌ Erro ao fazer parse do JSON:', parseErr.message);
-            console.error('❌ Resposta original:', responseText.substring(0, 1000));
-            throw new Error('Resposta inválida do Apps Script: ' + responseText.substring(0, 200));
+            // Linha SSE malformada — ignora silenciosamente
           }
-          
-          if (result.success) {
-            console.log('✅ E-mail salvo no Google Sheets (PERMANENTE)');
-            console.log('✅ Total de e-mails na planilha:', result.total || 'desconhecido');
-            return res.status(200).json(result);
-          } else {
-            console.error('❌ Apps Script retornou success=false:', result.message);
-            throw new Error(result.message || 'Erro desconhecido do Apps Script');
-          }
-        } catch (err) {
-          console.error('❌ ERRO ao salvar no Google Sheets:', err.message);
-          console.error('❌ Stack:', err.stack);
-          console.error('❌ Nome do erro:', err.name);
-          // Continua para salvar localmente como fallback
         }
-      } else {
-        console.error('❌ GOOGLE_APPS_SCRIPT_URL não está configurada ou está vazia!');
-        console.error('❌ Valor atual:', GOOGLE_APPS_SCRIPT_URL);
       }
-      
-      // FALLBACK: Salvar localmente (temporário)
-      console.log('⚠️ Salvando localmente em /tmp (fallback)');
-      const filePath = '/tmp/email-list.csv';
-      const timestamp = new Date().toISOString();
-      const newLine = `${email},${nome || 'Não informado'},${timestamp}\n`;
-      
-      if (!existsSync(filePath)) {
-        await writeFile(filePath, 'email,nome,data\n' + newLine);
-      } else {
-        const existingData = await readFile(filePath, 'utf-8');
-        if (existingData.includes(email)) {
-          return res.status(200).json({ 
-            success: true, 
-            message: 'E-mail já cadastrado',
-            duplicate: true
-          });
-        }
-        await writeFile(filePath, existingData + newLine);
-      }
-      
-      console.log('⚠️ E-mail salvo apenas localmente (será perdido no próximo deploy)');
-      
-      return res.status(200).json({ 
-        success: true,
-        message: 'E-mail salvo (local - temporário)',
-        duplicate: false,
-        warning: 'Configure GOOGLE_APPS_SCRIPT_URL para backup permanente'
+      console.log('✅ Fase 3 (stream) concluída');
+      res.end();
+    } catch (streamErr) {
+      console.error('❌ Erro durante streaming da Fase 3:', streamErr.message);
+      // Marcador inline que o frontend reconhece (headers já enviados, não dá pra status 500)
+      res.write('\n\n__AKASHIC_STREAM_ERROR__:' + (streamErr.message || 'Erro durante streaming'));
+      res.end();
+    }
+
+  } catch (error) {
+    console.error('❌ Erro geral:', error.message);
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(500).json({
+        success: false,
+        error: error.message || 'Erro interno do servidor.'
       });
-      
-    } catch (error) {
-      console.error('❌ Erro geral ao salvar e-mail:', error);
-      return res.status(500).json({ 
-        success: false, 
-        error: error.message 
-      });
+    } else {
+      try {
+        res.write('\n\n__AKASHIC_STREAM_ERROR__:' + (error.message || 'Erro'));
+        res.end();
+      } catch {}
     }
   }
-  
-  return res.status(405).json({ error: 'Method not allowed' });
 }
