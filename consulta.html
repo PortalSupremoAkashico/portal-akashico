@@ -2029,6 +2029,15 @@
       white-space: pre-wrap;
       word-wrap: break-word;
     }
+
+    /* Cursor pulsante do typewriter (▌) */
+    @keyframes cursorBlink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+    .translation-text {
+      caret-color: transparent;
+    }
     
     @keyframes cuneiformGlow {
       0%, 100% {
@@ -4449,19 +4458,28 @@ function startTypewriterLoop() {
     const pending = target.length - displayed;
 
     if (pending > 0) {
-      // Decide cadência: se a fila tá grande, acelera; se stream acabou, drena rápido
+      // Decide cadência
       let cps = TYPE_BASE_CPS;
       if (state.streamEnded) cps = TYPE_FLUSH_CPS;
       else if (pending > 400) cps = TYPE_CATCH_CPS;
       else if (pending > 120) cps = TYPE_BASE_CPS + (TYPE_CATCH_CPS - TYPE_BASE_CPS) * ((pending - 120) / 280);
 
       let charsThisFrame = Math.max(1, Math.ceil(cps * dt));
-      // Nunca ultrapassa o que temos
       charsThisFrame = Math.min(charsThisFrame, pending);
 
       const newDisplayed = displayed + charsThisFrame;
       state.displayedByKey[key] = newDisplayed;
-      setTranslationText(target.slice(0, newDisplayed));
+      const written = target.slice(0, newDisplayed);
+      // Adiciona cursor pulsante enquanto ainda há mais por vir
+      setTranslationText(newDisplayed < target.length ? written + '▌' : written);
+    } else if (!state.streamEnded && displayed === 0) {
+      // Aba clicada mas o servidor ainda não mandou nada para ela:
+      // pisca o cursor alternando a cada ~500ms pra não ficar vazia
+      const blink = Math.floor(now / 500) % 2 === 0;
+      setTranslationText(blink ? '▌' : '');
+    } else if (pending === 0 && displayed > 0) {
+      // Acabou de terminar — garante que o cursor sumiu
+      setTranslationText(target);
     }
 
     // Loop para quando: stream acabou E a aba visível foi totalmente renderizada.
