@@ -1,4 +1,4 @@
-crypto.subtle<!DOCTYPE html>
+<!DOCTYPE html>
 <!--
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║      PORTAL AKÁSHICO - ENVIO AUTOMÁTICO GMAIL CONFIGURADO E FUNCIONANDO!     ║
@@ -4691,9 +4691,12 @@ function enterPortal(user) {
   document.getElementById('abertura-consulta').style.display = '';
 }
 
+// Tentativas erradas por email — resetado ao entrar com sucesso
+const loginAttempts = {};
+
 async function handleEntrar() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const senha = document.getElementById('loginSenha').value;
+  const email  = document.getElementById('loginEmail').value.trim();
+  const senha  = document.getElementById('loginSenha').value;
   const status = document.getElementById('authStatus');
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -4708,22 +4711,155 @@ async function handleEntrar() {
 
   const saved = getStoredUser();
 
-  if (saved.email && saved.email.toLowerCase() === email.toLowerCase()) {
-    if (saved.senha) {
-      const senhaHash = await hashPassword(senha);
-      if (senhaHash !== saved.senha) {
-        setStatus(status, 'error', 'Senha incorreta.');
-        document.getElementById('loginSenha').focus();
-        return;
-      }
-    }
-    const firstName = saved.nome ? saved.nome.trim().split(/\s+/)[0] : 'viajante';
-    setStatus(status, 'ok', `Bem-vindo de volta, ${firstName}! Abrindo o portal...`);
-    setTimeout(() => enterPortal(saved), 700);
-  } else {
-    setStatus(status, 'warn', 'E-mail não encontrado. Faça seu cadastro para continuar.');
-    abrirCadastro();
+  // E-mail não cadastrado — mostra erro, NÃO abre cadastro automaticamente
+  if (!saved.email || saved.email.toLowerCase() !== email.toLowerCase()) {
+    setStatus(status, 'error', 'E-mail não cadastrado. Faça seu cadastro primeiro.');
+    return;
   }
+
+  // E-mail ok — verifica senha
+  const senhaHash = await hashPassword(senha);
+  if (senhaHash !== saved.senha) {
+    loginAttempts[email] = (loginAttempts[email] || 0) + 1;
+    const restantes = 5 - loginAttempts[email];
+
+    if (loginAttempts[email] >= 5) {
+      // 5 erros — bloqueia e envia código de recuperação
+      loginAttempts[email] = 0; // reseta contador
+      await enviarCodigoRecuperacao(email, saved.nome);
+      mostrarPainelCodigo(email);
+      return;
+    }
+
+    setStatus(status, 'error',
+      restantes > 0
+        ? `Senha incorreta. Você tem mais ${restantes} tentativa${restantes > 1 ? 's' : ''}.`
+        : 'Senha incorreta.'
+    );
+    document.getElementById('loginSenha').value = '';
+    document.getElementById('loginSenha').focus();
+    return;
+  }
+
+  // Sucesso
+  loginAttempts[email] = 0;
+  const firstName = saved.nome ? saved.nome.trim().split(/\s+/)[0] : 'viajante';
+  setStatus(status, 'ok', `Bem-vindo de volta, ${firstName}! Abrindo o portal...`);
+  setTimeout(() => enterPortal(saved), 700);
+}
+
+// Gera código de 6 dígitos, salva temporariamente e envia por email
+async function enviarCodigoRecuperacao(email, nome) {
+  const codigo = String(Math.floor(100000 + Math.random() * 900000));
+  const expira = Date.now() + 15 * 60 * 1000; // válido por 15 minutos
+
+  try {
+    sessionStorage.setItem('akashic_reset', JSON.stringify({ email, codigo, expira }));
+  } catch {}
+
+  const firstName = nome ? nome.trim().split(/\s+/)[0] : 'viajante';
+
+  try {
+    await fetch('/api/email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: email,
+        subject: 'Código de recuperação — Portal Akáshico',
+        body: `Olá ${firstName},\n\nSeu código de recuperação de senha é:\n\n${codigo}\n\nEle é válido por 15 minutos.\n\nSe não foi você quem solicitou, ignore este email.\n\nPortal Supremo dos Registros Akáshicos`
+      })
+    });
+    console.log('✅ Código de recuperação enviado para', email);
+  } catch (err) {
+    console.error('❌ Erro ao enviar email de recuperação:', err);
+  }
+}
+
+function mostrarPainelCodigo(email) {
+  const status = document.getElementById('authStatus');
+  setStatus(status, 'warn', `5 tentativas incorretas. Enviamos um código de 6 dígitos para ${email}. Verifique sua caixa de entrada.`);
+
+  // Injeta o painel de redefinição abaixo do status
+  let painelReset = document.getElementById('painelReset');
+  if (!painelReset) {
+    painelReset = document.createElement('div');
+    painelReset.id = 'painelReset';
+    painelReset.className = 'stack';
+    painelReset.style.marginTop = '16px';
+    painelReset.innerHTML = `
+      <div>
+        <label style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Código recebido por e-mail</label>
+        <input id="codigoReset" type="text" placeholder="000000" maxlength="6"
+          style="letter-spacing:.3em;text-align:center;font-size:1.2rem;"
+          onkeydown="if(event.key==='Enter') validarCodigo()" />
+      </div>
+      <div>
+        <label style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Nova senha</label>
+        <input id="novaSenha" type="password" placeholder="Crie uma nova senha" />
+      </div>
+      <div>
+        <label style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Confirmar nova senha</label>
+        <input id="novaSenhaConf" type="password" placeholder="Repita a nova senha"
+          onkeydown="if(event.key==='Enter') validarCodigo()" />
+      </div>
+      <div id="resetStatus" class="status"></div>
+      <button type="button" onclick="validarCodigo()" style="margin-top:4px;">✦ Redefinir Senha</button>
+    `;
+    status.parentNode.insertBefore(painelReset, status.nextSibling);
+  }
+  painelReset.style.display = '';
+  setTimeout(() => document.getElementById('codigoReset').focus(), 100);
+}
+
+async function validarCodigo() {
+  const codigoDigitado = (document.getElementById('codigoReset').value || '').trim();
+  const novaSenha      = (document.getElementById('novaSenha').value || '');
+  const novaSenhaConf  = (document.getElementById('novaSenhaConf').value || '');
+  const resetStatus    = document.getElementById('resetStatus');
+
+  if (!codigoDigitado || codigoDigitado.length !== 6) {
+    setStatus(resetStatus, 'error', 'Digite o código de 6 dígitos recebido por e-mail.');
+    return;
+  }
+  if (!novaSenha || novaSenha.length < 4) {
+    setStatus(resetStatus, 'error', 'A nova senha deve ter pelo menos 4 caracteres.');
+    return;
+  }
+  if (novaSenha !== novaSenhaConf) {
+    setStatus(resetStatus, 'error', 'As senhas não conferem.');
+    return;
+  }
+
+  let resetData;
+  try { resetData = JSON.parse(sessionStorage.getItem('akashic_reset') || '{}'); }
+  catch { resetData = {}; }
+
+  if (!resetData.codigo || !resetData.expira) {
+    setStatus(resetStatus, 'error', 'Nenhum código ativo. Tente fazer login novamente para receber um novo código.');
+    return;
+  }
+  if (Date.now() > resetData.expira) {
+    setStatus(resetStatus, 'error', 'Código expirado (válido por 15 min). Tente o login novamente para receber um novo código.');
+    sessionStorage.removeItem('akashic_reset');
+    return;
+  }
+  if (codigoDigitado !== resetData.codigo) {
+    setStatus(resetStatus, 'error', 'Código incorreto. Verifique o e-mail e tente novamente.');
+    return;
+  }
+
+  // Código correto — atualiza senha com o novo hash
+  const novoHash = await hashPassword(novaSenha);
+  const user = getStoredUser();
+  user.senha = novoHash;
+  saveStoredUser(user);
+  sessionStorage.removeItem('akashic_reset');
+
+  setStatus(resetStatus, 'ok', 'Senha redefinida com sucesso! Entrando no portal...');
+  setTimeout(() => {
+    document.getElementById('painelReset').style.display = 'none';
+    enterPortal(user);
+  }, 1000);
 }
 
 async function handleCadastro() {
