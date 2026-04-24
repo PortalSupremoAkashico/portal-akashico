@@ -4170,15 +4170,86 @@ function buildHistoryContext(name, birthdate) {
 }
 
 
+// Detecta se a nova pergunta é similar a alguma anterior do mesmo consulente.
+// Retorna as leituras similares com score de similaridade.
+function findSimilarReadings(name, newQuestion, newTheme) {
+  const profile = getConsultantProfile(name);
+  if (!profile || !profile.readings || profile.readings.length === 0) return [];
+
+  const normalize = str => (str || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\w\s]/g, ' ');
+
+  const words = str => normalize(str).split(/\s+/).filter(w => w.length > 3);
+
+  const newWords = new Set([...words(newQuestion), ...words(newTheme)]);
+
+  const similar = [];
+  profile.readings.forEach(r => {
+    const pastWords = new Set([...words(r.question), ...words(r.theme)]);
+    const intersection = [...newWords].filter(w => pastWords.has(w));
+    const union = new Set([...newWords, ...pastWords]);
+    const score = union.size > 0 ? intersection.length / union.size : 0;
+    if (score >= 0.25) { // ≥25% de palavras em comum = similar
+      similar.push({ ...r, score });
+    }
+  });
+
+  // Ordena por similaridade decrescente, retorna as 3 mais similares
+  return similar.sort((a, b) => b.score - a.score).slice(0, 3);
+}
+
+// Monta o contexto de leituras similares para o backend
+function buildSimilarContext(name, similarReadings) {
+  if (!similarReadings || similarReadings.length === 0) return '';
+
+  let ctx = `\n\nLEITURAS ANTERIORES SIMILARES DE ${name.toUpperCase()} — INSTRUÇÕES ESPECIAIS:
+
+REGRA OBRIGATÓRIA: Esta pergunta é similar a perguntas que ${name} já fez antes.
+Você DEVE:
+1. Manter a MESMA ESSÊNCIA e direcionamento das respostas anteriores (coerência)
+2. Usar LINGUAGEM COMPLETAMENTE DIFERENTE — novas metáforas, frases, estrutura de texto
+3. Se algo MUDOU (tema, estado emocional, contexto), explicar naturalmente NA PRÓPRIA RESPOSTA por que a orientação evoluiu — sem citar "você perguntou isso antes"
+4. Aprofundar o que foi dito antes — não repetir superficialmente, mas avançar
+
+LEITURAS SIMILARES ANTERIORES:\n`;
+
+  similarReadings.forEach((r, i) => {
+    ctx += `\n[${i + 1}] Data: ${r.date} | Tema: ${r.theme} | Estado: ${r.state}`;
+    ctx += `\nPergunta anterior: "${r.question}"`;
+    r.insights.forEach(ins => {
+      if (ins.type === 'revelation') ctx += `\nO que foi revelado: ${ins.text}`;
+      if (ins.type === 'action')     ctx += `\nAção recomendada na época: ${ins.text}`;
+      if (ins.type === 'warning')    ctx += `\nAdvertência dada: ${ins.text}`;
+    });
+  });
+
+  return ctx;
+}
+
 async function fetchAkashicReading(apiKey, name, birthdate, gender, theme, state, question, level, cosmicMode, onProgress) {
   console.log('🌟 INICIANDO LEITURA AKÁSHICA (streaming da Fase 3)');
   console.log('📝 Dados:', { name, birthdate, gender, theme, state, question, level, cosmicMode });
   console.log('🔒 Chamando backend seguro...');
 
+  // Detecta leituras similares anteriores deste consulente
+  const similarReadings = findSimilarReadings(name, question, theme);
+  const historyContext  = buildHistoryContext(name, birthdate);
+  const similarContext  = buildSimilarContext(name, similarReadings);
+
+  if (similarReadings.length > 0) {
+    console.log(`🔍 ${similarReadings.length} leitura(s) similar(es) encontrada(s) para ${name}`);
+  }
+
   const response = await fetch('/api/reading', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, birthdate, gender, theme, state, question, level, cosmicMode })
+    body: JSON.stringify({
+      name, birthdate, gender, theme, state, question, level, cosmicMode,
+      historyContext,
+      similarContext,
+      hasSimilar: similarReadings.length > 0
+    })
   });
 
   const contentType = (response.headers.get('content-type') || '').toLowerCase();
@@ -4189,7 +4260,12 @@ async function fetchAkashicReading(apiKey, name, birthdate, gender, theme, state
     try {
       if (contentType.includes('application/json')) {
         const errData = await response.json();
-        errMsg = errData.error || errMsg;
+        // Se o erro vem do save-email.js (rota errada), orienta o usuário
+        if (errData.error === 'E-mail obrigatório' || errData.error === 'Method not allowed') {
+          errMsg = `Rota /api/reading não encontrada no servidor. Verifique se o arquivo reading.js está deployado na pasta /api do projeto Vercel.`;
+        } else {
+          errMsg = errData.error || errData.message || errMsg;
+        }
       } else {
         const txt = await response.text().catch(() => '');
         errMsg = txt || errMsg;
