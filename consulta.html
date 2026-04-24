@@ -5515,4 +5515,101 @@ async function generatePDFBase64() {
     doc.setTextColor(...TEXT_DARK);
     
     textLines.forEach(line => {
-      doc.text(line, pag
+      doc.text(line, pageW / 2, y, { align: 'center' });
+      y += lineHeight;
+    });
+
+    y += 12;
+
+    // SEPARADOR
+    doc.setDrawColor(...SEPARATOR);
+    doc.setLineWidth(0.2);
+    doc.line(margin + 30, y, pageW - margin - 30, y);
+    y += 12;
+  });
+
+  addFooter(currentPage);
+
+  const pdfBlob = doc.output('blob');
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(pdfBlob);
+  });
+}
+
+// === FUNÇÃO PARA ENVIAR E-MAIL COM PDF ===
+async function sendEmailWithPDF(toEmail, pdfBase64) {
+  const name = currentReading.name || 'Consulente';
+  const date = currentReading.date || new Date().toLocaleString('pt-BR');
+  const filename = 'leitura-akashica-' + name.toLowerCase().replace(/\s+/g, '-') + '.pdf';
+  
+  // Chamar backend do Vercel (que chama o Google Apps Script)
+  // Isso resolve o problema de CORS!
+  const emailData = {
+    to: toEmail,
+    subject: 'Sua Leitura Akáshica - Portal Akáshico',
+    body: `Olá ${name},
+
+Segue em anexo sua leitura akáshica completa realizada em ${date}.
+
+Que a luz dos Registros Akáshicos ilumine seu caminho.
+
+Com gratidão,
+Portal Supremo dos Registros Akáshicos`,
+    fileName: filename,
+    fileData: pdfBase64,
+    mimeType: 'application/pdf'
+  };
+
+  // Dispara o envio do e-mail E o salvamento pra mala direta EM PARALELO.
+  // O usuário só espera pelo mais lento dos dois (geralmente o envio).
+  // Se o save-email falhar, NÃO afeta o envio principal (é opcional).
+  const sendPromise = fetch('/api/email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(emailData)
+  });
+
+  const savePromise = fetch('/api/save-email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email: toEmail,
+      nome: name
+    })
+  }).catch(err => {
+    // Falha no save-email é silenciosa — não afeta o envio
+    console.warn('⚠️ Erro ao salvar e-mail para mala direta (não crítico):', err);
+    return null;
+  });
+
+  // Aguarda os dois em paralelo
+  const [response, saveResponse] = await Promise.all([sendPromise, savePromise]);
+
+  if (!response.ok) {
+    throw new Error(`Erro HTTP: ${response.status}`);
+  }
+
+  const result = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.message || 'Erro ao enviar e-mail');
+  }
+
+  if (saveResponse) console.log('✅ E-mail salvo para mala direta');
+
+  return { success: true, method: 'gmail-auto' };
+}
+// === HANDLER DO BOTÃO (mantém-se como está) ===
+</script>
+</body>
+</html>
