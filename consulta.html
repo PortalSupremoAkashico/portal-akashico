@@ -4193,7 +4193,36 @@ async function fetchAkashicReading(apiKey, name, birthdate, gender, theme, state
   }
 
   console.log('✅ Stream da Fase 3 concluído');
-  return parseFinalStreamJSON(accumulated);
+
+  const finalSections = parseFinalStreamJSON(accumulated);
+
+  // Sinaliza pro typewriter que o stream acabou — ele acelera e drena o que falta
+  if (typeof finalizeStreamingTypewriter === 'function' && streamingState && streamingState.started) {
+    // Atualiza alvos finais (pra substituir qualquer texto parcial por versão canônica)
+    Object.keys(finalSections).forEach(k => {
+      if (finalSections[k]) streamingState.targetByKey[k] = finalSections[k];
+    });
+    finalizeStreamingTypewriter();
+    // Espera a fila zerar antes de devolver — assim o PDF é gerado com texto completo
+    await waitForTypewriterDrain();
+  }
+
+  return finalSections;
+}
+
+// Promise que resolve quando o loop do typewriter termina de renderizar tudo
+function waitForTypewriterDrain() {
+  return new Promise(resolve => {
+    const maxWaitMs = 6000; // teto de segurança — nunca trava mais que 6s
+    const start = performance.now();
+    (function check() {
+      const done = streamingState.streamEnded && STREAM_KEY_ORDER.every(k =>
+        (streamingState.displayedByKey[k] || 0) >= (streamingState.targetByKey[k] || '').length
+      );
+      if (done || (performance.now() - start) > maxWaitMs) resolve();
+      else setTimeout(check, 40);
+    })();
+  });
 }
 
 // Parser progressivo — extrai o que for possível do JSON parcial que chega do stream
@@ -4326,9 +4355,22 @@ const STREAM_KEY_ORDER = ['revelation', 'earthFuture', 'otherCivilizations', 'te
 
 let streamingState = {
   started: false,
-  autoAdvanceKey: null,   // última chave que AUTO-ativamos (referência pra detectar override do usuário)
-  userOverrode: false     // usuário clicou manualmente em alguma aba durante o stream
+  autoAdvanceKey: null,     // última chave que AUTO-ativamos
+  userOverrode: false,      // usuário clicou manualmente em alguma aba
+  // ── fila do typewriter ──
+  displayedByKey: {},       // quanto texto JÁ foi renderizado por chave
+  targetByKey: {},          // texto COMPLETO já recebido do servidor por chave
+  visibleKey: null,         // chave atualmente exibida no painel (pra typewriter)
+  typeRAF: null,            // id do requestAnimationFrame em curso
+  lastFrameTs: 0,           // timestamp do último frame (pra cadência)
+  streamEnded: false        // true quando o backend terminou de mandar tudo
 };
+
+// Velocidade do typewriter (chars por segundo). Ajustável — mais alto = mais rápido.
+// Vai acelerando conforme a fila cresce, pra nunca atrasar demais em relação ao servidor.
+const TYPE_BASE_CPS  = 220;   // velocidade normal (cadência agradável de leitura)
+const TYPE_CATCH_CPS = 900;   // velocidade quando a fila tá grande (catch-up)
+const TYPE_FLUSH_CPS = 3000;  // velocidade quando o stream acabou (drena rápido)
 
 function initStreamingUI() {
   stopThinkingText();
@@ -4343,7 +4385,6 @@ function initStreamingUI() {
 }
 
 function getVisibleStreamKey() {
-  // Procura a aba com btn-solid — é o que o usuário vê
   const solid = document.querySelector('.tab-btn.btn-solid');
   if (!solid) return null;
   for (const k of STREAM_KEY_ORDER) {
@@ -4370,39 +4411,103 @@ function advanceLiveTab(key) {
   sealLabel.textContent = cfg.label;
   sealWrap.className = `seal-wrap-small ${cfg.seal}`;
 
-  // Limpa o texto pra nova aba — vai ser preenchido na próxima atualização
-  updateLiveTabText('');
+  // O texto da nova aba começa do zero no typewriter — mostra só o que já digitamos pra ela
+  const alreadyDisplayed = streamingState.displayedByKey[key] || 0;
+  const target = streamingState.targetByKey[key] || '';
+  setTranslationText(target.slice(0, alreadyDisplayed));
+  streamingState.visibleKey = key;
 }
 
-function updateLiveTabText(text) {
+// Escreve direto no DOM — sem efeito, usado pelo typewriter loop
+function setTranslationText(text) {
   const box = document.getElementById('responseBox');
-  let translationEl = box.querySelector('.translation-text');
-  if (!translationEl) {
+  let el = box.querySelector('.translation-text');
+  if (!el) {
     box.innerHTML = formatAkashicResponse(text);
-    translationEl = box.querySelector('.translation-text');
+    el = box.querySelector('.translation-text');
   } else {
-    // Atualização direta do nó de texto — sem innerHTML re-render pesado
-    translationEl.textContent = text;
+    el.textContent = text;
+  }
+}
+
+// Loop de typewriter: roda 1x por frame (~60fps), escreve N chars por frame
+function startTypewriterLoop() {
+  if (streamingState.typeRAF != null) return; // já rodando
+  streamingState.lastFrameTs = performance.now();
+
+  function frame(now) {
+    const state = streamingState;
+    const dt = Math.max(0, (now - state.lastFrameTs) / 1000); // segundos desde o último frame
+    state.lastFrameTs = now;
+
+    const key = state.visibleKey;
+    if (!key) {
+      state.typeRAF = requestAnimationFrame(frame);
+      return;
+    }
+
+    const target = state.targetByKey[key] || '';
+    const displayed = state.displayedByKey[key] || 0;
+    const pending = target.length - displayed;
+
+    if (pending > 0) {
+      // Decide cadência: se a fila tá grande, acelera; se stream acabou, drena rápido
+      let cps = TYPE_BASE_CPS;
+      if (state.streamEnded) cps = TYPE_FLUSH_CPS;
+      else if (pending > 400) cps = TYPE_CATCH_CPS;
+      else if (pending > 120) cps = TYPE_BASE_CPS + (TYPE_CATCH_CPS - TYPE_BASE_CPS) * ((pending - 120) / 280);
+
+      let charsThisFrame = Math.max(1, Math.ceil(cps * dt));
+      // Nunca ultrapassa o que temos
+      charsThisFrame = Math.min(charsThisFrame, pending);
+
+      const newDisplayed = displayed + charsThisFrame;
+      state.displayedByKey[key] = newDisplayed;
+      setTranslationText(target.slice(0, newDisplayed));
+    }
+
+    // Continua o loop até stream acabar E tudo ter sido renderizado
+    const allKeysDone = state.streamEnded && STREAM_KEY_ORDER.every(k =>
+      (state.displayedByKey[k] || 0) >= (state.targetByKey[k] || '').length
+    );
+
+    if (allKeysDone) {
+      state.typeRAF = null;
+      return;
+    }
+    state.typeRAF = requestAnimationFrame(frame);
+  }
+
+  streamingState.typeRAF = requestAnimationFrame(frame);
+}
+
+function stopTypewriterLoop() {
+  if (streamingState.typeRAF != null) {
+    cancelAnimationFrame(streamingState.typeRAF);
+    streamingState.typeRAF = null;
   }
 }
 
 function handleStreamProgress(progress) {
   const { sections, completed, currentKey } = progress;
 
-  // Primeira vez: ativa UI de streaming
+  // Primeira vez: ativa UI de streaming e inicia loop do typewriter
   if (!streamingState.started) {
     streamingState.started = true;
     initStreamingUI();
+    startTypewriterLoop();
   }
 
-  // Atualiza currentSections progressivamente — assim cliques manuais nas abas mostram o que já chegou
-  if (currentSections) {
-    Object.keys(sections).forEach(k => {
-      if (sections[k]) currentSections[k] = sections[k];
-    });
-  }
+  // Atualiza alvos de texto (o que o servidor já mandou) pra cada chave
+  Object.keys(sections).forEach(k => {
+    if (sections[k] != null) {
+      streamingState.targetByKey[k] = sections[k];
+      // Mantém currentSections sincronizado pra cliques manuais mostrarem o texto acumulado
+      if (currentSections) currentSections[k] = sections[k];
+    }
+  });
 
-  // Determina a chave que DEVERIA estar visível (currentKey ou a última completada)
+  // Determina chave-alvo (qual aba deveria estar visível agora)
   let target = currentKey;
   if (!target) {
     for (let i = STREAM_KEY_ORDER.length - 1; i >= 0; i--) {
@@ -4411,28 +4516,49 @@ function handleStreamProgress(progress) {
   }
   if (!target) target = 'revelation';
 
-  // Detecta override do usuário: se a aba visível ≠ a última que auto-avançamos, usuário clicou
+  // Detecta override do usuário
   const visible = getVisibleStreamKey();
   if (streamingState.autoAdvanceKey && visible && visible !== streamingState.autoAdvanceKey) {
     streamingState.userOverrode = true;
   }
 
   if (streamingState.userOverrode) {
-    // Respeita a escolha do usuário — mostra o texto dela, continua preenchendo outras abas em background
+    // Respeita escolha do usuário — troca a visibleKey pra aba que ele escolheu
     const userKey = visible || target;
-    updateLiveTabText(sections[userKey] || '');
+    if (streamingState.visibleKey !== userKey) {
+      streamingState.visibleKey = userKey;
+      // Mostra o que já foi digitado naquela aba (mantém a posição, não reinicia)
+      const disp = streamingState.displayedByKey[userKey] || 0;
+      const tgt = streamingState.targetByKey[userKey] || '';
+      setTranslationText(tgt.slice(0, disp));
+    }
   } else {
-    // Auto-avanço habilitado
+    // Auto-avanço: quando o modelo começa uma nova seção, avançamos a aba
     if (target !== streamingState.autoAdvanceKey) {
       streamingState.autoAdvanceKey = target;
       advanceLiveTab(target);
     }
-    updateLiveTabText(sections[target] || '');
   }
 }
 
+function finalizeStreamingTypewriter() {
+  streamingState.streamEnded = true;
+  // Loop continua rodando até drenar toda a fila — não cancela aqui
+}
+
 function resetStreamingState() {
-  streamingState = { started: false, autoAdvanceKey: null, userOverrode: false };
+  stopTypewriterLoop();
+  streamingState = {
+    started: false,
+    autoAdvanceKey: null,
+    userOverrode: false,
+    displayedByKey: {},
+    targetByKey: {},
+    visibleKey: null,
+    typeRAF: null,
+    lastFrameTs: 0,
+    streamEnded: false
+  };
 }
 
 function setActiveTab(btn, key, title, markText, symbol, label, sealClass) {
@@ -4711,8 +4837,11 @@ document.getElementById('openReadingBtn').addEventListener('click', async functi
       return null;
     });
 
-    // Abre automaticamente a primeira aba (Revelação) com a versão final/autoritativa
-    setActiveTab(document.getElementById('tabMain'), 'revelation', 'Painel da Revelação', 'Revelação Ativa', '✶', 'REVELAÇÃO', 'seal-revelation');
+    // Abre Revelação APENAS se não rodou streaming (modo legado JSON).
+    // Com streaming, a aba já está ativa e preenchida pelo typewriter — reativar apagaria o resultado.
+    if (!streamingState.started) {
+      setActiveTab(document.getElementById('tabMain'), 'revelation', 'Painel da Revelação', 'Revelação Ativa', '✶', 'REVELAÇÃO', 'seal-revelation');
+    }
     document.getElementById('consulta').scrollIntoView({ behavior: 'smooth' });
 
     // Se NÃO teve streaming (fallback JSON legado), faz o efeito de piscar nas abas.
