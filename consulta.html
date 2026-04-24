@@ -4749,19 +4749,19 @@ function saveStoredUser(obj) {
 }
 
 function abrirCadastro() {
-  // Copia o e-mail digitado pro campo do cadastro
   const email = document.getElementById('loginEmail').value.trim();
   if (email) document.getElementById('cadEmail').value = email;
+  document.getElementById('authMain').style.display = 'none';
   document.getElementById('painelCadastro').style.display = '';
   document.getElementById('cadastroStatus').textContent = '';
   document.getElementById('cadNome').focus();
-  // Scroll suave até o formulário
   setTimeout(() => document.getElementById('painelCadastro').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
 }
 
 function fecharCadastro() {
   document.getElementById('painelCadastro').style.display = 'none';
   document.getElementById('cadastroStatus').textContent = '';
+  document.getElementById('authMain').style.display = '';
 }
 
 function enterPortal(user) {
@@ -4988,9 +4988,17 @@ async function handleCadastro() {
   }
 
   const user = { nome, data, sexo, email, senha: senhaHash };
+  saveStoredUser(user);  // salva já para o login funcionar na sequência
   const firstName = nome.split(/\s+/)[0];
-  setStatus(status, 'ok', `Cadastro realizado! Bem-vindo, ${firstName}!`);
-  setTimeout(() => enterPortal(user), 700);
+  setStatus(status, 'ok', `Cadastro realizado! Faça login para continuar.`);
+
+  setTimeout(() => {
+    fecharCadastro();
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginSenha').value = '';
+    document.getElementById('loginEmail').focus();
+    setStatus(document.getElementById('authStatus'), 'ok', `Cadastro de ${firstName} realizado! Faça login para entrar.`);
+  }, 1200);
 }
 
 // Ao carregar: sempre mostra tela de login, só pré-preenche o email se já cadastrado
