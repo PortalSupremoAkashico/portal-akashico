@@ -4545,15 +4545,27 @@ function setActiveTab(btn, key, title, markText, symbol, label, sealClass) {
   sealLabel.textContent = label;
   sealWrap.className = `seal-wrap-small ${sealClass}`;
 
-  // ── Modo streaming: typewriter escreve a partir do zero para esta aba ──
+  // ── Modo streaming ──
   if (streamingState.started) {
-    // Zera o contador pra esta aba — o loop vai escrever letra por letra
-    streamingState.displayedByKey[key] = 0;
-    streamingState.visibleKey = key;
-    // Limpa o painel
-    setTranslationText('');
-    // Garante que o loop está rodando (pode ter parado se a aba anterior já terminou)
-    startTypewriterLoop();
+    const target = streamingState.targetByKey[key] || '';
+    const displayed = streamingState.displayedByKey[key] ?? -1; // -1 = nunca tocada
+
+    if (displayed === -1) {
+      // Aba nunca foi tocada: começa typewriter do zero
+      streamingState.displayedByKey[key] = 0;
+      streamingState.visibleKey = key;
+      setTranslationText('');
+      startTypewriterLoop();
+    } else if (displayed >= target.length && target.length > 0) {
+      // Aba já foi escrita por completo: mostra na hora, sem redigitar
+      streamingState.visibleKey = key;
+      setTranslationText(target);
+    } else {
+      // Aba estava no meio: continua de onde parou
+      streamingState.visibleKey = key;
+      setTranslationText(target.slice(0, displayed));
+      startTypewriterLoop();
+    }
     return;
   }
 
