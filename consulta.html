@@ -4109,56 +4109,332 @@ function buildHistoryContext(name, birthdate) {
 }
 
 
-async function fetchAkashicReading(apiKey, name, birthdate, gender, theme, state, question, level, cosmicMode) {
-  console.log('🌟 INICIANDO LEITURA AKÁSHICA');
+async function fetchAkashicReading(apiKey, name, birthdate, gender, theme, state, question, level, cosmicMode, onProgress) {
+  console.log('🌟 INICIANDO LEITURA AKÁSHICA (streaming da Fase 3)');
   console.log('📝 Dados:', { name, birthdate, gender, theme, state, question, level, cosmicMode });
-  console.log('⏱️ Tempo estimado: 60-120 segundos para 3 fases de processamento');
   console.log('🔒 Chamando backend seguro...');
-  
-  // Chamar o backend do Vercel ao invés da API direta
-  try {
-    const response = await fetch('/api/reading', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name,
-        birthdate,
-        gender,
-        theme,
-        state,
-        question,
-        level,
-        cosmicMode
-      })
-    });
-    
-    if (!response.ok) {
-      let errMsg = `Erro ${response.status}`;
-      try {
+
+  const response = await fetch('/api/reading', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, birthdate, gender, theme, state, question, level, cosmicMode })
+  });
+
+  const contentType = (response.headers.get('content-type') || '').toLowerCase();
+
+  // ── CAMINHO DE ERRO (JSON): erro antes do streaming começar ──
+  if (!response.ok) {
+    let errMsg = `Erro ${response.status}`;
+    try {
+      if (contentType.includes('application/json')) {
         const errData = await response.json();
         errMsg = errData.error || errMsg;
-      } catch {
-        errMsg = (await response.text().catch(() => '')) || errMsg;
+      } else {
+        const txt = await response.text().catch(() => '');
+        errMsg = txt || errMsg;
       }
-      throw new Error(errMsg);
-    }
-    
+    } catch {}
+    throw new Error(errMsg);
+  }
+
+  // ── CAMINHO LEGADO (JSON completo): fallback se backend não estiver streamando ──
+  if (contentType.includes('application/json')) {
     const data = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.error || 'Erro desconhecido no backend');
+    if (!data.success) throw new Error(data.error || 'Erro desconhecido no backend');
+    console.log('✅ Leitura recebida (modo legado, sem streaming)');
+    // Dispara callback final com resultado completo pra UI já renderizar
+    if (onProgress) {
+      const sections = data.sections || {};
+      onProgress({
+        sections,
+        completed: {
+          revelation: !!sections.revelation,
+          earthFuture: !!sections.earthFuture,
+          otherCivilizations: !!sections.otherCivilizations,
+          technologyFuture: !!sections.technologyFuture,
+          warning: !!sections.warning,
+          action: !!sections.action
+        },
+        currentKey: null
+      });
     }
-    
-    console.log('✅ Leitura recebida do backend com sucesso!');
     return data.sections;
-    
-  } catch (error) {
-    console.error('❌ Erro ao chamar backend:', error);
-    throw new Error(`Erro ao processar leitura: ${error.message}`);
+  }
+
+  // ── CAMINHO DE STREAMING ──
+  if (!response.body) throw new Error('Resposta sem corpo (streaming não suportado pelo navegador).');
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let accumulated = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    accumulated += decoder.decode(value, { stream: true });
+
+    // Verifica se chegou marcador de erro inline
+    const errIdx = accumulated.indexOf('__AKASHIC_STREAM_ERROR__:');
+    if (errIdx !== -1) {
+      const msg = accumulated.slice(errIdx + '__AKASHIC_STREAM_ERROR__:'.length).trim();
+      throw new Error(msg || 'Erro durante a canalização');
+    }
+
+    // Parse progressivo e callback pra UI atualizar em tempo real
+    if (onProgress) {
+      try {
+        const progress = parseProgressive(accumulated);
+        onProgress(progress);
+      } catch (e) {
+        // Nunca deixa erro de parse parcial derrubar o stream
+      }
+    }
+  }
+
+  console.log('✅ Stream da Fase 3 concluído');
+  return parseFinalStreamJSON(accumulated);
+}
+
+// Parser progressivo — extrai o que for possível do JSON parcial que chega do stream
+function parseProgressive(rawText) {
+  // Remove fences de markdown no início (o modelo às vezes envolve em ```json)
+  let text = rawText.replace(/^\s*```(?:json)?\s*/i, '');
+
+  const keyOrder = ['revelation', 'earthFuture', 'otherCivilizations', 'technologyFuture', 'warning', 'action'];
+  const sections = { revelation: '', earthFuture: '', otherCivilizations: '', technologyFuture: '', warning: '', action: '' };
+  const completed = {};
+  let currentKey = null;
+
+  for (const key of keyOrder) {
+    const r = extractSectionText(text, key);
+    if (r.found) {
+      sections[key] = r.text;
+      if (r.complete) {
+        completed[key] = true;
+      } else {
+        currentKey = key; // última chave ainda não fechada = a que está sendo escrita
+      }
+    }
+  }
+
+  return { sections, completed, currentKey };
+}
+
+// Extrai o valor string de uma chave JSON específica, respeitando escapes — funciona em JSON parcial
+function extractSectionText(text, key) {
+  const pattern = new RegExp(`"${key}"\\s*:\\s*"`, 'g');
+  const match = pattern.exec(text);
+  if (!match) return { found: false, text: '', complete: false };
+
+  let i = match.index + match[0].length;
+  let out = '';
+
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === '\\') {
+      if (i + 1 >= text.length) break; // escape incompleto — espera o próximo chunk
+      const nx = text[i + 1];
+      if (nx === 'n') out += '\n';
+      else if (nx === 't') out += '\t';
+      else if (nx === 'r') out += '\r';
+      else if (nx === '"') out += '"';
+      else if (nx === '\\') out += '\\';
+      else if (nx === '/') out += '/';
+      else if (nx === "'") out += "'";
+      else if (nx === 'u') {
+        if (i + 5 >= text.length) break; // unicode incompleto
+        const hex = text.slice(i + 2, i + 6);
+        if (!/^[0-9a-fA-F]{4}$/.test(hex)) break;
+        out += String.fromCharCode(parseInt(hex, 16));
+        i += 6;
+        continue;
+      } else {
+        out += nx;
+      }
+      i += 2;
+    } else if (ch === '"') {
+      return { found: true, text: out, complete: true };
+    } else {
+      out += ch;
+      i++;
+    }
+  }
+
+  return { found: true, text: out, complete: false };
+}
+
+// Parse final — mesma lógica do backend antigo, com defaults pra chaves vazias
+function parseFinalStreamJSON(rawText) {
+  const cleaned = rawText
+    .replace(/^\s*```(?:json)?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/,\s*([}\]])/g, '$1')
+    .trim();
+
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+
+  let sections;
+  if (firstBrace !== -1 && lastBrace !== -1) {
+    try {
+      sections = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+    } catch {
+      // Se parse falhar, tenta reconstruir via extração progressiva
+      const prog = parseProgressive(rawText);
+      sections = prog.sections;
+    }
+  } else {
+    const prog = parseProgressive(rawText);
+    sections = prog.sections;
+  }
+
+  const defaults = {
+    revelation: 'A revelação chegou em silêncio. Refaça a consulta em alguns instantes.',
+    earthFuture: 'A visão do futuro não foi recebida por inteiro nesta tentativa.',
+    otherCivilizations: 'Os ecos dos mentores ainda não puderam ser traduzidos nesta leitura.',
+    technologyFuture: 'A camada de coexistência não foi decodificada completamente.',
+    warning: 'Nenhum aviso específico além do convite à prudência e ao discernimento.',
+    action: 'Respire, recentre-se e repita a consulta com uma pergunta mais específica.'
+  };
+
+  Object.keys(defaults).forEach(key => {
+    if (!sections[key] || typeof sections[key] !== 'string' || !sections[key].trim()) {
+      sections[key] = defaults[key];
+    }
+  });
+
+  return sections;
+}
+
+// ═══════════════════════════════════════════════════════
+//  STREAMING UI — atualização ao vivo durante a canalização
+// ═══════════════════════════════════════════════════════
+
+const STREAM_TAB_CONFIG = {
+  revelation:         { tabId: 'tabMain',          title: 'Painel da Revelação', mark: 'Revelação Ativa', symbol: '✶', label: 'REVELAÇÃO',    seal: 'seal-revelation' },
+  earthFuture:        { tabId: 'tabEarth',         title: 'Futuro',               mark: 'Visão Ativa',     symbol: '⚚', label: 'TERRA',         seal: 'seal-earth' },
+  otherCivilizations: { tabId: 'tabCivilizations', title: 'Mentores',             mark: 'Sinal Ativo',     symbol: '⎈', label: 'CÓSMICO',       seal: 'seal-civilizations' },
+  technologyFuture:   { tabId: 'tabTech',          title: 'Coexistência',         mark: 'Visão Ativa',     symbol: '⟡', label: 'COEXISTÊNCIA',  seal: 'seal-tech' },
+  warning:            { tabId: 'tabWarning',       title: 'Advertência',          mark: 'Aviso',           symbol: '⚠', label: 'ALERTA',        seal: 'seal-warning' },
+  action:             { tabId: 'tabAction',        title: 'Ação',                 mark: 'Ação',            symbol: '↟', label: 'AÇÃO',          seal: 'seal-action' }
+};
+
+const STREAM_KEY_ORDER = ['revelation', 'earthFuture', 'otherCivilizations', 'technologyFuture', 'warning', 'action'];
+
+let streamingState = {
+  started: false,
+  autoAdvanceKey: null,   // última chave que AUTO-ativamos (referência pra detectar override do usuário)
+  userOverrode: false     // usuário clicou manualmente em alguma aba durante o stream
+};
+
+function initStreamingUI() {
+  stopThinkingText();
+  document.getElementById('spinnerWrap').classList.remove('ativo');
+  const box = document.getElementById('responseBox');
+  box.style.display = '';
+  box.style.opacity = '1';
+  box.style.transform = 'none';
+  box.innerHTML = formatAkashicResponse('');
+  // Remove btn-solid de todas as abas — o primeiro advance vai marcar Revelação
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('btn-solid'));
+}
+
+function getVisibleStreamKey() {
+  // Procura a aba com btn-solid — é o que o usuário vê
+  const solid = document.querySelector('.tab-btn.btn-solid');
+  if (!solid) return null;
+  for (const k of STREAM_KEY_ORDER) {
+    if (STREAM_TAB_CONFIG[k].tabId === solid.id) return k;
+  }
+  return null;
+}
+
+function advanceLiveTab(key) {
+  const cfg = STREAM_TAB_CONFIG[key];
+  if (!cfg) return;
+
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('btn-solid'));
+  const btn = document.getElementById(cfg.tabId);
+  if (btn) {
+    btn.classList.remove('btn-blink');
+    btn.classList.add('btn-solid');
+  }
+
+  panelTitle.textContent = cfg.title;
+  panelMark.textContent = `✶ ${cfg.mark}`;
+  panelMark.style.display = '';
+  sealSymbol.textContent = cfg.symbol;
+  sealLabel.textContent = cfg.label;
+  sealWrap.className = `seal-wrap-small ${cfg.seal}`;
+
+  // Limpa o texto pra nova aba — vai ser preenchido na próxima atualização
+  updateLiveTabText('');
+}
+
+function updateLiveTabText(text) {
+  const box = document.getElementById('responseBox');
+  let translationEl = box.querySelector('.translation-text');
+  if (!translationEl) {
+    box.innerHTML = formatAkashicResponse(text);
+    translationEl = box.querySelector('.translation-text');
+  } else {
+    // Atualização direta do nó de texto — sem innerHTML re-render pesado
+    translationEl.textContent = text;
   }
 }
+
+function handleStreamProgress(progress) {
+  const { sections, completed, currentKey } = progress;
+
+  // Primeira vez: ativa UI de streaming
+  if (!streamingState.started) {
+    streamingState.started = true;
+    initStreamingUI();
+  }
+
+  // Atualiza currentSections progressivamente — assim cliques manuais nas abas mostram o que já chegou
+  if (currentSections) {
+    Object.keys(sections).forEach(k => {
+      if (sections[k]) currentSections[k] = sections[k];
+    });
+  }
+
+  // Determina a chave que DEVERIA estar visível (currentKey ou a última completada)
+  let target = currentKey;
+  if (!target) {
+    for (let i = STREAM_KEY_ORDER.length - 1; i >= 0; i--) {
+      if (completed[STREAM_KEY_ORDER[i]]) { target = STREAM_KEY_ORDER[i]; break; }
+    }
+  }
+  if (!target) target = 'revelation';
+
+  // Detecta override do usuário: se a aba visível ≠ a última que auto-avançamos, usuário clicou
+  const visible = getVisibleStreamKey();
+  if (streamingState.autoAdvanceKey && visible && visible !== streamingState.autoAdvanceKey) {
+    streamingState.userOverrode = true;
+  }
+
+  if (streamingState.userOverrode) {
+    // Respeita a escolha do usuário — mostra o texto dela, continua preenchendo outras abas em background
+    const userKey = visible || target;
+    updateLiveTabText(sections[userKey] || '');
+  } else {
+    // Auto-avanço habilitado
+    if (target !== streamingState.autoAdvanceKey) {
+      streamingState.autoAdvanceKey = target;
+      advanceLiveTab(target);
+    }
+    updateLiveTabText(sections[target] || '');
+  }
+}
+
+function resetStreamingState() {
+  streamingState = { started: false, autoAdvanceKey: null, userOverrode: false };
+}
+
 function setActiveTab(btn, key, title, markText, symbol, label, sealClass) {
   if (!currentSections) {
     responseBox.textContent = 'Abra uma consulta primeiro.';
@@ -4389,7 +4665,14 @@ document.getElementById('openReadingBtn').addEventListener('click', async functi
   try {
     const apiKey = await getApiKey();
     document.getElementById('thinkingText').textContent = 'Acessando os Registros Akáshicos...';
-    currentSections = await fetchAkashicReading(apiKey, name, birthdate, gender, theme, state, question, level, cosmicMode);
+
+    // Prepara estado de streaming: zera flags e inicializa currentSections vazio,
+    // pra que cliques manuais em abas durante o stream mostrem o que já chegou.
+    resetStreamingState();
+    currentSections = { revelation: '', earthFuture: '', otherCivilizations: '', technologyFuture: '', warning: '', action: '' };
+
+    // Passa o callback — a UI atualiza em tempo real conforme os tokens chegam da Fase 3.
+    currentSections = await fetchAkashicReading(apiKey, name, birthdate, gender, theme, state, question, level, cosmicMode, handleStreamProgress);
     currentReading = {
       date: new Date().toLocaleString('pt-BR'),
       name,
@@ -4428,20 +4711,23 @@ document.getElementById('openReadingBtn').addEventListener('click', async functi
       return null;
     });
 
-    // Abre automaticamente a primeira aba (Revelação)
+    // Abre automaticamente a primeira aba (Revelação) com a versão final/autoritativa
     setActiveTab(document.getElementById('tabMain'), 'revelation', 'Painel da Revelação', 'Revelação Ativa', '✶', 'REVELAÇÃO', 'seal-revelation');
     document.getElementById('consulta').scrollIntoView({ behavior: 'smooth' });
 
-    // Faz os outros 5 botões piscarem (o tabMain já foi ativado pelo setActiveTab)
-    setTimeout(() => {
-      document.querySelectorAll('.tab-btn').forEach(tab => {
-        if (!tab.classList.contains('btn-solid')) {
-          tab.classList.remove('btn-blink');
-          void tab.offsetWidth; // força reflow para reiniciar animação
-          tab.classList.add('btn-blink');
-        }
-      });
-    }, 100);
+    // Se NÃO teve streaming (fallback JSON legado), faz o efeito de piscar nas abas.
+    // Com streaming, o usuário já viu todas as abas durante o auto-avanço, piscar seria redundante.
+    if (!streamingState.started) {
+      setTimeout(() => {
+        document.querySelectorAll('.tab-btn').forEach(tab => {
+          if (!tab.classList.contains('btn-solid')) {
+            tab.classList.remove('btn-blink');
+            void tab.offsetWidth; // força reflow para reiniciar animação
+            tab.classList.add('btn-blink');
+          }
+        });
+      }, 100);
+    }
 
 
   } catch (error) {
@@ -4544,6 +4830,9 @@ document.getElementById('resetAppBtn').addEventListener('click', function() {
 
   // Invalida o PDF cacheado — a próxima leitura vai gerar um novo
   cachedPDFPromise = null;
+
+  // Reseta o estado do streaming da próxima leitura
+  resetStreamingState();
 
   openArchivedBtn.classList.remove('btn-solid');
 
