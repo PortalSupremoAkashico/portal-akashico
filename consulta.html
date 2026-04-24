@@ -3256,8 +3256,64 @@
     <!-- SECÇÃO 1: RITUAL + FORMULÁRIO -->
     <div class="section" id="section1">
 
+        <!-- AUTH: ENTRAR / CADASTRO -->
+        <div class="card" id="authCard">
+          <div class="card-body" style="text-align:center;">
+            <div class="header-badge" style="margin-bottom:14px;">Inteligência Universal</div>
+            <h1 style="font-size:clamp(1.1rem,3vw,1.7rem);margin-bottom:10px;">Portal Supremo dos<br>Registros Akáshicos</h1>
+            <p class="lead" style="font-size:clamp(.82rem,2vw,.95rem);margin:0 auto 24px;">Um templo digital para conduzir você por uma experiência profunda de preparação energética, abertura simbólica e leitura intuitiva da Inteligência Universal.</p>
+
+            <!-- Abas ENTRAR / CADASTRO -->
+            <div id="authTabs" style="display:flex;gap:0;border-radius:12px;overflow:hidden;border:1px solid rgba(196,181,253,.22);margin-bottom:24px;">
+              <button id="tabEntrar" onclick="showAuthTab('entrar')" style="flex:1;padding:12px;background:rgba(139,92,246,.28);border:none;color:#e5ddfb;font-size:.95rem;font-weight:600;letter-spacing:.06em;cursor:pointer;transition:background .2s;">✦ ENTRAR</button>
+              <button id="tabCadastro" onclick="showAuthTab('cadastro')" style="flex:1;padding:12px;background:rgba(255,255,255,.04);border:none;color:rgba(221,214,245,.55);font-size:.95rem;font-weight:600;letter-spacing:.06em;cursor:pointer;transition:background .2s;">⊕ CADASTRO</button>
+            </div>
+
+            <!-- Painel ENTRAR -->
+            <div id="painelEntrar" class="stack">
+              <div>
+                <label for="loginEmail" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">E-mail</label>
+                <input id="loginEmail" type="email" placeholder="seu@email.com" autocomplete="email" />
+              </div>
+              <div id="loginStatus" class="status"></div>
+              <button id="btnEntrar" type="button" onclick="handleEntrar()">✦ Entrar no Portal</button>
+            </div>
+
+            <!-- Painel CADASTRO -->
+            <div id="painelCadastro" class="stack" style="display:none;">
+              <div class="row-2">
+                <div>
+                  <label for="cadNome" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Nome completo</label>
+                  <input id="cadNome" type="text" placeholder="Seu nome" autocomplete="name" />
+                </div>
+                <div>
+                  <label for="cadData" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Data de nascimento</label>
+                  <input id="cadData" type="text" placeholder="dd/mm/aaaa" maxlength="10" />
+                </div>
+              </div>
+              <div class="row-2">
+                <div>
+                  <label for="cadSexo" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Sexo</label>
+                  <select id="cadSexo">
+                    <option value="">Selecione</option>
+                    <option>Masculino</option>
+                    <option>Feminino</option>
+                    <option>Prefiro Não Informar</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="cadEmail" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">E-mail</label>
+                  <input id="cadEmail" type="email" placeholder="seu@email.com" autocomplete="email" />
+                </div>
+              </div>
+              <div id="cadastroStatus" class="status"></div>
+              <button id="btnCadastrar" type="button" onclick="handleCadastro()">⊕ Criar Cadastro</button>
+            </div>
+          </div>
+        </div>
+
         <!-- RITUAL -->
-        <div class="card" id="ritualCard">
+        <div class="card" id="ritualCard" style="display:none;">
           <div class="card-body">
             <div style="text-align:center;padding:8px 0 4px;">
               <div class="header-badge">Inteligência Universal</div>
@@ -3294,25 +3350,6 @@
             <div class="stack">
               <div class="row-2">
                 <div>
-                  <label for="nome">Seu nome</label>
-                  <input id="nome" type="text" placeholder="Nome Completo" disabled />
-                </div>
-                <div>
-                  <label for="dataNascimento">Data de nascimento</label>
-                  <input id="dataNascimento" type="text" placeholder="dd/mm/aaaa" maxlength="10" disabled />
-                </div>
-              </div>
-              <div class="row-2">
-                <div>
-                  <label for="sexo">Sexo</label>
-                  <select id="sexo" required disabled>
-                    <option value="" selected>Selecione</option>
-                    <option>Masculino</option>
-                    <option>Feminino</option>
-                    <option>Prefiro Não Informar</option>
-                  </select>
-                </div>
-                <div>
                   <label for="tema">Tema</label>
                   <select id="tema" required disabled>
                     <option value="" selected>Selecione</option>
@@ -3321,8 +3358,6 @@
                     <option>Decisão importante</option><option>Outro</option>
                   </select>
                 </div>
-              </div>
-              <div class="row-2">
                 <div>
                   <label for="estado">Estado interior</label>
                   <select id="estado" required disabled>
@@ -3331,7 +3366,6 @@
                     <option>Cansado</option><option>Esperançoso</option><option>Intenso</option>
                   </select>
                 </div>
-                <div></div>
               </div>
               <div>
                 <label for="pergunta">Pergunta principal</label>
@@ -3697,7 +3731,7 @@ const sealWrap     = document.getElementById('sealWrap');
 const sealSymbol   = document.getElementById('sealSymbol');
 const sealLabel    = document.getElementById('sealLabel');
 
-const fieldIds = ['nome', 'dataNascimento', 'sexo', 'tema', 'estado', 'pergunta'];
+const fieldIds = ['tema', 'estado', 'pergunta'];
 const formFields = fieldIds.map(id => document.getElementById(id));
 const startRitualBtn = document.getElementById('startRitualBtn');
 const goToProtocolBtn = document.getElementById('goToProtocolBtn');
@@ -3760,33 +3794,31 @@ function setStatus(element, type, message) {
 }
 
 function getFormData() {
+  // Nome, data e sexo vêm do cadastro (guardados no localStorage)
+  const user = getStoredUser();
   return {
-    name: document.getElementById('nome').value.trim(),
-    birthdate: document.getElementById('dataNascimento').value,
-    gender: document.getElementById('sexo').value,
-    theme: document.getElementById('tema').value,
-    state: document.getElementById('estado').value,
-    level: 'Profunda', // Valor fixo padrão
-    cosmicMode: 'Desativado', // Valor fixo padrão
-    question: document.getElementById('pergunta').value.trim()
+    name:      user.nome     || '',
+    birthdate: user.data     || '',
+    gender:    user.sexo     || '',
+    theme:     document.getElementById('tema').value,
+    state:     document.getElementById('estado').value,
+    level:     'Profunda',
+    cosmicMode: 'Desativado',
+    question:  document.getElementById('pergunta').value.trim()
   };
 }
 
 function validateForm() {
   const data = getFormData();
-
-  if (!data.name || !data.gender || !data.theme || !data.state || !data.question) {
-    return { ok: false, message: 'Preencha seu nome, sexo, selecione todas as opções e escreva sua pergunta.' };
+  if (!data.name || data.name.length < 2) {
+    return { ok: false, message: 'Dados do cadastro não encontrados. Por favor, faça login novamente.' };
   }
-
-  if (data.name.length < 2) {
-    return { ok: false, message: 'Digite um nome com pelo menos 2 caracteres.' };
+  if (!data.theme || !data.state || !data.question) {
+    return { ok: false, message: 'Selecione o tema, o estado interior e escreva sua pergunta.' };
   }
-
   if (data.question.length < 12) {
     return { ok: false, message: 'Escreva uma pergunta um pouco mais completa para obter uma leitura melhor.' };
   }
-
   return { ok: true, data };
 }
 
@@ -3804,7 +3836,7 @@ function updateSelectPlaceholderState(select) {
 }
 
 function updateSelectPlaceholderStates() {
-  ['sexo', 'tema', 'estado'].forEach(id => {
+  ['tema', 'estado'].forEach(id => {
     updateSelectPlaceholderState(document.getElementById(id));
   });
 }
@@ -3824,10 +3856,8 @@ function restoreDraft() {
   try {
     const data = JSON.parse(raw);
     if (data && typeof data === 'object') {
-      document.getElementById('nome').value = data.name || '';
-      document.getElementById('dataNascimento').value = data.birthdate || '';
-      document.getElementById('tema').value = data.theme || '';
-      document.getElementById('estado').value = data.state || '';
+      document.getElementById('tema').value   = data.theme    || '';
+      document.getElementById('estado').value = data.state    || '';
       document.getElementById('pergunta').value = data.question || '';
     }
   } catch (error) {}
@@ -3844,7 +3874,7 @@ function updatePillsFromForm() {
 }
 
 function updateFlowButtons() {
-  const formEnabled = !document.getElementById('nome').disabled;
+  const formEnabled = !document.getElementById('tema').disabled;
   const formIsValid = validateForm().ok;
   goToProtocolBtn.disabled = !formEnabled || !formIsValid || goToProtocolBtn.classList.contains('btn-solid');
 
@@ -4585,71 +4615,99 @@ formFields.forEach(field => {
 
 
 document.getElementById('pergunta').setAttribute('maxlength', '1200');
-document.getElementById('nome').setAttribute('maxlength', '80');
 
-// Formatação automática de data dd/mm/aaaa
-const dataNascimentoInput = document.getElementById('dataNascimento');
-dataNascimentoInput.addEventListener('input', (e) => {
-  let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não é número
-  
-  if (value.length >= 2) {
-    value = value.slice(0, 2) + '/' + value.slice(2);
-  }
-  if (value.length >= 5) {
-    value = value.slice(0, 5) + '/' + value.slice(5, 9);
-  }
-  
+// Formatação automática de data dd/mm/aaaa no cadastro
+document.getElementById('cadData').addEventListener('input', (e) => {
+  let value = e.target.value.replace(/\D/g, '');
+  if (value.length >= 2) value = value.slice(0, 2) + '/' + value.slice(2);
+  if (value.length >= 5) value = value.slice(0, 5) + '/' + value.slice(5, 9);
   e.target.value = value;
 });
 
-// Validação ao sair do campo
-dataNascimentoInput.addEventListener('blur', (e) => {
-  const value = e.target.value;
-  if (!value) return; // Campo vazio é permitido
-  
-  const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-  const match = value.match(regex);
-  
-  if (!match) {
-    alert('Data inválida! Use o formato dd/mm/aaaa');
-    e.target.value = '';
+// ═══════════════════════════════════════════════════════
+//  AUTH — ENTRAR / CADASTRO
+// ═══════════════════════════════════════════════════════
+
+const STORAGE_KEY_USER = 'akashic_user';
+
+function getStoredUser() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY_USER) || '{}'); }
+  catch { return {}; }
+}
+
+function saveStoredUser(obj) {
+  try { localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(obj)); } catch {}
+}
+
+function showAuthTab(tab) {
+  const isEntrar = tab === 'entrar';
+  document.getElementById('painelEntrar').style.display  = isEntrar ? '' : 'none';
+  document.getElementById('painelCadastro').style.display = isEntrar ? 'none' : '';
+  document.getElementById('tabEntrar').style.background  = isEntrar ? 'rgba(139,92,246,.28)' : 'rgba(255,255,255,.04)';
+  document.getElementById('tabEntrar').style.color       = isEntrar ? '#e5ddfb' : 'rgba(221,214,245,.55)';
+  document.getElementById('tabCadastro').style.background = isEntrar ? 'rgba(255,255,255,.04)' : 'rgba(139,92,246,.28)';
+  document.getElementById('tabCadastro').style.color      = isEntrar ? 'rgba(221,214,245,.55)' : '#e5ddfb';
+}
+
+function enterPortal(user) {
+  // Salva/atualiza usuário no storage
+  saveStoredUser(user);
+
+  // Esconde auth, mostra o restante da section1 (ritual + formulário)
+  document.getElementById('authCard').style.display = 'none';
+  document.getElementById('ritualCard').style.display = '';
+  document.getElementById('abertura-consulta').style.display = '';
+}
+
+function handleEntrar() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const status = document.getElementById('loginStatus');
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setStatus(status, 'error', 'Digite um e-mail válido.');
     return;
   }
-  
-  const [_, dia, mes, ano] = match;
-  const diaNum = parseInt(dia);
-  const mesNum = parseInt(mes);
-  const anoNum = parseInt(ano);
-  
-  // Validação do ano (1900-2999)
-  if (anoNum < 1900 || anoNum > 2999) {
-    alert('Ano deve estar entre 1900 e 2999');
-    e.target.value = '';
+
+  // Verifica se há cadastro salvo para este e-mail
+  const saved = getStoredUser();
+  if (saved.email && saved.email.toLowerCase() === email.toLowerCase()) {
+    setStatus(status, 'ok', `Bem-vindo de volta, ${saved.nome ? saved.nome.split(' ')[0] : 'viajante'}!`);
+    setTimeout(() => enterPortal(saved), 600);
+  } else {
+    // E-mail não cadastrado — entra mesmo assim com só o email (nome/data/sexo ficam vazios)
+    setStatus(status, 'ok', 'Acesso concedido. Seja bem-vindo!');
+    setTimeout(() => enterPortal({ email, nome: '', data: '', sexo: '' }), 600);
+  }
+}
+
+function handleCadastro() {
+  const nome  = document.getElementById('cadNome').value.trim();
+  const data  = document.getElementById('cadData').value.trim();
+  const sexo  = document.getElementById('cadSexo').value;
+  const email = document.getElementById('cadEmail').value.trim();
+  const status = document.getElementById('cadastroStatus');
+
+  if (!nome || nome.length < 2) {
+    setStatus(status, 'error', 'Digite seu nome completo.');
     return;
   }
-  
-  // Validação do mês (1-12)
-  if (mesNum < 1 || mesNum > 12) {
-    alert('Mês deve estar entre 01 e 12');
-    e.target.value = '';
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setStatus(status, 'error', 'Digite um e-mail válido.');
     return;
   }
-  
-  // Validação do dia (1-31, considerando mês)
-  const diasPorMes = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  
-  // Verifica ano bissexto
-  if ((anoNum % 4 === 0 && anoNum % 100 !== 0) || anoNum % 400 === 0) {
-    diasPorMes[1] = 29; // Fevereiro em ano bissexto
+
+  const user = { nome, data, sexo, email };
+  setStatus(status, 'ok', `Cadastro realizado! Bem-vindo, ${nome.split(' ')[0]}!`);
+  setTimeout(() => enterPortal(user), 600);
+}
+
+// Ao carregar: se já tem usuário salvo, preenche o e-mail no login automaticamente
+(function initAuth() {
+  const saved = getStoredUser();
+  if (saved.email) {
+    document.getElementById('loginEmail').value = saved.email;
   }
-  
-  const maxDias = diasPorMes[mesNum - 1];
-  if (diaNum < 1 || diaNum > maxDias) {
-    alert(`Dia inválido para ${mesNum}/${anoNum}. Dia deve estar entre 01 e ${maxDias}`);
-    e.target.value = '';
-    return;
-  }
-});
+})();
 
 window.addEventListener('offline', () => {
   if (!currentReading) {
@@ -4890,8 +4948,6 @@ function hidePanels() {
 
 document.getElementById('resetAppBtn').addEventListener('click', function() {
   lockArchive();
-  document.getElementById('nome').value = '';
-  document.getElementById('dataNascimento').value = '';
   document.getElementById('pergunta').value = '';
   document.getElementById('tema').selectedIndex = 0;
   document.getElementById('estado').selectedIndex = 0;
