@@ -15,7 +15,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { name, birthdate, theme, state, question, level, cosmicMode, gender } = req.body;
+    const { name, birthdate, theme, state, question, level, cosmicMode, gender,
+            historyContext, similarContext, hasSimilar } = req.body;
 
     // Extrai apenas o primeiro nome para uso nas respostas
     const firstName = name ? name.trim().split(/\s+/)[0] : name;
@@ -211,6 +212,7 @@ ${reading1}
 
 PERSPECTIVA ${secondary.toUpperCase()} (FOCO SECUNDÁRIO):
 ${reading2}
+${historyContext || ''}${similarContext || ''}
 
 INSTRUÇÃO CRÍTICA — SINTETIZE em UMA leitura coesa:
 
@@ -238,11 +240,19 @@ INSTRUÇÃO CRÍTICA — SINTETIZE em UMA leitura coesa:
    - Mencione "${firstName}" pelo menos 3-5 vezes em CADA seção
    - Consulente deve sentir: "ISSO FOI ESCRITO PARA MIM!"
 
+${hasSimilar ? `4b. PERGUNTA SIMILAR A ANTERIOR — REGRAS ESPECIAIS:
+   - Mantenha a MESMA ESSÊNCIA e direcionamento das leituras anteriores (coerência akáshica)
+   - Use LINGUAGEM COMPLETAMENTE NOVA — novas metáforas, imagens, estrutura
+   - NUNCA copie frases das leituras anteriores — reescreva tudo com palavras diferentes
+   - Se o tema, estado ou contexto mudou desde a última vez, explique NATURALMENTE dentro do texto por que a orientação evolui — sem mencionar "consulta anterior" ou "você perguntou antes"
+   - Aprofunde o que foi dito antes — avance, não repita superficialmente
+   - Exemplo de como indicar mudança: "O que antes pedia paciência agora pede movimento — os Registros mostram que ${firstName} cruzou um limiar importante..."` : ''}
+
 5. REGRA ABSOLUTA DE DATAS:
    - JAMAIS use o ano ${currentYear} ou qualquer ano ≤ ${currentYear}
    - Use SEMPRE expressões relativas: "nos próximos meses", "nos próximos anos", "em breve", "no futuro próximo", "daqui a alguns anos", "na próxima fase"
 
-5. TAMANHO (CRÍTICO):
+6. TAMANHO (CRÍTICO):
    - Cada seção: MÍNIMO 300-500 palavras
    - Parágrafos LONGOS e DESENVOLVIDOS
    - Múltiplos exemplos e analogias
