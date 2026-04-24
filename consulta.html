@@ -4170,59 +4170,48 @@ async function fetchAkashicReading(apiKey, name, birthdate, gender, theme, state
     return data.sections;
   }
 
-  // ── CAMINHO DE STREAMING (6 seções paralelas, newline-delimited JSON) ──
+  // ── CAMINHO DE STREAMING (síntese única, JSON progressivo) ──
   if (!response.body) throw new Error('Streaming não suportado pelo navegador.');
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
-  let lineBuffer = '';
+  let accumulated = '';
 
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
 
-    lineBuffer += decoder.decode(value, { stream: true });
-    const lines = lineBuffer.split('\n');
-    lineBuffer = lines.pop() || '';
+    accumulated += decoder.decode(value, { stream: true });
 
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
+    // Verifica marcador de erro inline
+    const errIdx = accumulated.indexOf('__AKASHIC_STREAM_ERROR__:');
+    if (errIdx !== -1) {
+      const msg = accumulated.slice(errIdx + '__AKASHIC_STREAM_ERROR__:'.length).trim();
+      throw new Error(msg || 'Erro durante a canalização');
+    }
+
+    // Parse progressivo: extrai o que já chegou de cada seção
+    if (onProgress) {
       try {
-        const msg = JSON.parse(trimmed);
-        if (msg.error && !msg.s) throw new Error(msg.error); // erro global
-        if (msg.s && msg.t) {
-          // Acumula texto da seção
-          streamingState.targetByKey[msg.s] = (streamingState.targetByKey[msg.s] || '') + msg.t;
-          if (currentSections) currentSections[msg.s] = streamingState.targetByKey[msg.s];
-        }
-        if (onProgress) onProgress();
-      } catch (e) {
-        if (e.message && !e.message.startsWith('Unexpected')) throw e; // só relança erros reais
-      }
+        const progress = parseProgressive(accumulated);
+        onProgress(progress);
+      } catch (e) { /* ignora erros de parse parcial */ }
     }
   }
 
-  console.log('✅ Stream concluído (6 seções paralelas)');
+  console.log('✅ Stream da síntese concluído');
+
+  const finalSections = parseFinalStreamJSON(accumulated);
 
   if (typeof finalizeStreamingTypewriter === 'function' && streamingState && streamingState.started) {
+    Object.keys(finalSections).forEach(k => {
+      if (finalSections[k]) streamingState.targetByKey[k] = finalSections[k];
+    });
     finalizeStreamingTypewriter();
     await waitForTypewriterDrain();
   }
 
-  const defaults = {
-    revelation:         'A revelação chegou em silêncio. Refaça a consulta em alguns instantes.',
-    earthFuture:        'A visão do futuro não foi recebida nesta tentativa.',
-    otherCivilizations: 'Os mentores não puderam ser traduzidos nesta leitura.',
-    technologyFuture:   'A camada de coexistência não foi decodificada completamente.',
-    warning:            'Convite à prudência e ao discernimento.',
-    action:             'Respire, recentre-se e repita a consulta com uma pergunta mais específica.'
-  };
-  const result = {};
-  Object.keys(defaults).forEach(k => {
-    result[k] = (streamingState.targetByKey[k] || '').trim() || defaults[k];
-  });
-  return result;
+  return finalSections;
 }
 
 function waitForTypewriterDrain() {
@@ -4238,6 +4227,90 @@ function waitForTypewriterDrain() {
       else setTimeout(check, 40);
     })();
   });
+}
+
+// Parser progressivo — extrai seções do JSON parcial conforme os tokens chegam
+function parseProgressive(rawText) {
+  let text = rawText.replace(/^\s*```(?:json)?\s*/i, '');
+  const keyOrder = ['revelation', 'earthFuture', 'otherCivilizations', 'technologyFuture', 'warning', 'action'];
+  const sections = {};
+  const completed = {};
+  let currentKey = null;
+
+  for (const key of keyOrder) {
+    const r = extractSectionText(text, key);
+    if (r.found) {
+      sections[key] = r.text;
+      if (r.complete) completed[key] = true;
+      else currentKey = key;
+    }
+  }
+  return { sections, completed, currentKey };
+}
+
+function extractSectionText(text, key) {
+  const pattern = new RegExp(`"${key}"\\s*:\\s*"`, 'g');
+  const match = pattern.exec(text);
+  if (!match) return { found: false, text: '', complete: false };
+
+  let i = match.index + match[0].length;
+  let out = '';
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === '\\') {
+      if (i + 1 >= text.length) break;
+      const nx = text[i + 1];
+      if      (nx === 'n')  { out += '\n'; i += 2; }
+      else if (nx === 't')  { out += '\t'; i += 2; }
+      else if (nx === 'r')  { out += '\r'; i += 2; }
+      else if (nx === '"')  { out += '"';  i += 2; }
+      else if (nx === '\\') { out += '\\'; i += 2; }
+      else if (nx === '/')  { out += '/';  i += 2; }
+      else if (nx === 'u')  {
+        if (i + 5 >= text.length) break;
+        const hex = text.slice(i + 2, i + 6);
+        if (!/^[0-9a-fA-F]{4}$/.test(hex)) break;
+        out += String.fromCharCode(parseInt(hex, 16));
+        i += 6;
+      } else { out += nx; i += 2; }
+    } else if (ch === '"') {
+      return { found: true, text: out, complete: true };
+    } else {
+      out += ch; i++;
+    }
+  }
+  return { found: true, text: out, complete: false };
+}
+
+function parseFinalStreamJSON(rawText) {
+  const cleaned = rawText
+    .replace(/^\s*```(?:json)?\s*/i, '').replace(/```\s*$/i, '')
+    .replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'")
+    .replace(/,\s*([}\]])/g, '$1').trim();
+
+  const first = cleaned.indexOf('{');
+  const last  = cleaned.lastIndexOf('}');
+  let sections = {};
+
+  if (first !== -1 && last !== -1) {
+    try { sections = JSON.parse(cleaned.slice(first, last + 1)); }
+    catch { sections = parseProgressive(rawText).sections; }
+  } else {
+    sections = parseProgressive(rawText).sections;
+  }
+
+  const defaults = {
+    revelation:         'A revelação chegou em silêncio. Refaça a consulta em alguns instantes.',
+    earthFuture:        'A visão do futuro não foi recebida por inteiro nesta tentativa.',
+    otherCivilizations: 'Os mentores não puderam ser traduzidos nesta leitura.',
+    technologyFuture:   'A camada de coexistência não foi decodificada completamente.',
+    warning:            'Convite à prudência e ao discernimento.',
+    action:             'Respire, recentre-se e repita a consulta com uma pergunta mais específica.'
+  };
+  Object.keys(defaults).forEach(k => {
+    if (!sections[k]?.trim()) sections[k] = defaults[k];
+  });
+  return sections;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -4365,10 +4438,10 @@ function startTypewriterLoop() {
       // Adiciona cursor pulsante enquanto ainda há mais por vir
       setTranslationText(newDisplayed < target.length ? written + '▌' : written);
     } else if (!state.streamEnded && displayed === 0) {
-      // Aba clicada mas o servidor ainda não mandou nada para ela:
-      // pisca o cursor alternando a cada ~500ms pra não ficar vazia
-      const blink = Math.floor(now / 500) % 2 === 0;
-      setTranslationText(blink ? '▌' : '');
+      // Aba clicada mas o servidor ainda não chegou nessa seção do JSON:
+      // mostra mensagem elegante em vez de cursor vazio
+      const dots = '.'.repeat((Math.floor(now / 400) % 3) + 1);
+      setTranslationText(`Aguarde um momento${dots}`);
     } else if (pending === 0 && displayed > 0) {
       // Acabou de terminar — garante que o cursor sumiu
       setTranslationText(target);
@@ -4397,7 +4470,9 @@ function stopTypewriterLoop() {
   }
 }
 
-function handleStreamProgress() {
+function handleStreamProgress(progress) {
+  const { sections, currentKey } = progress;
+
   // Primeira vez: abre UI e inicia typewriter na Revelação
   if (!streamingState.started) {
     streamingState.started = true;
@@ -4405,8 +4480,16 @@ function handleStreamProgress() {
     advanceLiveTab('revelation');
     startTypewriterLoop();
   }
-  // currentSections e streamingState.targetByKey já foram atualizados
-  // no loop de parsing — o typewriter lê diretamente de targetByKey[visibleKey].
+
+  // Atualiza alvos de todas as chaves com o que já chegou do stream
+  Object.keys(sections).forEach(k => {
+    if (sections[k] != null) {
+      streamingState.targetByKey[k] = sections[k];
+      if (currentSections) currentSections[k] = sections[k];
+    }
+  });
+  // Sem auto-avanço — cada aba escreve quando o usuário a clicar.
+  // O typewriter da aba visível já está sendo alimentado pelo targetByKey.
 }
 
 function finalizeStreamingTypewriter() {
