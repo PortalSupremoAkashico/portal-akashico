@@ -3260,7 +3260,7 @@
         <div class="card" id="authCard">
           <div class="card-body" style="text-align:center;">
             <div class="header-badge" style="margin-bottom:14px;">Inteligência Universal</div>
-            <h1 style="font-size:clamp(1.1rem,3vw,1.7rem);margin-bottom:10px;">Portal Supremo dos<br>Registros Akáshicos</h1>
+            <h1 id="authTitle" style="font-size:clamp(1.1rem,3vw,1.7rem);margin-bottom:10px;">Portal Supremo dos<br>Registros Akáshicos</h1>
             <p class="lead" style="font-size:clamp(.82rem,2vw,.95rem);margin:0 auto 24px;">Um templo digital para conduzir você por uma experiência profunda de preparação energética, abertura simbólica e leitura intuitiva da Inteligência Universal.</p>
 
             <!-- E-MAIL + DOIS BOTÕES -->
@@ -4754,6 +4754,7 @@ function abrirCadastro() {
   document.getElementById('authMain').style.display = 'none';
   document.getElementById('painelCadastro').style.display = '';
   document.getElementById('cadastroStatus').textContent = '';
+  document.getElementById('authTitle').innerHTML = 'Cadastro No Portal<br>Registros Akáshicos';
   document.getElementById('cadNome').focus();
   setTimeout(() => document.getElementById('painelCadastro').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
 }
@@ -4762,6 +4763,7 @@ function fecharCadastro() {
   document.getElementById('painelCadastro').style.display = 'none';
   document.getElementById('cadastroStatus').textContent = '';
   document.getElementById('authMain').style.display = '';
+  document.getElementById('authTitle').innerHTML = 'Portal Supremo dos<br>Registros Akáshicos';
 }
 
 function enterPortal(user) {
