@@ -3268,12 +3268,15 @@
               <div>
                 <label for="loginEmail" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">E-mail</label>
                 <input id="loginEmail" type="email" placeholder="seu@email.com" autocomplete="email"
+                  onblur="validarEmailCampo(this,'authStatus')"
                   onkeydown="if(event.key==='Enter') document.getElementById('loginSenha').focus()" />
               </div>
-              <div>
+              <div style="position:relative;">
                 <label for="loginSenha" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Senha</label>
-                <input id="loginSenha" type="password" placeholder="Sua senha" autocomplete="current-password"
-                  onkeydown="if(event.key==='Enter') handleEntrar()" />
+                <input id="loginSenha" type="password" placeholder="Sua senha" autocomplete="current-password" maxlength="12"
+                  oninput="filtrarSenha(this)"
+                  onkeydown="if(event.key==='Enter') handleEntrar()" style="padding-right:40px;" />
+                <span onclick="toggleSenha('loginSenha',this)" style="position:absolute;right:12px;bottom:11px;cursor:pointer;font-size:1rem;color:rgba(196,181,253,.55);user-select:none;">👁</span>
               </div>
               <div id="authStatus" class="status"></div>
               <div style="display:flex;justify-content:center;">
@@ -3312,17 +3315,22 @@
                 </div>
                 <div>
                   <label for="cadEmail" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">E-mail</label>
-                  <input id="cadEmail" type="email" placeholder="seu@email.com" autocomplete="email" />
+                  <input id="cadEmail" type="email" placeholder="seu@email.com" autocomplete="email"
+                    onblur="validarEmailCampo(this,'cadastroStatus')" />
                 </div>
               </div>
               <div class="row-2">
-                <div>
-                  <label for="cadSenha" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Senha</label>
-                  <input id="cadSenha" type="password" placeholder="Crie uma senha" autocomplete="new-password" />
+                <div style="position:relative;">
+                  <label for="cadSenha" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Senha <span style="font-size:.75rem;color:rgba(196,181,253,.45);">(máx. 12 caracteres)</span></label>
+                  <input id="cadSenha" type="password" placeholder="Crie uma senha" autocomplete="new-password" maxlength="12"
+                    oninput="filtrarSenha(this)" style="padding-right:40px;" />
+                  <span onclick="toggleSenha('cadSenha',this)" style="position:absolute;right:12px;bottom:11px;cursor:pointer;font-size:1rem;color:rgba(196,181,253,.55);user-select:none;">👁</span>
                 </div>
-                <div>
+                <div style="position:relative;">
                   <label for="cadSenhaConf" style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Confirmar senha</label>
-                  <input id="cadSenhaConf" type="password" placeholder="Repita a senha" autocomplete="new-password" />
+                  <input id="cadSenhaConf" type="password" placeholder="Repita a senha" autocomplete="new-password" maxlength="12"
+                    oninput="filtrarSenha(this)" style="padding-right:40px;" />
+                  <span onclick="toggleSenha('cadSenhaConf',this)" style="position:absolute;right:12px;bottom:11px;cursor:pointer;font-size:1rem;color:rgba(196,181,253,.55);user-select:none;">👁</span>
                 </div>
               </div>
               <div id="cadastroStatus" class="status"></div>
@@ -4724,6 +4732,38 @@ document.getElementById('cadData').addEventListener('input', (e) => {
   if (value.length >= 5) value = value.slice(0, 5) + '/' + value.slice(5, 9);
   e.target.value = value;
 });
+
+// ── Validação de e-mail ao sair do campo ──
+function validarEmailCampo(input, statusId) {
+  const v = input.value.trim();
+  if (!v) return; // vazio — deixa a validação principal cuidar
+  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+  if (!ok) {
+    const st = document.getElementById(statusId);
+    if (st) setStatus(st, 'error', 'E-mail inválido. Verifique o formato (ex: nome@dominio.com).');
+    input.focus();
+  } else {
+    const st = document.getElementById(statusId);
+    if (st && st.textContent.includes('inválido')) setStatus(st, '', '');
+  }
+}
+
+// ── Olhinho: mostrar / ocultar senha ──
+function toggleSenha(inputId, olho) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  const visivel = inp.type === 'text';
+  inp.type = visivel ? 'password' : 'text';
+  olho.textContent = visivel ? '👁' : '🙈';
+}
+
+// ── Filtro de senha: só alfanuméricos + símbolos, máx 12 chars ──
+// Bloqueia espaços e caracteres de controle; o maxlength já limita o tamanho.
+function filtrarSenha(input) {
+  // Remove espaços e caracteres de controle (abaixo de ASCII 33)
+  const limpa = input.value.replace(/[\x00-\x1F\x7F ]/g, '');
+  if (limpa !== input.value) input.value = limpa;
+}
 
 // ═══════════════════════════════════════════════════════
 //  AUTH — ENTRAR / CADASTRO
