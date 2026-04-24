@@ -58,12 +58,12 @@ export default async function handler(req, res) {
     }
   }
   
-  // POST: Salva novo e-mail
+  // POST: Salva novo e-mail (cadastro)
   if (req.method === 'POST') {
     try {
-      const { email, nome } = req.body;
+      const { email, nome, data_nascimento, sexo } = req.body;
       
-      console.log('📨 POST request recebido para salvar e-mail:', email);
+      console.log('📨 POST request recebido para salvar cadastro:', email);
       
       if (!email) {
         console.error('❌ E-mail não fornecido');
@@ -75,7 +75,7 @@ export default async function handler(req, res) {
         console.log('🔵 URL do Apps Script configurada:', GOOGLE_APPS_SCRIPT_URL);
         try {
           console.log('🔵 Iniciando chamada ao Google Apps Script...');
-          console.log('🔵 Dados enviados:', { action: 'saveEmail', email, nome: nome || 'Não informado' });
+          console.log('🔵 Dados enviados:', { action: 'saveEmail', email, nome: nome || 'Não informado', data_nascimento: data_nascimento || '', sexo: sexo || '' });
           
           const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
             method: 'POST',
@@ -85,7 +85,9 @@ export default async function handler(req, res) {
             body: JSON.stringify({
               action: 'saveEmail',
               email: email,
-              nome: nome || 'Não informado'
+              nome: nome || 'Não informado',
+              data_nascimento: data_nascimento || '',
+              sexo: sexo || ''
             })
           });
           
