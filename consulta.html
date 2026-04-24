@@ -4711,9 +4711,10 @@ async function handleEntrar() {
 
   const saved = getStoredUser();
 
-  // E-mail não cadastrado — mostra erro, NÃO abre cadastro automaticamente
+  // E-mail não cadastrado — abre cadastro com email pré-preenchido
   if (!saved.email || saved.email.toLowerCase() !== email.toLowerCase()) {
-    setStatus(status, 'error', 'E-mail não cadastrado. Faça seu cadastro primeiro.');
+    setStatus(status, 'warn', 'E-mail não encontrado. Preencha o cadastro para continuar.');
+    abrirCadastro();
     return;
   }
 
