@@ -4904,11 +4904,8 @@ Portal Supremo dos Registros Akáshicos`;
       body: JSON.stringify({
         to: email,
         subject: 'Código de Recuperação de Senha — Portal Akáshico',
-        body: corpoEmail,
-        // Sem PDF — campos opcionais ausentes
-        fileName: null,
-        fileData: null,
-        mimeType: null
+        body: corpoEmail
+        // sem fileName/fileData/mimeType — sem PDF neste envio
       })
     });
 
