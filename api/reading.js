@@ -98,16 +98,27 @@ EVITE: Previsões de curto prazo. Foque em padrões de longo prazo (2+ anos).`
     // ═══════════════════════════════════════════════
     const currentYear = new Date().getFullYear();
 
+    // Fase de vida — integrada naturalmente, sem expor o número da idade
+    let lifePhase = '';
+    if (age !== null) {
+      if (age < 25)      lifePhase = 'início da vida adulta, fase de construção de identidade e descobertas';
+      else if (age < 35) lifePhase = 'consolidação da vida adulta, fase de estabelecimento e primeiras grandes escolhas';
+      else if (age < 45) lifePhase = 'maturidade jovem, fase de realização, questionamentos profundos e redefinição de prioridades';
+      else if (age < 55) lifePhase = 'meia-idade, fase de transformação interior e redefinição do propósito';
+      else if (age < 65) lifePhase = 'maturidade plena, fase de sabedoria, colheita e legado';
+      else               lifePhase = 'fase de sabedoria profunda, legado e síntese de uma vida vivida';
+    }
+
     const baseSystemPrompt = `${genderInstructions}
 
 REGRAS CRÍTICAS DE PERSONALIZAÇÃO (MÁXIMA PRIORIDADE):
-1. USE TODOS OS DADOS — Nome: ${firstName}, ${age ? `Idade: ${age} anos` : ''}, Tema: ${theme}, Estado: ${state}
+1. USE TODOS OS DADOS — Nome: ${firstName}, Tema: ${theme}, Estado: ${state}
 2. MENCIONE O PRIMEIRO NOME "${firstName}" repetidamente — "${firstName}, você está..." / "Para você, ${firstName}..."
 3. USE APENAS O PRIMEIRO NOME — NUNCA escreva o nome completo do consulente, somente "${firstName}"
 4. CONECTE COM A PERGUNTA EXATA — Responda DIRETAMENTE: "${question}"
 5. INTEGRE O TEMA — Se tema é "${theme}", TODA a leitura deve focar nisso
 6. RECONHEÇA O ESTADO EMOCIONAL — Se está "${state}", adapte o tom e abordagem
-${age ? `7. USE A IDADE — ${age} anos é uma fase específica, mencione de forma relevante` : ''}
+${lifePhase ? `7. FASE DE VIDA — ${firstName} está na ${lifePhase}. Integre essa dimensão temporal naturalmente ao longo do texto — use expressões como "neste momento da sua vida", "nesta fase que você atravessa", "no ciclo em que se encontra" — NUNCA mencione número de anos ou idade diretamente` : ''}
 8. SEJA ULTRA-ESPECÍFICO — Cada frase deve ser PARA ${firstName} especificamente
 9. CREDIBILIDADE — O consulente deve sentir: "Isso é EXATAMENTE para mim"
 
@@ -233,7 +244,7 @@ INSTRUÇÃO CRÍTICA — SINTETIZE em UMA leitura coesa:
 
 4. PERSONALIZAÇÃO EXTREMA (OBRIGATÓRIO):
    - CONSULENTE: ${firstName} (USE APENAS O PRIMEIRO NOME — nunca o nome completo)
-   ${age ? `- IDADE: ${age} anos (SEMPRE relevante!)` : ''}
+   ${lifePhase ? `- FASE DE VIDA: ${firstName} está na ${lifePhase} — integre naturalmente, NUNCA cite número de anos` : ''}
    - TEMA: ${theme} (FOQUE 100% nisso!)
    - ESTADO EMOCIONAL: ${state} (ADAPTE o tom!)
    - PERGUNTA EXATA: "${question}" (RESPONDA diretamente!)
