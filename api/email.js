@@ -18,20 +18,21 @@ export default async function handler(req, res) {
     // URL do Google Apps Script
     const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzInaMhe5fCWvB0_CdUyovfN1kcJchd7pwASUME7Df7-g1v8lw63FF0tsqL6pNuXQ8/exec';
     
+    // Monta o payload — inclui campos de PDF só se existirem
+    const payload = { to, subject, body };
+    if (fileData) {
+      payload.fileName = fileName;
+      payload.fileData = fileData;
+      payload.mimeType = mimeType;
+    }
+
     // Chamar o Google Apps Script do servidor (sem problema de CORS!)
     const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        to,
-        subject,
-        body,
-        fileName,
-        fileData,
-        mimeType
-      })
+      body: JSON.stringify(payload)
     });
     
     if (!response.ok) {
