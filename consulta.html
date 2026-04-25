@@ -2058,7 +2058,7 @@
     #consulta { display: none; }
 
     /* Largura média para todos os blocos */
-    #section1, #section2, #archiveSection {
+    #section1, #section2 {
       max-width: 720px;
       margin-left: auto;
       margin-right: auto;
@@ -3551,35 +3551,6 @@
     </div>
 
     <!-- SECÇÃO 4: ARQUIVO — protegido por senha -->
-    <div class="section card" id="archiveSection" style="display:none;">
-      <div class="card-body">
-        <div class="section-title">Administrador</div>
-        <h2>Arquivo de Consultas</h2>
-
-        <!-- Lock screen -->
-        <div id="archiveLock">
-          <p class="section-desc" style="margin-bottom:18px;">Área restrita. Digite a senha para acessar o arquivo completo de consulentes.</p>
-          <div style="display:flex;gap:10px;align-items:center;max-width:360px;">
-            <input id="archivePasswordInput" type="password" placeholder="Senha de acesso..." style="flex:1;" />
-            <button id="archiveUnlockBtn" type="button" style="width:auto;padding:14px 22px;">Entrar</button>
-          </div>
-          <div id="archiveLockError" style="display:none;margin-top:10px;font-size:.82rem;color:var(--danger);">Senha incorreta.</div>
-        </div>
-
-        <!-- Archive content (hidden until unlocked) -->
-        <div id="archiveContent" style="display:none;">
-          <div class="actions-row" style="margin-bottom:12px;">
-            <button id="openArchivedBtn" type="button">Abrir Selecionado</button>
-            <button id="clearJournalBtn" type="button">Apagar</button>
-            <button id="confirmClearBtn" type="button" class="btn-danger" style="display:none;">Confirmar?</button>
-            <button id="archiveLockBtn" type="button" style="width:auto;padding:14px 18px;font-size:.72rem;">🔒 Bloquear</button>
-          </div>
-          <div class="sep"></div>
-          <div id="journalList" class="journal-list"></div>
-        </div>
-      </div>
-    </div>
-
   <!-- Ghost elements para compatibilidade com JS -->
   <div id="sealWrap" class="seal-wrap-small seal-revelation" style="display:none;position:absolute;pointer-events:none;visibility:hidden;">
     <span id="sealSymbol" class="seal-symbol">✶</span>
@@ -3729,7 +3700,6 @@ function formatAkashicResponse(portugueseText) {
 
 const STORAGE_KEYS = {
   apiKey: 'portal_supremo_claude_api_key',
-  journal: 'akashic_journal',
   draft: 'portal_supremo_form_draft',
   model: 'portal_supremo_model_cache',
   consultants: 'akashic_consultants_db'
@@ -3753,7 +3723,6 @@ const API_TIMEOUT_MS = 120000; // 2 minutos
 const ritualStatus = document.getElementById('ritualStatus');
 const openStatus   = document.getElementById('openStatus');
 const responseBox  = document.getElementById('responseBox');
-const journalList  = document.getElementById('journalList');
 const pillTema     = document.getElementById('pillTema');
 const pillEstado   = document.getElementById('pillEstado');
 const pillEnergia  = document.getElementById('pillEnergia');
@@ -3769,9 +3738,6 @@ const formFields = fieldIds.map(id => document.getElementById(id));
 const startRitualBtn = document.getElementById('startRitualBtn');
 const goToProtocolBtn = document.getElementById('goToProtocolBtn');
 const openReadingBtn = document.getElementById('openReadingBtn');
-const openArchivedBtn = document.getElementById('openArchivedBtn');
-const clearJournalBtn = document.getElementById('clearJournalBtn');
-const confirmClearBtn = document.getElementById('confirmClearBtn');
 
 let currentReading = null;
 let currentSections = null;
@@ -3918,58 +3884,7 @@ function updateFlowButtons() {
   }
 }
 
-function getSavedJournal() {
-  try {
-    const parsed = JSON.parse(safeGetStorage(STORAGE_KEYS.journal, '[]'));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    return [];
-  }
-}
 
-function saveToJournal(entry) {
-  try {
-    const journal = getSavedJournal();
-    journal.unshift(entry);
-    const trimmed = journal.slice(0, 200); // até 200 consultas
-    safeSetStorage(STORAGE_KEYS.journal, JSON.stringify(trimmed));
-    renderJournal();
-  } catch (error) {
-    console.warn('Archive save error:', error);
-  }
-}
-
-function renderJournal() {
-  const journal = getSavedJournal();
-
-  if (!journal.length) {
-    journalList.innerHTML = '<div class="status">Nenhum registro encontrado. O Arquivo está vazio.</div>';
-    openArchivedBtn.disabled = true;
-    clearJournalBtn.disabled = true;
-    confirmClearBtn.style.display = 'none';
-    clearJournalBtn.style.display = 'inline-block';
-    return;
-  }
-
-  openArchivedBtn.disabled = false;
-  clearJournalBtn.disabled = false;
-
-  journalList.innerHTML = journal.map((entry, index) => {
-    const theme = escapeHtml(entry.theme || 'Tema');
-    const level = escapeHtml(entry.level || '');
-    const date = escapeHtml(entry.date || '');
-    const question = escapeHtml(entry.question || 'Nenhuma');
-    return `<label class="entry-label">
-      <input type="radio" name="journalEntry" class="entry-radio" value="${index}" />
-      <div class="entry">
-        <div class="entry-head"><span class="entry-title">${theme} — ${level}</span><small>${date}</small></div>
-        <p><strong>Pergunta:</strong> ${question}</p>
-      </div>
-    </label>`;
-  }).join('');
-}
-
-renderJournal();
 // Draft não é restaurado no carregamento — formulário sempre inicia limpo
 updateSelectPlaceholderStates();
 updatePillsFromForm();
@@ -5232,7 +5147,6 @@ document.getElementById('openReadingBtn').addEventListener('click', async functi
     this.classList.add('btn-solid');
 
     // Auto-save silently
-    saveToJournal(currentReading);
     document.getElementById('sendEmailBtn').disabled = false;
 
     // Dispara geração do PDF em background enquanto o consulente lê as abas.
@@ -5324,7 +5238,6 @@ function hidePanels() {
 ;
 
 document.getElementById('resetAppBtn').addEventListener('click', function() {
-  lockArchive();
   document.getElementById('pergunta').value = '';
   document.getElementById('tema').selectedIndex = 0;
   document.getElementById('estado').selectedIndex = 0;
@@ -5369,7 +5282,6 @@ document.getElementById('resetAppBtn').addEventListener('click', function() {
   // Reseta o estado do streaming da próxima leitura
   resetStreamingState();
 
-  openArchivedBtn.classList.remove('btn-solid');
 
   // Volta ao estado inicial: mostra apenas o card ritual
   const ritualCard = document.getElementById('ritualCard');
@@ -5405,152 +5317,7 @@ function hashPassword(pwd) {
 }
 
 // Senha padrão: 'RECLAROJURA' — troque abaixo para a sua
-const ARCHIVE_PASSWORD_HASH = hashPassword('RECLAROJURA');
-const ARCHIVE_SESSION_KEY   = 'akashic_archive_unlocked';
 
-function isArchiveUnlocked() {
-  try { return sessionStorage.getItem(ARCHIVE_SESSION_KEY) === '1'; }
-  catch(e) { return false; }
-}
-
-function unlockArchive() {
-  try { sessionStorage.setItem(ARCHIVE_SESSION_KEY, '1'); } catch(e) {}
-  document.getElementById('archiveSection').style.display = 'block';
-  document.getElementById('archiveLock').style.display    = 'none';
-  document.getElementById('archiveContent').style.display = 'block';
-  document.getElementById('archiveSection').scrollIntoView({ behavior: 'smooth' });
-  renderJournal();
-}
-
-function lockArchive() {
-  try { sessionStorage.removeItem(ARCHIVE_SESSION_KEY); } catch(e) {}
-  document.getElementById('archiveSection').style.display  = 'none';
-  document.getElementById('archiveLock').style.display     = 'block';
-  document.getElementById('archiveContent').style.display  = 'none';
-  document.getElementById('archivePasswordInput').value    = '';
-  document.getElementById('archiveLockError').style.display = 'none';
-}
-
-// Inicializa estado do arquivo
-if (isArchiveUnlocked()) {
-  document.getElementById('archiveSection').style.display = 'block';
-  document.getElementById('archiveLock').style.display    = 'none';
-  document.getElementById('archiveContent').style.display = 'block';
-  renderJournal();
-}
-
-document.getElementById('archiveUnlockBtn').addEventListener('click', function() {
-  const pwd = document.getElementById('archivePasswordInput').value;
-  if (hashPassword(pwd) === ARCHIVE_PASSWORD_HASH) {
-    document.getElementById('archiveLockError').style.display = 'none';
-    unlockArchive();
-  } else {
-    document.getElementById('archiveLockError').style.display = 'block';
-    document.getElementById('archivePasswordInput').value = '';
-    document.getElementById('archivePasswordInput').focus();
-  }
-});
-
-document.getElementById('archivePasswordInput').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') document.getElementById('archiveUnlockBtn').click();
-});
-
-document.getElementById('archiveLockBtn').addEventListener('click', function() {
-  lockArchive();
-});
-
-// Atalho secreto: Ctrl + Shift + K abre o arquivo (invisível para outros)
-document.addEventListener('keydown', function(e) {
-  if (e.ctrlKey && e.shiftKey && e.key === 'K') {
-    e.preventDefault();
-    const section = document.getElementById('archiveSection');
-    if (section.style.display === 'none') {
-      section.style.display = 'block';
-      section.scrollIntoView({ behavior: 'smooth' });
-      if (isArchiveUnlocked()) {
-        document.getElementById('archiveLock').style.display    = 'none';
-        document.getElementById('archiveContent').style.display = 'block';
-        renderJournal();
-      } else {
-        document.getElementById('archiveLock').style.display    = 'block';
-        document.getElementById('archiveContent').style.display = 'none';
-        setTimeout(() => document.getElementById('archivePasswordInput').focus(), 400);
-      }
-    } else {
-      lockArchive();
-    }
-  }
-});
-
-
-
-document.getElementById('clearJournalBtn').addEventListener('click', function() {
-  const selected = document.querySelector('.entry-radio:checked');
-  if (!selected) {
-    alert('Selecione uma consulta na lista do Arquivo para poder apagá-la.');
-    return;
-  }
-
-  this.style.display = 'none';
-  confirmClearBtn.style.display = 'inline-block';
-});
-
-document.getElementById('confirmClearBtn').addEventListener('click', function() {
-  const selected = document.querySelector('.entry-radio:checked');
-  if (!selected) return;
-
-  try {
-    const journal = getSavedJournal();
-    const indexToRemove = Number.parseInt(selected.value, 10);
-    if (!Number.isNaN(indexToRemove)) {
-      journal.splice(indexToRemove, 1);
-      safeSetStorage(STORAGE_KEYS.journal, JSON.stringify(journal));
-      renderJournal();
-    }
-  } catch (error) {}
-
-  this.style.display = 'none';
-  clearJournalBtn.style.display = 'inline-block';
-  alert('Arquivo apagado com sucesso.');
-});
-
-document.getElementById('openArchivedBtn').addEventListener('click', function() {
-  const selected = document.querySelector('.entry-radio:checked');
-  if (!selected) {
-    alert('Selecione uma consulta no Arquivo primeiro.');
-    return;
-  }
-
-  const journal = getSavedJournal();
-  const entry = journal[selected.value];
-
-  if (!entry || !entry.sections) {
-    alert('Não foi possível abrir este registro.');
-    return;
-  }
-
-  currentReading = entry;
-  currentSections = normalizeSections(entry.sections);
-  pillTema.textContent = `Tema: ${entry.theme || '—'}`;
-  pillEstado.textContent = `Estado: ${entry.state || '—'}`;
-  pillPortal.textContent = 'Portal: Arquivo Aberto ✦';
-  pillEnergia.textContent = 'Frequência: arquivo ✦';
-
-  document.querySelectorAll('.tab-btn').forEach(tab => {
-    tab.classList.remove('btn-solid');
-    tab.classList.add('btn-blink');
-  });
-
-  document.getElementById('sendEmailBtn').disabled = false;
-  setActiveTab(document.getElementById('tabMain'), 'revelation', 'Painel (Arquivo)', 'Arquivo Aberto', '✶', 'REVELAÇÃO', 'seal-revelation');
-  document.getElementById('consulta').scrollIntoView({ behavior: 'smooth' });
-  this.classList.add('btn-solid');
-});
-
-openArchivedBtn.disabled = getSavedJournal().length === 0;
-clearJournalBtn.disabled = getSavedJournal().length === 0;
-
-  
 const thinkingMessages = [
   'Consultando os registros...',
   'Decodificando frequências...',
