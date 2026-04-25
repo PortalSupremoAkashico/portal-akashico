@@ -15,8 +15,8 @@ export default async function handler(req, res) {
   try {
     const { to, subject, body, fileName, fileData, mimeType } = req.body;
     
-    // URL do Google Apps Script
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzInaMhe5fCWvB0_CdUyovfN1kcJchd7pwASUME7Df7-g1v8lw63FF0tsqL6pNuXQ8/exec';
+    // URL do Google Apps Script (mesmo script que salva emails na planilha)
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjgmWDoG6LB0_1LQGGZM4kyxdpZmP2igtNhuES1ET2n35Tz7IkHzVPxKjXIL88-1cw/exec';
     
     // Monta o payload — inclui campos de PDF só se existirem
     const payload = { to, subject, body };
