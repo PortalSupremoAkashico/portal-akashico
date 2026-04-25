@@ -4882,25 +4882,50 @@ async function enviarCodigoRecuperacao(email, nome) {
 
   const firstName = nome ? nome.trim().split(/\s+/)[0] : 'viajante';
 
+  const corpoEmail = `Olá ${firstName},
+
+Recebemos uma solicitação de recuperação de senha para sua conta no Portal Supremo dos Registros Akáshicos.
+
+Seu código de recuperação é:
+
+${codigo}
+
+Este código é válido por 15 minutos.
+
+Se não foi você quem solicitou, ignore este e-mail — sua senha permanece a mesma.
+
+Com gratidão,
+Portal Supremo dos Registros Akáshicos`;
+
   try {
-    await fetch('/api/email', {
+    const resp = await fetch('/api/email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: email,
-        subject: 'Código de recuperação — Portal Akáshico',
-        body: `Olá ${firstName},\n\nSeu código de recuperação de senha é:\n\n${codigo}\n\nEle é válido por 15 minutos.\n\nSe não foi você quem solicitou, ignore este email.\n\nPortal Supremo dos Registros Akáshicos`
+        subject: 'Código de Recuperação de Senha — Portal Akáshico',
+        body: corpoEmail,
+        // Sem PDF — campos opcionais ausentes
+        fileName: null,
+        fileData: null,
+        mimeType: null
       })
     });
-    console.log('✅ Código de recuperação enviado para', email);
+
+    const txt = await resp.text();
+    if (!resp.ok) {
+      console.error('❌ Erro ao enviar código de recuperação. Status:', resp.status, '| Resposta:', txt);
+    } else {
+      console.log('✅ Código de recuperação enviado para', email);
+    }
   } catch (err) {
-    console.error('❌ Erro ao enviar email de recuperação:', err);
+    console.error('❌ Exceção ao enviar e-mail de recuperação:', err.message);
   }
 }
 
 function mostrarPainelCodigo(email) {
   const status = document.getElementById('authStatus');
-  setStatus(status, 'warn', `5 tentativas incorretas. Enviamos um código de 6 dígitos para ${email}. Verifique sua caixa de entrada.`);
+  setStatus(status, 'warn', `5 tentativas incorretas. Um código de 6 dígitos foi enviado para ${email}. Verifique sua caixa de entrada (e o spam).`);
 
   // Injeta o painel de redefinição abaixo do status
   let painelReset = document.getElementById('painelReset');
