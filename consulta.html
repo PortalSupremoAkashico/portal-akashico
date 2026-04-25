@@ -4848,8 +4848,8 @@ async function handleEntrar() {
 
     if (loginAttempts[email] >= 5) {
       loginAttempts[email] = 0;
-      const codigo = await enviarCodigoRecuperacao(email, saved.nome);
-      mostrarPainelCodigo(email, codigo);
+      await enviarCodigoRecuperacao(email, saved.nome);
+      mostrarPainelCodigo(email);
       return;
     }
 
@@ -4921,9 +4921,9 @@ Portal Supremo dos Registros Akáshicos`;
   return codigo; // sempre retorna pra mostrar na tela como fallback
 }
 
-function mostrarPainelCodigo(email, codigo) {
+function mostrarPainelCodigo(email) {
   const status = document.getElementById('authStatus');
-  setStatus(status, 'warn', `5 tentativas incorretas. Verifique seu e-mail ${email} (cheque também o spam).`);
+  setStatus(status, 'warn', `5 tentativas incorretas. Um código de 6 dígitos foi enviado para ${email}. Verifique sua caixa de entrada e o spam.`);
 
   let painelReset = document.getElementById('painelReset');
   if (!painelReset) {
@@ -4935,13 +4935,8 @@ function mostrarPainelCodigo(email, codigo) {
   }
 
   painelReset.innerHTML = `
-    <div style="background:rgba(139,92,246,.12);border:1px solid rgba(196,181,253,.25);border-radius:10px;padding:14px;text-align:center;">
-      <div style="font-size:.8rem;color:rgba(196,181,253,.7);margin-bottom:6px;">Código de recuperação</div>
-      <div style="font-size:2rem;font-weight:700;letter-spacing:.4em;color:#c4b5fd;">${codigo}</div>
-      <div style="font-size:.75rem;color:rgba(196,181,253,.5);margin-top:6px;">Válido por 15 minutos · Use este código abaixo</div>
-    </div>
     <div>
-      <label style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Digite o código acima</label>
+      <label style="text-align:left;display:block;margin-bottom:6px;font-size:.85rem;color:rgba(196,181,253,.8);">Código recebido por e-mail</label>
       <input id="codigoReset" type="text" placeholder="000000" maxlength="6"
         style="letter-spacing:.3em;text-align:center;font-size:1.2rem;"
         onkeydown="if(event.key==='Enter') validarCodigo()" />
