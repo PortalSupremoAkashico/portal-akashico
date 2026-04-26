@@ -135,7 +135,8 @@
     .chat-container {
       display: flex;
       flex-direction: column;
-      height: 520px;
+      height: calc(100vh - 420px);
+      min-height: 480px;
     }
     .chat-messages {
       flex: 1;
@@ -483,52 +484,104 @@
 
 <script>
 // ═══════════════════════════════════
-// FUNDO CÓSMICO
+// FUNDO CÓSMICO — idêntico ao Portal
 // ═══════════════════════════════════
 (function initCanvas() {
   const canvas = document.getElementById('cosmicCanvas');
-  const ctx = canvas.getContext('2d');
-  let W, H, stars = [], particles = [];
+  const ctx    = canvas.getContext('2d');
+  let W, H, stars = [], nebulas = [], shootingStars = [];
+  let frame = 0;
 
   function resize() {
     W = canvas.width  = window.innerWidth;
     H = canvas.height = window.innerHeight;
   }
 
-  function initStars() {
-    stars = [];
-    for (let i = 0; i < 180; i++) {
-      stars.push({
-        x: Math.random() * W, y: Math.random() * H,
-        r: Math.random() * 1.2,
-        a: Math.random(),
-        speed: 0.003 + Math.random() * 0.008,
-        phase: Math.random() * Math.PI * 2
+  function randomBetween(a, b) { return a + Math.random() * (b - a); }
+
+  function initObjects() {
+    // Estrelas
+    stars = Array.from({ length: 220 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      r: randomBetween(0.2, 1.4),
+      alpha: randomBetween(0.3, 1),
+      speed: randomBetween(0.003, 0.012),
+      phase: Math.random() * Math.PI * 2,
+      color: Math.random() > 0.8 ? [196, 181, 253] : [255, 255, 255]
+    }));
+
+    // Nebulosas
+    nebulas = [
+      { x: W * 0.2,  y: H * 0.3,  r: W * 0.35, c: [109, 40, 217], a: 0.06 },
+      { x: W * 0.8,  y: H * 0.6,  r: W * 0.30, c: [76,  29, 149], a: 0.05 },
+      { x: W * 0.5,  y: H * 0.15, r: W * 0.25, c: [167, 139, 250], a: 0.04 },
+      { x: W * 0.65, y: H * 0.85, r: W * 0.28, c: [139, 92, 246], a: 0.04 }
+    ];
+
+    shootingStars = [];
+  }
+
+  function spawnShootingStar() {
+    if (shootingStars.length < 2 && Math.random() < 0.003) {
+      shootingStars.push({
+        x: Math.random() * W, y: Math.random() * H * 0.5,
+        vx: randomBetween(4, 8), vy: randomBetween(2, 5),
+        len: randomBetween(60, 120), life: 1
       });
     }
   }
 
   function draw(t) {
+    frame++;
     ctx.clearRect(0, 0, W, H);
-    const grd = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H));
-    grd.addColorStop(0, 'rgba(30,10,70,0.6)');
-    grd.addColorStop(1, 'rgba(7,5,16,0)');
-    ctx.fillStyle = grd;
+
+    // Fundo base
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#050310');
+    bg.addColorStop(0.5, '#080618');
+    bg.addColorStop(1, '#060412');
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
+    // Nebulosas
+    nebulas.forEach(n => {
+      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+      g.addColorStop(0, `rgba(${n.c[0]},${n.c[1]},${n.c[2]},${n.a})`);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    });
+
+    // Estrelas
     stars.forEach(s => {
-      const a = 0.3 + 0.6 * Math.abs(Math.sin(t * s.speed + s.phase));
+      const a = s.alpha * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(196,181,253,${a})`;
+      ctx.fillStyle = `rgba(${s.color[0]},${s.color[1]},${s.color[2]},${a})`;
       ctx.fill();
+    });
+
+    // Estrelas cadentes
+    spawnShootingStar();
+    shootingStars = shootingStars.filter(ss => ss.life > 0);
+    shootingStars.forEach(ss => {
+      const tail = ctx.createLinearGradient(ss.x, ss.y, ss.x - ss.vx * ss.len / ss.vx, ss.y - ss.vy * ss.len / ss.vx);
+      tail.addColorStop(0, `rgba(255,255,255,${ss.life * 0.8})`);
+      tail.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.beginPath();
+      ctx.moveTo(ss.x, ss.y);
+      ctx.lineTo(ss.x - ss.len, ss.y - ss.len * (ss.vy / ss.vx));
+      ctx.strokeStyle = tail;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ss.x += ss.vx; ss.y += ss.vy; ss.life -= 0.04;
     });
 
     requestAnimationFrame(draw);
   }
 
-  window.addEventListener('resize', () => { resize(); initStars(); });
-  resize(); initStars(); draw(0);
+  window.addEventListener('resize', () => { resize(); initObjects(); });
+  resize(); initObjects(); draw(0);
 })();
 
 // ═══════════════════════════════════
@@ -681,13 +734,18 @@ function calcLifePhase(data) {
 
 function renderSoulProfile(journey) {
   const grid = document.getElementById('soulProfileGrid');
+  const n = journey.totalConsultas;
+  const consultasText = n === 0 ? 'Início da jornada'
+    : n === 1 ? 'Em sua consulta anterior'
+    : 'Em suas consultas anteriores';
+
   const items = [
-    { label: 'Consultas realizadas', value: journey.totalConsultas > 0 ? `${journey.totalConsultas} consultas` : 'Início da jornada' },
-    { label: 'Fase de vida',         value: journey.faseDeVida },
-    { label: 'Temas recorrentes',    value: journey.temasRecorrentes.length > 0 ? journey.temasRecorrentes.slice(0,3).join(', ') : 'Em mapeamento' },
-    { label: 'Padrão emocional',     value: journey.padraoEmocional },
-    { label: 'Direção evolutiva',    value: journey.direcaoEvolutiva },
-    { label: 'Maior desafio',        value: journey.maiorDesafio }
+    { label: 'Jornada',          value: consultasText },
+    { label: 'Fase de vida',     value: journey.faseDeVida },
+    { label: 'Temas recorrentes', value: journey.temasRecorrentes.length > 0 ? journey.temasRecorrentes.slice(0,3).join(', ') : 'Em mapeamento' },
+    { label: 'Padrão emocional', value: journey.padraoEmocional },
+    { label: 'Direção evolutiva', value: journey.direcaoEvolutiva },
+    { label: 'Maior desafio',    value: journey.maiorDesafio }
   ];
 
   grid.innerHTML = items.map(i => `
