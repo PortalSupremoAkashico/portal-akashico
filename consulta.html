@@ -4039,30 +4039,41 @@ function saveConsultantReading(reading, sections) {
   const db  = loadConsultantDB();
   const key = consultantKey(reading.name);
 
-  // Cria ou atualiza perfil
   const profile = db[key] || {
     name:      reading.name,
     birthdate: reading.birthdate || '',
+    gender:    reading.gender    || '',
+    email:     reading.email     || '',
     firstSeen: reading.date,
     readings:  []
   };
 
-  // Atualiza data de nascimento se fornecida agora
-  if (reading.birthdate && !profile.birthdate) {
-    profile.birthdate = reading.birthdate;
-  }
+  if (reading.birthdate && !profile.birthdate) profile.birthdate = reading.birthdate;
+  if (reading.gender    && !profile.gender)    profile.gender    = reading.gender;
+  if (reading.email     && !profile.email)     profile.email     = reading.email;
 
-  // Adiciona nova leitura ao histórico (máx 10 últimas)
+  // Salva a leitura completa (seções inteiras) para uso na Mentoria
   const newEntry = {
     date:     reading.date,
     theme:    reading.theme,
     state:    reading.state,
     question: reading.question,
     level:    reading.level,
+    // Seções completas — usadas na Mentoria Akáshica
+    sections: {
+      revelation:         (sections.revelation         || '').slice(0, 2000),
+      earthFuture:        (sections.earthFuture        || '').slice(0, 1000),
+      otherCivilizations: (sections.otherCivilizations || '').slice(0, 1000),
+      technologyFuture:   (sections.technologyFuture   || '').slice(0, 1000),
+      warning:            (sections.warning            || '').slice(0, 1000),
+      action:             (sections.action             || '').slice(0, 1000)
+    },
+    // Insights resumidos para o sistema de similaridade (mantém compatibilidade)
     insights: extractInsights(sections, reading.theme, reading.question)
   };
+
   profile.readings.unshift(newEntry);
-  profile.readings = profile.readings.slice(0, 10);
+  profile.readings = profile.readings.slice(0, 20); // guarda últimas 20 leituras
   profile.lastSeen = reading.date;
 
   db[key] = profile;
@@ -5141,6 +5152,7 @@ document.getElementById('openReadingBtn').addEventListener('click', async functi
       name,
       birthdate,
       gender,
+      email: getStoredUser().email || '',
       theme,
       state,
       question,
