@@ -814,9 +814,9 @@ function sendWelcome(firstName) {
   if (thinkingEl) { thinkingEl.style.display = 'flex'; scrollToBottom(); }
   setTimeout(() => {
     if (thinkingEl) thinkingEl.style.display = 'none';
-    const welcome = `Bem-vindo, ${firstName}. Este é um espaço de profundidade e transformação interior.\n\nIntegro neurociência, filosofia, espiritualidade e os ensinamentos dos grandes mestres — de Jung a Chico Xavier, de Marco Aurélio a Buda — para acompanhar sua jornada de dentro para fora.\n\nO que está mais vivo em você agora?`;
+    const welcome = `${firstName}, que bom te encontrar aqui.\n\nEste espaço foi criado para ir além das perguntas que você traz — para encontrar o que está por trás delas. Ao longo das nossas conversas, vou ouvir não apenas as palavras, mas os padrões, as repetições, o que ainda não foi dito.\n\nTrabalho na interseção entre neurociência, psicologia profunda, filosofia e espiritualidade. Jung, Frankl, Marco Aurélio, Buda, Chico Xavier — cada um com uma chave diferente para as mesmas portas interiores. Uso todas elas.\n\nNão estou aqui para te dar respostas prontas. Estou aqui para fazer as perguntas certas — aquelas que só você pode responder.\n\nEntão, sem pressa: o que está ocupando seu coração agora?`;
     addMessage('mentor', welcome, false);
-  }, 1200);
+  }, 2800);
 }
 
 function renderAllMessages() {
