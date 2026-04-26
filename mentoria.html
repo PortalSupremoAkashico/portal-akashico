@@ -752,9 +752,21 @@ function calcLifePhase(data) {
 function renderSoulProfile(journey) {
   const grid = document.getElementById('soulProfileGrid');
   const n = journey.totalConsultas;
-  const consultasText = n === 0 ? 'Início da jornada'
-    : n === 1 ? 'Em sua consulta anterior'
-    : 'Em suas consultas anteriores';
+  let consultasText;
+  if (n === 0) {
+    consultasText = 'Nenhuma consulta ainda — início da jornada';
+  } else if (n === 1) {
+    const r = currentReadings[0];
+    consultasText = r?.question
+      ? `"${r.question.slice(0, 80)}${r.question.length > 80 ? '…' : ''}"`
+      : 'Uma consulta realizada';
+  } else {
+    const temas = journey.temasRecorrentes;
+    const temaPrincipal = temas[0] || '';
+    consultasText = temaPrincipal
+      ? `${n} consultas — tema central: ${temaPrincipal}`
+      : `${n} consultas realizadas`;
+  }
 
   const items = [
     { label: 'Jornada',          value: consultasText },
