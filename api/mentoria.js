@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   if (!ANTHROPIC_API_KEY) return res.status(500).json({ error: 'API key não configurada.' });
 
   try {
-    const { user, soulJourney, conversationHistory, userMessage } = req.body;
+    const { user, soulJourney, readingsContext, conversationHistory, userMessage } = req.body;
 
     const firstName = user?.nome ? user.nome.trim().split(/\s+/)[0] : 'consulente';
     const gender = user?.sexo || '';
@@ -51,6 +51,7 @@ Você não dá respostas prontas. Você abre portas. Você é simultaneamente:
 - Um mentor socrático que sabe que as melhores respostas já existem dentro de quem pergunta
 
 ${soulJourneyContext}
+${readingsContext ? `\n${readingsContext}` : ''}
 
 METODOLOGIA DO MENTOR:
 
