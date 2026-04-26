@@ -3257,15 +3257,6 @@
     <!-- SECÇÃO 1: RITUAL + FORMULÁRIO -->
     <div class="section" id="section1">
 
-        <!-- Link para Mentoria -->
-        <div style="text-align:right;margin-bottom:12px;">
-          <a href="/mentoria" style="font-size:.78rem;color:rgba(196,181,253,.55);text-decoration:none;border:1px solid rgba(196,181,253,.15);border-radius:20px;padding:6px 14px;transition:all .2s;"
-            onmouseover="this.style.color='#c4b5fd';this.style.borderColor='rgba(196,181,253,.35)'"
-            onmouseout="this.style.color='rgba(196,181,253,.55)';this.style.borderColor='rgba(196,181,253,.15)'">
-            ⚚ Mentoria Akáshica →
-          </a>
-        </div>
-
         <!-- AUTH -->
         <div class="card" id="authCard">
           <div class="card-body" style="text-align:center;">
@@ -3432,6 +3423,16 @@
     <!-- SECÇÃO 2: PROTOCOLO + SELO -->
     <div class="section" id="section2" style="display:none;">
 
+        <!-- Botão Voltar -->
+        <div style="margin-bottom:12px;">
+          <button type="button" onclick="voltarParaFormulario()"
+            style="font-size:.75rem;padding:7px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(196,181,253,.2);border-radius:20px;color:rgba(196,181,253,.7);letter-spacing:.06em;cursor:pointer;transition:all .2s;"
+            onmouseover="this.style.background='rgba(139,92,246,.15)';this.style.color='#c4b5fd'"
+            onmouseout="this.style.background='rgba(255,255,255,.04)';this.style.color='rgba(196,181,253,.7)'">
+            ← Voltar
+          </button>
+        </div>
+
         <!-- PROTOCOLO -->
         <div class="card" id="protocolo">
           <div class="card-body">
@@ -3493,6 +3494,16 @@
     <!-- SECÇÃO 3: CONSULTA -->
     <div class="section card" id="consulta">
       <div class="card-body">
+
+        <!-- Botão Voltar -->
+        <div style="margin-bottom:12px;">
+          <button type="button" onclick="voltarParaProtocolo()"
+            style="font-size:.75rem;padding:7px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(196,181,253,.2);border-radius:20px;color:rgba(196,181,253,.7);letter-spacing:.06em;cursor:pointer;transition:all .2s;"
+            onmouseover="this.style.background='rgba(139,92,246,.15)';this.style.color='#c4b5fd'"
+            onmouseout="this.style.background='rgba(255,255,255,.04)';this.style.color='rgba(196,181,253,.7)'">
+            ← Voltar
+          </button>
+        </div>
         
         <h2>Leitura Akáshica Suprema</h2>
         <p class="section-desc">Deslize as abas para explorar todas as camadas da sua leitura.</p>
@@ -4587,6 +4598,30 @@ function resetStreamingState() {
     lastFrameTs: 0,
     streamEnded: false
   };
+}
+
+function voltarParaFormulario() {
+  // Protocolo → Formulário
+  const section2 = document.getElementById('section2');
+  section2.style.display = 'none';
+  section2.classList.remove('section-fade-in');
+  const formCard = document.getElementById('abertura-consulta');
+  if (formCard) {
+    formCard.style.display = '';
+    formCard.classList.add('section-fade-in');
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function voltarParaProtocolo() {
+  // Consulta → Protocolo
+  const consulta = document.getElementById('consulta');
+  consulta.style.display = 'none';
+  consulta.classList.remove('section-fade-in');
+  const section2 = document.getElementById('section2');
+  section2.style.display = 'block';
+  section2.classList.add('section-fade-in');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function setActiveTab(btn, key, title, markText, symbol, label, sealClass) {
@@ -5836,59 +5871,4 @@ async function sendEmailWithPDF(toEmail, pdfBase64) {
 
 Segue em anexo sua leitura akáshica completa realizada em ${date}.
 
-Que a luz dos Registros Akáshicos ilumine seu caminho.
-
-Com gratidão,
-Portal Supremo dos Registros Akáshicos`,
-    fileName: filename,
-    fileData: pdfBase64,
-    mimeType: 'application/pdf'
-  };
-
-  // Dispara o envio do e-mail E o salvamento pra mala direta EM PARALELO.
-  // O usuário só espera pelo mais lento dos dois (geralmente o envio).
-  // Se o save-email falhar, NÃO afeta o envio principal (é opcional).
-  const sendPromise = fetch('/api/email', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(emailData)
-  });
-
-  const savePromise = fetch('/api/save-email', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      email: toEmail,
-      nome: name
-    })
-  }).catch(err => {
-    // Falha no save-email é silenciosa — não afeta o envio
-    console.warn('⚠️ Erro ao salvar e-mail para mala direta (não crítico):', err);
-    return null;
-  });
-
-  // Aguarda os dois em paralelo
-  const [response, saveResponse] = await Promise.all([sendPromise, savePromise]);
-
-  if (!response.ok) {
-    throw new Error(`Erro HTTP: ${response.status}`);
-  }
-
-  const result = await response.json();
-
-  if (!result.success) {
-    throw new Error(result.message || 'Erro ao enviar e-mail');
-  }
-
-  if (saveResponse) console.log('✅ E-mail salvo para mala direta');
-
-  return { success: true, method: 'gmail-auto' };
-}
-// === HANDLER DO BOTÃO (mantém-se como está) ===
-</script>
-</body>
-</html>
+Que a luz
