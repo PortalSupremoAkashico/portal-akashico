@@ -3389,22 +3389,6 @@
             <h2>Formulário da Consulta</h2>
             <p class="section-desc">Preencha os campos e conecte-se à rede universal para canalizar sua resposta.</p>
 
-            <!-- PERGUNTAS DE DESPERTAR -->
-            <div id="awakeningQuestions" class="stack" style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid rgba(196,181,253,.1);">
-              <div style="text-align:center;margin-bottom:4px;">
-                <div style="font-family:var(--font-display);font-size:.7rem;letter-spacing:.14em;color:rgba(240,201,107,.7);margin-bottom:6px;">PREPARAÇÃO INTERIOR</div>
-                <p style="font-size:.82rem;color:rgba(155,148,196,.7);line-height:1.5;">Antes de formular sua pergunta, respire e conecte-se com o que realmente está presente em você.</p>
-              </div>
-              <div>
-                <label for="aw1" style="font-size:.82rem;color:rgba(196,181,253,.7);">✦ O que está mais vivo em você agora — o que pede atenção?</label>
-                <textarea id="aw1" placeholder="Escreva livremente, sem julgamento..." rows="2" disabled style="font-size:.88rem;margin-top:6px;"></textarea>
-              </div>
-              <div>
-                <label for="aw2" style="font-size:.82rem;color:rgba(196,181,253,.7);">✦ Se você já soubesse a resposta que busca, o que ela seria?</label>
-                <textarea id="aw2" placeholder="Deixe emergir o que já existe dentro de você..." rows="2" disabled style="font-size:.88rem;margin-top:6px;"></textarea>
-              </div>
-            </div>
-
             <div class="stack">
               <div class="row-2">
                 <div>
@@ -3819,9 +3803,6 @@ function setStatus(element, type, message) {
 
 function getFormData() {
   const user = getStoredUser();
-  const aw1 = (document.getElementById('aw1')?.value || '').trim();
-  const aw2 = (document.getElementById('aw2')?.value || '').trim();
-  const awakeningContext = [aw1 ? `O que está vivo agora: "${aw1}"` : '', aw2 ? `Intuição interior: "${aw2}"` : ''].filter(Boolean).join(' | ');
   return {
     name:      user.nome     || '',
     birthdate: user.data     || '',
@@ -3830,8 +3811,7 @@ function getFormData() {
     state:     document.getElementById('estado').value,
     level:     'Profunda',
     cosmicMode: 'Desativado',
-    question:  document.getElementById('pergunta').value.trim(),
-    awakeningContext
+    question:  document.getElementById('pergunta').value.trim()
   };
 }
 
@@ -3853,11 +3833,6 @@ function enableFormFields(enabled) {
   fieldIds.forEach(id => {
     const element = document.getElementById(id);
     element.disabled = !enabled;
-  });
-  // Perguntas de despertar habilitam junto com o formulário
-  ['aw1','aw2'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = !enabled;
   });
   updateSelectPlaceholderStates();
 }
@@ -4200,9 +4175,6 @@ async function fetchAkashicReading(apiKey, name, birthdate, gender, theme, state
     console.log(`🔍 ${similarReadings.length} leitura(s) similar(es) encontrada(s) para ${name}`);
   }
 
-  // Pega awakeningContext do formData atual
-  const awakeningContext = getFormData().awakeningContext || '';
-
   const response = await fetch('/api/reading', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -4210,8 +4182,7 @@ async function fetchAkashicReading(apiKey, name, birthdate, gender, theme, state
       name, birthdate, gender, theme, state, question, level, cosmicMode,
       historyContext,
       similarContext,
-      hasSimilar: similarReadings.length > 0,
-      awakeningContext
+      hasSimilar: similarReadings.length > 0
     })
   });
 
