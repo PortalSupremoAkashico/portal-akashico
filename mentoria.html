@@ -464,17 +464,11 @@
             <div style="font-family:var(--font-display);font-size:.75rem;letter-spacing:.12em;color:var(--gold);margin-bottom:2px;">JORNADA DA ALMA</div>
             <div style="font-size:.82rem;color:var(--muted);">Perfil consciencial em evolução</div>
           </div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div style="text-align:right;">
-              <div id="progressLabel" style="font-size:.75rem;color:var(--muted);margin-bottom:4px;">Evolução</div>
-              <div class="progress-bar-wrap" style="width:100px;">
-                <div id="progressFill" class="progress-bar-fill" style="width:0%;"></div>
-              </div>
+          <div style="text-align:right;">
+            <div id="progressLabel" style="font-size:.75rem;color:var(--muted);margin-bottom:4px;">Evolução</div>
+            <div class="progress-bar-wrap" style="width:100px;">
+              <div id="progressFill" class="progress-bar-fill" style="width:0%;"></div>
             </div>
-            <button type="button" onclick="clearConversation()"
-              style="width:auto;padding:8px 16px;font-size:.72rem;background:rgba(255,255,255,.04);border-color:rgba(196,181,253,.15);white-space:nowrap;flex-shrink:0;">
-              Nova Sessão
-            </button>
           </div>
         </div>
         <div class="soul-profile" id="soulProfileGrid"></div>
@@ -634,21 +628,36 @@ function loadUserReadings(user) {
 }
 
 // Monta contexto rico de todas as leituras passadas para o mentor
-function buildReadingsContext(readings, firstName) {
-  if (!readings || readings.length === 0) return '';
+function buildReadingsContext(readings, user) {
+  const firstName = (user?.nome || '').trim().split(/\s+/)[0] || 'consulente';
+  const journey = currentJourney;
 
-  let ctx = `\nHISTÓRICO COMPLETO DE LEITURAS DE ${firstName.toUpperCase()} (use como base profunda da mentoria):\n`;
-  ctx += `Total de leituras registradas: ${readings.length}\n\n`;
+  let ctx = `PERFIL COMPLETO DO CONSULENTE:\n`;
+  ctx += `Nome: ${user?.nome || '—'}\n`;
+  ctx += `E-mail: ${user?.email || '—'}\n`;
+  ctx += `Data de nascimento: ${user?.data || '—'}\n`;
+  ctx += `Sexo: ${user?.sexo || '—'}\n`;
+  ctx += `Fase de vida: ${journey?.faseDeVida || '—'}\n`;
+  ctx += `Temas recorrentes: ${(journey?.temasRecorrentes || []).join(', ') || '—'}\n`;
+  ctx += `Padrão emocional: ${journey?.padraoEmocional || '—'}\n`;
+  ctx += `Direção evolutiva: ${journey?.direcaoEvolutiva || '—'}\n`;
+  ctx += `Maior desafio identificado: ${journey?.maiorDesafio || '—'}\n\n`;
+
+  if (!readings || readings.length === 0) {
+    ctx += `${firstName} ainda não realizou consultas anteriores — esta é sua primeira interação com o portal.\n`;
+    return ctx;
+  }
+
+  ctx += `HISTÓRICO DE CONSULTAS (${readings.length} total):\n\n`;
 
   readings.forEach((r, i) => {
-    ctx += `━━ LEITURA ${i + 1} — ${r.date || 'data não registrada'} ━━\n`;
-    ctx += `Tema: ${r.theme || '—'} | Estado emocional: ${r.state || '—'}\n`;
+    ctx += `━━ CONSULTA ${i + 1} — ${r.date || 'data não registrada'} ━━\n`;
+    ctx += `Tema: ${r.theme || '—'} | Estado: ${r.state || '—'}\n`;
     ctx += `Pergunta: "${r.question || '—'}"\n`;
     if (r.sections) {
-      if (r.sections.revelation)         ctx += `Revelação: ${r.sections.revelation.slice(0, 600)}\n`;
-      if (r.sections.earthFuture)        ctx += `Futuro: ${r.sections.earthFuture.slice(0, 300)}\n`;
-      if (r.sections.warning)            ctx += `Advertência: ${r.sections.warning.slice(0, 300)}\n`;
-      if (r.sections.action)             ctx += `Ação recomendada: ${r.sections.action.slice(0, 300)}\n`;
+      if (r.sections.revelation) ctx += `Revelação: ${r.sections.revelation.slice(0, 500)}\n`;
+      if (r.sections.warning)    ctx += `Advertência: ${r.sections.warning.slice(0, 300)}\n`;
+      if (r.sections.action)     ctx += `Ação recomendada: ${r.sections.action.slice(0, 300)}\n`;
     } else if (r.insights) {
       r.insights.forEach(ins => {
         if (ins.type === 'revelation') ctx += `Revelação: ${ins.text}\n`;
@@ -787,16 +796,59 @@ function initMentoria(user) {
   const firstName = user.nome ? user.nome.trim().split(/\s+/)[0] : 'viajante';
   document.getElementById('userGreeting').textContent = `Olá, ${firstName}`;
 
-  // Atualiza perfil com dados das leituras
+  // Atualiza perfil com dados reais das leituras
   if (currentReadings.length > 0) {
     currentJourney.totalConsultas = currentReadings.length;
     currentJourney.ultimaConsulta = currentReadings[0]?.date || '—';
-    // Extrai temas recorrentes das leituras
+
+    // Temas recorrentes (por frequência)
     const temas = currentReadings.map(r => r.theme).filter(Boolean);
     const temasCount = {};
     temas.forEach(t => { temasCount[t] = (temasCount[t] || 0) + 1; });
     currentJourney.temasRecorrentes = Object.entries(temasCount)
       .sort((a,b) => b[1]-a[1]).slice(0,4).map(([t]) => t);
+
+    // Padrão emocional (estado mais frequente nas consultas)
+    const estados = currentReadings.map(r => r.state).filter(Boolean);
+    if (estados.length > 0) {
+      const estadoCount = {};
+      estados.forEach(e => { estadoCount[e] = (estadoCount[e] || 0) + 1; });
+      const maisFrequente = Object.entries(estadoCount).sort((a,b) => b[1]-a[1])[0][0];
+      const variedade = Object.keys(estadoCount).length;
+      if (variedade === 1) {
+        currentJourney.padraoEmocional = `Predominantemente ${maisFrequente.toLowerCase()}`;
+      } else if (variedade <= 3) {
+        currentJourney.padraoEmocional = `Variável — com tendência ao estado ${maisFrequente.toLowerCase()}`;
+      } else {
+        currentJourney.padraoEmocional = `Multifacetado e em constante movimento`;
+      }
+    }
+
+    // Direção evolutiva (baseada nos temas e volume de consultas)
+    const n = currentReadings.length;
+    const temaPrincipal = currentJourney.temasRecorrentes[0] || '';
+    if (n >= 5) {
+      currentJourney.direcaoEvolutiva = `Aprofundamento consistente — especialmente em ${temaPrincipal.toLowerCase()}`;
+    } else if (n >= 2) {
+      currentJourney.direcaoEvolutiva = `Em processo de autoconhecimento — padrões emergindo`;
+    } else {
+      currentJourney.direcaoEvolutiva = `Início da jornada — primeiros mapeamentos`;
+    }
+
+    // Maior desafio (tema com mais consultas em estados de tensão)
+    const tensaoEstados = ['Confuso', 'Cansado', 'Intenso', 'Sensível'];
+    const tensaoReadings = currentReadings.filter(r => tensaoEstados.includes(r.state));
+    if (tensaoReadings.length > 0) {
+      const desafioTemas = tensaoReadings.map(r => r.theme).filter(Boolean);
+      const desafioCount = {};
+      desafioTemas.forEach(t => { desafioCount[t] = (desafioCount[t] || 0) + 1; });
+      const maiorDesafio = Object.entries(desafioCount).sort((a,b) => b[1]-a[1])[0]?.[0];
+      if (maiorDesafio) currentJourney.maiorDesafio = maiorDesafio;
+    }
+
+    // Progresso proporcional ao número de consultas
+    currentJourney.progressoPct = Math.min(90, 10 + n * 8);
+
     try { localStorage.setItem(STORAGE_KEY_JOURNEY, JSON.stringify(currentJourney)); } catch {}
   }
 
@@ -895,9 +947,9 @@ async function sendMessage() {
   thinkingEl.style.display = 'flex';
   scrollToBottom();
 
-  // Contexto de leituras
-  const readingsContext = conversationHistory.length < 6
-    ? buildReadingsContext(currentReadings, currentUser?.nome?.trim().split(/\s+/)[0] || '')
+  // Contexto de leituras — sempre nas primeiras mensagens, carrega perfil completo
+  const readingsContext = conversationHistory.length < 4
+    ? buildReadingsContext(currentReadings, currentUser)
     : '';
 
   let bubble = null;
