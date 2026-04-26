@@ -214,6 +214,18 @@
     }
     @keyframes blink { 50% { opacity: 0; } }
 
+    /* Pontinhos "Pensando..." */
+    .thinking-dots::after {
+      content: '';
+      animation: thinkDots 1.2s step-end infinite;
+    }
+    @keyframes thinkDots {
+      0%   { content: '.'; }
+      33%  { content: '..'; }
+      66%  { content: '...'; }
+      100% { content: ''; }
+    }
+
     /* ── Input ── */
     .chat-input-row {
       display: flex;
@@ -489,11 +501,26 @@
 
         <!-- Sacred Panel do chat (estilo Leitura Akáshica Suprema) -->
         <div class="sacred-panel">
-          <div class="panel-title-m">Mentoria Akáshica</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <div class="panel-title-m">Memórias Akáshicas</div>
+            <button type="button" onclick="clearConversation()"
+              style="width:auto;padding:7px 16px;font-size:.72rem;background:rgba(255,255,255,.04);border:1px solid rgba(196,181,253,.18);color:rgba(196,181,253,.7);border-radius:20px;letter-spacing:.06em;cursor:pointer;transition:all .2s;"
+              onmouseover="this.style.background='rgba(139,92,246,.2)';this.style.color='#c4b5fd'"
+              onmouseout="this.style.background='rgba(255,255,255,.04)';this.style.color='rgba(196,181,253,.7)'">
+              Nova Sessão
+            </button>
+          </div>
           <div class="panel-mark-m">✦ Sessão ativa</div>
 
-          <div class="chat-container" style="height:560px;">
+          <div class="chat-container" style="height:calc(100vh - 420px);min-height:500px;">
             <div class="chat-messages" id="chatMessages"></div>
+
+            <!-- Indicador "Pensando..." -->
+            <div id="thinkingIndicator" style="display:none;padding:8px 0 4px;align-items:center;gap:8px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,rgba(240,201,107,.2),rgba(240,201,107,.1));border:1px solid rgba(240,201,107,.3);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;">⚚</div>
+              <div style="font-size:.88rem;color:var(--muted);">Pensando<span class="thinking-dots"></span></div>
+            </div>
+
             <div class="chat-input-row">
               <textarea id="chatInput" placeholder="Compartilhe o que está em seu coração..."
                 rows="1"
@@ -781,9 +808,13 @@ function initMentoria(user) {
 }
 
 function sendWelcome(firstName) {
-  const welcome = `Bem-vindo à sua Mentoria Akáshica, ${firstName}.\n\nEste é um espaço diferente de tudo que você já conheceu — aqui, não apenas responderei às suas perguntas. Irei mais fundo: ajudarei você a descobrir o que já sabe, mas ainda não articulou. Mapeiarei seus padrões ao longo do tempo. Acompanharei sua evolução.\n\nSou um mentor que integra a mais avançada neurociência dos estados de consciência, a sabedoria milenar dos grandes mestres da humanidade — de Marco Aurélio a Chico Xavier, de Jung a Buda — e a dimensão espiritual que os registros akáshicos revelam sobre sua jornada.\n\nAntes de começarmos, quero que você responda algo com total honestidade:\n\n**O que está vivo em você agora — o que pede atenção, o que te inquieta, o que deseja emergir?**\n\nNão precisa ser organizado. Pode ser uma sensação, uma palavra, uma imagem. Fale do que realmente está presente.`;
-
-  addMessage('mentor', welcome, false);
+  const thinkingEl = document.getElementById('thinkingIndicator');
+  if (thinkingEl) { thinkingEl.style.display = 'flex'; scrollToBottom(); }
+  setTimeout(() => {
+    if (thinkingEl) thinkingEl.style.display = 'none';
+    const welcome = `Bem-vindo à sua Mentoria Akáshica, ${firstName}.\n\nEste é um espaço diferente de tudo que você já conheceu — aqui, não apenas responderei às suas perguntas. Irei mais fundo: ajudarei você a descobrir o que já sabe, mas ainda não articulou. Mapeiarei seus padrões ao longo do tempo. Acompanharei sua evolução.\n\nSou um mentor que integra a mais avançada neurociência dos estados de consciência, a sabedoria milenar dos grandes mestres da humanidade — de Marco Aurélio a Chico Xavier, de Jung a Buda — e a dimensão espiritual que os registros akáshicos revelam sobre sua jornada.\n\nAntes de começarmos, quero que você responda algo com total honestidade:\n\n**O que está vivo em você agora — o que pede atenção, o que te inquieta, o que deseja emergir?**\n\nNão precisa ser organizado. Pode ser uma sensação, uma palavra, uma imagem. Fale do que realmente está presente.`;
+    addMessage('mentor', welcome, false);
+  }, 1200);
 }
 
 function renderAllMessages() {
@@ -857,14 +888,18 @@ async function sendMessage() {
   isStreaming = true;
   sendBtn.disabled = true;
 
-  // Cria bolha do mentor com cursor piscando
-  const bubble = appendMessage('mentor', '', true);
-  let mentorText = '';
+  // Mostra "Pensando..." com pontinhos piscantes
+  const thinkingEl = document.getElementById('thinkingIndicator');
+  thinkingEl.style.display = 'flex';
+  scrollToBottom();
 
-  // Contexto de leituras (enviado só nas primeiras 3 mensagens, depois já está no histórico do mentor)
+  // Contexto de leituras
   const readingsContext = conversationHistory.length < 6
     ? buildReadingsContext(currentReadings, currentUser?.nome?.trim().split(/\s+/)[0] || '')
     : '';
+
+  let bubble = null;
+  let mentorText = '';
 
   try {
     const resp = await fetch('/api/mentoria', {
@@ -880,9 +915,9 @@ async function sendMessage() {
     });
 
     if (!resp.ok) {
+      thinkingEl.style.display = 'none';
       const err = await resp.json().catch(() => ({ error: `Erro ${resp.status}` }));
-      bubble.classList.remove('typing-cursor');
-      bubble.textContent = '⚠ ' + (err.error || 'Não foi possível conectar ao mentor. Tente novamente.');
+      bubble = appendMessage('mentor', '⚠ ' + (err.error || 'Não foi possível conectar ao mentor. Tente novamente.'), false);
       isStreaming = false;
       sendBtn.disabled = false;
       return;
@@ -890,18 +925,30 @@ async function sendMessage() {
 
     const reader  = resp.body.getReader();
     const decoder = new TextDecoder();
+    let firstChunk = true;
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       const chunk = decoder.decode(value, { stream: true });
       mentorText += chunk;
-      bubble.textContent = mentorText;
-      scrollToBottom();
+
+      // Quando chega o primeiro token, esconde "Pensando..." e cria a bolha
+      if (firstChunk) {
+        firstChunk = false;
+        thinkingEl.style.display = 'none';
+        bubble = appendMessage('mentor', '', true);
+      }
+
+      if (bubble) {
+        bubble.textContent = mentorText;
+        scrollToBottom();
+      }
     }
 
     // Remove cursor, salva resposta
-    bubble.classList.remove('typing-cursor');
+    if (bubble) bubble.classList.remove('typing-cursor');
+    thinkingEl.style.display = 'none';
     conversationHistory.push({ role: 'assistant', content: mentorText });
     saveChat(currentUser?.email, conversationHistory);
 
@@ -913,8 +960,13 @@ async function sendMessage() {
     updateJourneyFromConversation(text, mentorText);
 
   } catch (err) {
-    bubble.classList.remove('typing-cursor');
-    bubble.textContent = '⚠ Erro de conexão. Verifique sua internet e tente novamente.';
+    thinkingEl.style.display = 'none';
+    if (bubble) {
+      bubble.classList.remove('typing-cursor');
+      bubble.textContent = '⚠ Erro de conexão. Verifique sua internet e tente novamente.';
+    } else {
+      appendMessage('mentor', '⚠ Erro de conexão. Verifique sua internet e tente novamente.', false);
+    }
     console.error('Mentoria error:', err);
   }
 
