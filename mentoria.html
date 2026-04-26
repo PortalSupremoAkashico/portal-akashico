@@ -534,14 +534,72 @@
 // ═══════════════════════════════════
 // STORAGE & AUTH
 // ═══════════════════════════════════
-const STORAGE_KEY_USER    = 'akashic_user';
-const STORAGE_KEY_JOURNEY = 'akashic_journey';
-const STORAGE_KEY_CHAT    = 'akashic_mentoria_chat';
+const STORAGE_KEY_USER      = 'akashic_user';
+const STORAGE_KEY_JOURNEY   = 'akashic_journey';
+const STORAGE_KEY_CONS_DB   = 'akashic_consultants_db';
 
 function getUser()    { try { return JSON.parse(localStorage.getItem(STORAGE_KEY_USER) || '{}'); } catch { return {}; } }
 function getJourney() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY_JOURNEY) || '{}'); } catch { return {}; } }
-function getChat()    { try { return JSON.parse(localStorage.getItem(STORAGE_KEY_CHAT) || '[]'); } catch { return []; } }
-function saveChat(h)  { try { localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(h.slice(-60))); } catch {} } // mantém últimas 60 msgs
+
+// Chave do chat da mentoria: específica por email do usuário
+function getMentoriaKey(email) { return `akashic_mentoria_${(email||'anon').replace(/[^a-z0-9]/gi,'_')}`; }
+function getChat(email)  { try { return JSON.parse(localStorage.getItem(getMentoriaKey(email)) || '[]'); } catch { return []; } }
+function saveChat(email, h) { try { localStorage.setItem(getMentoriaKey(email), JSON.stringify(h.slice(-80))); } catch {} }
+
+// Carrega todas as leituras do consulente logado do banco de perfis
+function loadUserReadings(user) {
+  try {
+    const db = JSON.parse(localStorage.getItem(STORAGE_KEY_CONS_DB) || '{}');
+    // Procura pelo nome do usuário (a chave é nome normalizado)
+    const firstName = (user.nome || '').trim().split(/\s+/)[0].toLowerCase();
+    const fullName  = (user.nome || '').trim().toLowerCase().replace(/\s+/g,'_');
+
+    // Tenta encontrar o perfil por diferentes variações da chave
+    let profile = null;
+    for (const key of Object.keys(db)) {
+      const p = db[key];
+      const pName = (p.name || '').toLowerCase();
+      if (
+        pName === (user.nome || '').toLowerCase() ||
+        pName.startsWith(firstName) ||
+        (user.email && p.email && p.email.toLowerCase() === user.email.toLowerCase())
+      ) {
+        profile = p;
+        break;
+      }
+    }
+    return profile ? (profile.readings || []) : [];
+  } catch { return []; }
+}
+
+// Monta contexto rico de todas as leituras passadas para o mentor
+function buildReadingsContext(readings, firstName) {
+  if (!readings || readings.length === 0) return '';
+
+  let ctx = `\nHISTÓRICO COMPLETO DE LEITURAS DE ${firstName.toUpperCase()} (use como base profunda da mentoria):\n`;
+  ctx += `Total de leituras registradas: ${readings.length}\n\n`;
+
+  readings.forEach((r, i) => {
+    ctx += `━━ LEITURA ${i + 1} — ${r.date || 'data não registrada'} ━━\n`;
+    ctx += `Tema: ${r.theme || '—'} | Estado emocional: ${r.state || '—'}\n`;
+    ctx += `Pergunta: "${r.question || '—'}"\n`;
+    if (r.sections) {
+      if (r.sections.revelation)         ctx += `Revelação: ${r.sections.revelation.slice(0, 600)}\n`;
+      if (r.sections.earthFuture)        ctx += `Futuro: ${r.sections.earthFuture.slice(0, 300)}\n`;
+      if (r.sections.warning)            ctx += `Advertência: ${r.sections.warning.slice(0, 300)}\n`;
+      if (r.sections.action)             ctx += `Ação recomendada: ${r.sections.action.slice(0, 300)}\n`;
+    } else if (r.insights) {
+      r.insights.forEach(ins => {
+        if (ins.type === 'revelation') ctx += `Revelação: ${ins.text}\n`;
+        if (ins.type === 'action')     ctx += `Ação: ${ins.text}\n`;
+        if (ins.type === 'warning')    ctx += `Alerta: ${ins.text}\n`;
+      });
+    }
+    ctx += '\n';
+  });
+
+  return ctx;
+}
 
 async function hashPassword(password) {
   const buf = new TextEncoder().encode(password);
@@ -650,10 +708,12 @@ let conversationHistory = [];
 let isStreaming = false;
 let currentUser = null;
 let currentJourney = null;
+let currentReadings = [];  // histórico completo de leituras do usuário
 
 function initMentoria(user) {
   currentUser    = user;
   currentJourney = buildSoulJourney(user);
+  currentReadings = loadUserReadings(user);
 
   document.getElementById('authScreen').style.display  = 'none';
   document.getElementById('mentoriaMain').style.display = '';
@@ -661,13 +721,25 @@ function initMentoria(user) {
   const firstName = user.nome ? user.nome.trim().split(/\s+/)[0] : 'viajante';
   document.getElementById('userGreeting').textContent = `Olá, ${firstName}`;
 
+  // Atualiza perfil com dados das leituras
+  if (currentReadings.length > 0) {
+    currentJourney.totalConsultas = currentReadings.length;
+    currentJourney.ultimaConsulta = currentReadings[0]?.date || '—';
+    // Extrai temas recorrentes das leituras
+    const temas = currentReadings.map(r => r.theme).filter(Boolean);
+    const temasCount = {};
+    temas.forEach(t => { temasCount[t] = (temasCount[t] || 0) + 1; });
+    currentJourney.temasRecorrentes = Object.entries(temasCount)
+      .sort((a,b) => b[1]-a[1]).slice(0,4).map(([t]) => t);
+    try { localStorage.setItem(STORAGE_KEY_JOURNEY, JSON.stringify(currentJourney)); } catch {}
+  }
+
   renderSoulProfile(currentJourney);
 
-  // Carrega histórico salvo
-  conversationHistory = getChat();
+  // Carrega histórico de mentoria específico deste usuário (por email)
+  conversationHistory = getChat(user.email);
   renderAllMessages();
 
-  // Se não há histórico, envia mensagem de boas-vindas do mentor
   if (conversationHistory.length === 0) {
     setTimeout(() => sendWelcome(firstName), 400);
   } else {
@@ -694,7 +766,7 @@ function addMessage(role, content, save = true) {
   appendMessage(role, content, false);
   if (save) {
     conversationHistory.push({ role: role === 'user' ? 'user' : 'assistant', content });
-    saveChat(conversationHistory);
+    saveChat(currentUser?.email, conversationHistory);
   }
   scrollToBottom();
 }
@@ -756,6 +828,11 @@ async function sendMessage() {
   const bubble = appendMessage('mentor', '', true);
   let mentorText = '';
 
+  // Contexto de leituras (enviado só nas primeiras 3 mensagens, depois já está no histórico do mentor)
+  const readingsContext = conversationHistory.length < 6
+    ? buildReadingsContext(currentReadings, currentUser?.nome?.trim().split(/\s+/)[0] || '')
+    : '';
+
   try {
     const resp = await fetch('/api/mentoria', {
       method: 'POST',
@@ -763,7 +840,8 @@ async function sendMessage() {
       body: JSON.stringify({
         user:                currentUser,
         soulJourney:         currentJourney,
-        conversationHistory: conversationHistory.slice(-20), // últimas 20 mensagens como contexto
+        readingsContext,
+        conversationHistory: conversationHistory.slice(-30),
         userMessage:         text
       })
     });
@@ -792,7 +870,7 @@ async function sendMessage() {
     // Remove cursor, salva resposta
     bubble.classList.remove('typing-cursor');
     conversationHistory.push({ role: 'assistant', content: mentorText });
-    saveChat(conversationHistory);
+    saveChat(currentUser?.email, conversationHistory);
 
     // Remove o id de streaming
     const streamEl = document.getElementById('streaming-msg');
@@ -837,7 +915,7 @@ function updateJourneyFromConversation(userMsg, mentorMsg) {
 function clearConversation() {
   if (!confirm('Deseja iniciar uma nova sessão? O histórico desta conversa será apagado.')) return;
   conversationHistory = [];
-  saveChat([]);
+  saveChat(currentUser?.email, []);
   document.getElementById('chatMessages').innerHTML = '';
   const firstName = currentUser?.nome ? currentUser.nome.trim().split(/\s+/)[0] : 'viajante';
   setTimeout(() => sendWelcome(firstName), 200);
