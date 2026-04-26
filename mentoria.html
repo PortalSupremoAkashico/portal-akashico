@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mentoria Akáshica — Portal Supremo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-deep: #070510;
+      --bg-card: rgba(18, 13, 38, 0.92);
+      --border: rgba(147, 109, 255, 0.18);
+      --border-glow: rgba(147, 109, 255, 0.45);
+      --text: #ede9ff;
+      --muted: #9b94c4;
+      --accent: #a78bfa;
+      --accent-bright: #c4b5fd;
+      --accent-dark: #6d28d9;
+      --gold: #f0c96b;
+      --ok: #86efac;
+      --danger: #fca5a5;
+      --radius: 20px;
+      --radius-sm: 12px;
+      --font-display: 'Cinzel', serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--text);
+      background-color: var(--bg-deep);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Fundo cósmico ── */
+    #cosmicCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .container {
+      width: min(780px, calc(100% - 24px));
+      margin: 0 auto;
+      padding: 24px 0 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      text-align: center;
+      padding: 36px 20px 24px;
+    }
+    .header-badge {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: .65rem;
+      letter-spacing: .18em;
+      color: var(--gold);
+      border: 1px solid rgba(240,201,107,.3);
+      border-radius: 20px;
+      padding: 4px 14px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+    .site-header h1 {
+      font-family: var(--font-display);
+      font-size: clamp(1.3rem, 4vw, 2rem);
+      font-weight: 600;
+      letter-spacing: .08em;
+      background: linear-gradient(135deg, #e0d4ff, #a78bfa, #c4b5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    .site-header p {
+      font-size: .88rem;
+      color: var(--muted);
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 32px rgba(0,0,0,.6), 0 0 0 1px var(--border);
+      backdrop-filter: blur(20px);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .card-body { padding: 28px 32px; }
+    @media (max-width: 600px) { .card-body { padding: 20px 18px; } }
+
+    /* ── Soul Journey Profile ── */
+    .soul-profile {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .soul-item {
+      background: rgba(139,92,246,.08);
+      border: 1px solid rgba(196,181,253,.12);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+    .soul-item-label {
+      font-size: .7rem;
+      letter-spacing: .1em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .soul-item-value {
+      font-size: .88rem;
+      color: var(--accent-bright);
+      font-weight: 500;
+    }
+
+    /* ── Chat ── */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 520px;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(147,109,255,.3) transparent;
+    }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: rgba(147,109,255,.3); border-radius: 4px; }
+
+    .msg {
+      display: flex;
+      gap: 10px;
+      max-width: 88%;
+      animation: msgIn .3s ease;
+    }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+    .msg.mentor { align-self: flex-start; }
+
+    .msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .9rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .msg.user .msg-avatar {
+      background: linear-gradient(135deg, rgba(139,92,246,.4), rgba(109,40,217,.3));
+      border: 1px solid rgba(196,181,253,.3);
+    }
+    .msg.mentor .msg-avatar {
+      background: linear-gradient(135deg, rgba(240,201,107,.2), rgba(240,201,107,.1));
+      border: 1px solid rgba(240,201,107,.3);
+    }
+
+    .msg-bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: .9rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user .msg-bubble {
+      background: rgba(109,40,217,.25);
+      border: 1px solid rgba(196,181,253,.2);
+      border-top-right-radius: 4px;
+      color: var(--text);
+    }
+    .msg.mentor .msg-bubble {
+      background: rgba(18,13,38,.8);
+      border: 1px solid rgba(147,109,255,.18);
+      border-top-left-radius: 4px;
+      color: rgba(237,233,255,.92);
+    }
+
+    /* Cursor do typewriter no mentor */
+    .typing-cursor::after {
+      content: '▌';
+      opacity: 1;
+      animation: blink .6s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Input ── */
+    .chat-input-row {
+      display: flex;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(196,181,253,.1);
+      margin-top: 4px;
+      align-items: flex-end;
+    }
+    .chat-input-row textarea {
+      flex: 1;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(196,181,253,.2);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: .9rem;
+      padding: 12px 14px;
+      resize: none;
+      min-height: 48px;
+      max-height: 140px;
+      outline: none;
+      transition: border-color .2s;
+      line-height: 1.5;
+    }
+    .chat-input-row textarea:focus { border-color: rgba(196,181,253,.5); }
+    .chat-input-row textarea::placeholder { color: rgba(155,148,196,.45); }
+    .chat-input-row textarea:-webkit-autofill,
+    .chat-input-row textarea:-webkit-autofill:focus {
+      -webkit-text-fill-color: #e5ddfb !important;
+      -webkit-box-shadow: 0 0 0px 1000px rgba(12,9,27,.98) inset !important;
+    }
+
+    .btn-send {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(139,92,246,.5), rgba(109,40,217,.4));
+      border: 1px solid rgba(196,181,253,.3);
+      color: var(--accent-bright);
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+      flex-shrink: 0;
+    }
+    .btn-send:hover { background: rgba(109,40,217,.6); border-color: rgba(196,181,253,.5); }
+    .btn-send:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ── Botões de ação rápida ── */
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .quick-btn {
+      font-size: .75rem;
+      padding: 6px 12px;
+      background: rgba(139,92,246,.1);
+      border: 1px solid rgba(196,181,253,.18);
+      border-radius: 20px;
+      color: rgba(196,181,253,.8);
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    .quick-btn:hover {
+      background: rgba(139,92,246,.25);
+      border-color: rgba(196,181,253,.4);
+      color: var(--accent-bright);
+    }
+
+    /* ── Progresso ── */
+    .progress-bar-wrap {
+      background: rgba(255,255,255,.05);
+      border-radius: 20px;
+      height: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 20px;
+      background: linear-gradient(90deg, var(--accent-dark), var(--accent));
+      transition: width 1s ease;
+    }
+
+    /* ── Status ── */
+    .status { font-size: .82rem; min-height: 20px; }
+    .status.ok    { color: var(--ok); }
+    .status.error { color: var(--danger); }
+    .status.warn  { color: var(--gold); }
+
+    /* ── Nav ── */
+    .nav-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .8rem;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 8px 14px;
+      border: 1px solid rgba(196,181,253,.15);
+      border-radius: 20px;
+      transition: all .2s;
+    }
+    .nav-link:hover { color: var(--accent-bright); border-color: rgba(196,181,253,.35); }
+
+    /* ── Auth screen ── */
+    #authScreen { text-align: center; }
+    .stack { display: flex; flex-direction: column; gap: 14px; }
+    input, textarea {
+      width: 100%;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(196,181,253,.2);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: .95rem;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input:focus, textarea:focus { border-color: rgba(196,181,253,.5); }
+    input::placeholder { color: rgba(155,148,196,.45); }
+    button {
+      width: 100%;
+      padding: 15px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(196,181,253,.25);
+      background: linear-gradient(135deg, rgba(109,40,217,.35), rgba(139,92,246,.2));
+      color: var(--text);
+      font-family: var(--font-display);
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      cursor: pointer;
+      transition: all .25s;
+    }
+    button:hover { background: linear-gradient(135deg, rgba(109,40,217,.55), rgba(139,92,246,.4)); }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    label { font-size: .85rem; color: rgba(196,181,253,.8); display: block; margin-bottom: 6px; }
+
+    /* ── Divider ── */
+    .sep {
+      border: none;
+      border-top: 1px solid rgba(196,181,253,.1);
+      margin: 16px 0;
+    }
+
+    @media (max-width: 600px) {
+      .soul-profile { grid-template-columns: 1fr 1fr; }
+      .chat-container { height: 440px; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="cosmicCanvas"></canvas>
+
+<div class="container">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-badge">Inteligência Universal</div>
+    <h1>Mentoria Akáshica</h1>
+    <p>Um espaço de profundidade, acompanhamento e transformação interior ao longo da sua jornada</p>
+  </header>
+
+  <!-- AUTH -->
+  <div class="card" id="authScreen">
+    <div class="card-body stack" style="max-width:400px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:8px;">
+        <div style="font-size:2rem;margin-bottom:8px;">✦</div>
+        <p style="font-size:.88rem;color:var(--muted);">Acesse com suas credenciais do Portal</p>
+      </div>
+      <div>
+        <label for="authEmail">E-mail</label>
+        <input id="authEmail" type="email" placeholder="seu@email.com" autocomplete="email"
+          onkeydown="if(event.key==='Enter') document.getElementById('authSenha').focus()" />
+      </div>
+      <div style="position:relative;">
+        <label for="authSenha">Senha</label>
+        <input id="authSenha" type="password" placeholder="Sua senha" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter') handleAuthLogin()" style="padding-right:40px;" />
+        <span onclick="toggleEye('authSenha',this)" style="position:absolute;right:12px;bottom:13px;cursor:pointer;font-size:.95rem;color:rgba(196,181,253,.5);">👁</span>
+      </div>
+      <div id="authStatus" class="status"></div>
+      <button type="button" onclick="handleAuthLogin()">✦ Entrar na Mentoria</button>
+      <a href="/" class="nav-link" style="justify-content:center;">← Voltar ao Portal</a>
+    </div>
+  </div>
+
+  <!-- MAIN MENTORIA (hidden until login) -->
+  <div id="mentoriaMain" style="display:none;">
+
+    <!-- Nav -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <a href="/" class="nav-link">← Portal</a>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span id="userGreeting" style="font-size:.82rem;color:var(--muted);"></span>
+        <button type="button" onclick="clearConversation()" style="width:auto;padding:8px 14px;font-size:.72rem;background:rgba(255,255,255,.04);border-color:rgba(196,181,253,.15);">Nova sessão</button>
+      </div>
+    </div>
+
+    <!-- Soul Journey Profile -->
+    <div class="card" id="soulProfileCard">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div>
+            <div style="font-family:var(--font-display);font-size:.75rem;letter-spacing:.12em;color:var(--gold);margin-bottom:2px;">JORNADA DA ALMA</div>
+            <div style="font-size:.82rem;color:var(--muted);">Perfil consciencial em evolução</div>
+          </div>
+          <div style="text-align:right;">
+            <div id="progressLabel" style="font-size:.75rem;color:var(--muted);margin-bottom:4px;">Evolução</div>
+            <div class="progress-bar-wrap" style="width:120px;">
+              <div id="progressFill" class="progress-bar-fill" style="width:0%;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="soul-profile" id="soulProfileGrid">
+          <!-- preenchido pelo JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="card">
+      <div class="card-body">
+
+        <!-- Ações rápidas -->
+        <div class="quick-actions" id="quickActions">
+          <button type="button" class="quick-btn" onclick="sendQuick('Como estou evoluindo desde nossas últimas conversas?')">Como estou evoluindo?</button>
+          <button type="button" class="quick-btn" onclick="sendQuick('Quais padrões você percebe em minha jornada?')">Meus padrões</button>
+          <button type="button" class="quick-btn" onclick="sendQuick('Preciso de uma prática espiritual para este momento.')">Prática espiritual</button>
+          <button type="button" class="quick-btn" onclick="sendQuick('O que os registros akáshicos revelam sobre meu propósito de vida?')">Meu propósito</button>
+          <button type="button" class="quick-btn" onclick="sendQuick('Estou em um momento de decisão difícil. Pode me ajudar a ver com mais clareza?')">Decisão difícil</button>
+        </div>
+
+        <div class="chat-container">
+          <div class="chat-messages" id="chatMessages">
+            <!-- mensagens aparecem aqui -->
+          </div>
+
+          <div class="chat-input-row">
+            <textarea id="chatInput" placeholder="Compartilhe o que está em seu coração..."
+              rows="1"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"
+              oninput="autoResize(this)"></textarea>
+            <button type="button" class="btn-send" id="sendBtn" onclick="sendMessage()" title="Enviar">↑</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Nota de rodapé -->
+    <p style="text-align:center;font-size:.75rem;color:rgba(155,148,196,.4);margin-top:8px;line-height:1.5;">
+      A Mentoria Akáshica é um espaço de reflexão e crescimento interior.<br>
+      Em situações de crise emocional grave, busque sempre apoio profissional especializado.
+    </p>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════
+// FUNDO CÓSMICO
+// ═══════════════════════════════════
+(function initCanvas() {
+  const canvas = document.getElementById('cosmicCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, stars = [], particles = [];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function initStars() {
+    stars = [];
+    for (let i = 0; i < 180; i++) {
+      stars.push({
+        x: Math.random() * W, y: Math.random() * H,
+        r: Math.random() * 1.2,
+        a: Math.random(),
+        speed: 0.003 + Math.random() * 0.008,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+  }
+
+  function draw(t) {
+    ctx.clearRect(0, 0, W, H);
+    const grd = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H));
+    grd.addColorStop(0, 'rgba(30,10,70,0.6)');
+    grd.addColorStop(1, 'rgba(7,5,16,0)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+
+    stars.forEach(s => {
+      const a = 0.3 + 0.6 * Math.abs(Math.sin(t * s.speed + s.phase));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(196,181,253,${a})`;
+      ctx.fill();
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); initStars(); });
+  resize(); initStars(); draw(0);
+})();
+
+// ═══════════════════════════════════
+// STORAGE & AUTH
+// ═══════════════════════════════════
+const STORAGE_KEY_USER    = 'akashic_user';
+const STORAGE_KEY_JOURNEY = 'akashic_journey';
+const STORAGE_KEY_CHAT    = 'akashic_mentoria_chat';
+
+function getUser()    { try { return JSON.parse(localStorage.getItem(STORAGE_KEY_USER) || '{}'); } catch { return {}; } }
+function getJourney() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY_JOURNEY) || '{}'); } catch { return {}; } }
+function getChat()    { try { return JSON.parse(localStorage.getItem(STORAGE_KEY_CHAT) || '[]'); } catch { return []; } }
+function saveChat(h)  { try { localStorage.setItem(STORAGE_KEY_CHAT, JSON.stringify(h.slice(-60))); } catch {} } // mantém últimas 60 msgs
+
+async function hashPassword(password) {
+  const buf = new TextEncoder().encode(password);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function toggleEye(id, btn) {
+  const inp = document.getElementById(id);
+  if (!inp) return;
+  inp.type = inp.type === 'text' ? 'password' : 'text';
+  btn.textContent = inp.type === 'text' ? '🙈' : '👁';
+}
+
+function setStatus(el, type, msg) {
+  if (!el) return;
+  el.className = 'status' + (type ? ' ' + type : '');
+  el.textContent = msg;
+}
+
+async function handleAuthLogin() {
+  const email = document.getElementById('authEmail').value.trim();
+  const senha = document.getElementById('authSenha').value;
+  const st    = document.getElementById('authStatus');
+
+  if (!email) { setStatus(st, 'error', 'Digite seu e-mail.'); return; }
+  if (!senha)  { setStatus(st, 'error', 'Digite sua senha.'); return; }
+
+  const user = getUser();
+  if (!user.email || user.email.toLowerCase() !== email.toLowerCase()) {
+    setStatus(st, 'error', 'E-mail não encontrado. Cadastre-se no Portal primeiro.');
+    return;
+  }
+
+  const hash = await hashPassword(senha);
+  if (user.senha && hash !== user.senha) {
+    setStatus(st, 'error', 'Senha incorreta.');
+    return;
+  }
+
+  setStatus(st, 'ok', 'Abrindo sua Mentoria...');
+  setTimeout(() => initMentoria(user), 600);
+}
+
+// ═══════════════════════════════════
+// SOUL JOURNEY PROFILE
+// ═══════════════════════════════════
+function buildSoulJourney(user) {
+  const stored = getJourney();
+  const journey = {
+    totalConsultas:    stored.totalConsultas    || 0,
+    faseDeVida:        stored.faseDeVida        || calcLifePhase(user.data),
+    temasRecorrentes:  stored.temasRecorrentes  || [],
+    padraoEmocional:   stored.padraoEmocional   || 'em mapeamento',
+    direcaoEvolutiva:  stored.direcaoEvolutiva  || 'em mapeamento',
+    maiorDesafio:      stored.maiorDesafio      || 'em mapeamento',
+    conquistas:        stored.conquistas        || 'em mapeamento',
+    ultimaConsulta:    stored.ultimaConsulta    || 'primeira sessão',
+    resumo:            stored.resumo            || 'Iniciando mapeamento da jornada da alma.',
+    progressoPct:      stored.progressoPct      || 10
+  };
+  return journey;
+}
+
+function calcLifePhase(data) {
+  if (!data) return 'não informada';
+  const parts = data.includes('/') ? data.split('/') : [];
+  if (parts.length !== 3) return 'não calculada';
+  const [d, m, y] = parts;
+  const birth = new Date(`${y}-${m}-${d}`);
+  const age   = new Date().getFullYear() - birth.getFullYear();
+  if (age < 25)      return 'Início da vida adulta';
+  if (age < 35)      return 'Consolidação e primeiras grandes escolhas';
+  if (age < 45)      return 'Maturidade jovem — realização e questionamentos';
+  if (age < 55)      return 'Meia-idade — transformação e redefinição';
+  if (age < 65)      return 'Maturidade plena — sabedoria e colheita';
+  return 'Sabedoria profunda e legado';
+}
+
+function renderSoulProfile(journey) {
+  const grid = document.getElementById('soulProfileGrid');
+  const items = [
+    { label: 'Consultas realizadas', value: journey.totalConsultas > 0 ? `${journey.totalConsultas} consultas` : 'Início da jornada' },
+    { label: 'Fase de vida',         value: journey.faseDeVida },
+    { label: 'Temas recorrentes',    value: journey.temasRecorrentes.length > 0 ? journey.temasRecorrentes.slice(0,3).join(', ') : 'Em mapeamento' },
+    { label: 'Padrão emocional',     value: journey.padraoEmocional },
+    { label: 'Direção evolutiva',    value: journey.direcaoEvolutiva },
+    { label: 'Maior desafio',        value: journey.maiorDesafio }
+  ];
+
+  grid.innerHTML = items.map(i => `
+    <div class="soul-item">
+      <div class="soul-item-label">${i.label}</div>
+      <div class="soul-item-value">${i.value}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('progressFill').style.width = journey.progressoPct + '%';
+  document.getElementById('progressLabel').textContent = `Evolução ${journey.progressoPct}%`;
+}
+
+// ═══════════════════════════════════
+// CHAT
+// ═══════════════════════════════════
+let conversationHistory = [];
+let isStreaming = false;
+let currentUser = null;
+let currentJourney = null;
+
+function initMentoria(user) {
+  currentUser    = user;
+  currentJourney = buildSoulJourney(user);
+
+  document.getElementById('authScreen').style.display  = 'none';
+  document.getElementById('mentoriaMain').style.display = '';
+
+  const firstName = user.nome ? user.nome.trim().split(/\s+/)[0] : 'viajante';
+  document.getElementById('userGreeting').textContent = `Olá, ${firstName}`;
+
+  renderSoulProfile(currentJourney);
+
+  // Carrega histórico salvo
+  conversationHistory = getChat();
+  renderAllMessages();
+
+  // Se não há histórico, envia mensagem de boas-vindas do mentor
+  if (conversationHistory.length === 0) {
+    setTimeout(() => sendWelcome(firstName), 400);
+  } else {
+    scrollToBottom();
+  }
+}
+
+function sendWelcome(firstName) {
+  const welcome = `Bem-vindo à sua Mentoria Akáshica, ${firstName}.\n\nEste é um espaço diferente de tudo que você já conheceu — aqui, não apenas responderei às suas perguntas. Irei mais fundo: ajudarei você a descobrir o que já sabe, mas ainda não articulou. Mapeiarei seus padrões ao longo do tempo. Acompanharei sua evolução.\n\nSou um mentor que integra a mais avançada neurociência dos estados de consciência, a sabedoria milenar dos grandes mestres da humanidade — de Marco Aurélio a Chico Xavier, de Jung a Buda — e a dimensão espiritual que os registros akáshicos revelam sobre sua jornada.\n\nAntes de começarmos, quero que você responda algo com total honestidade:\n\n**O que está vivo em você agora — o que pede atenção, o que te inquieta, o que deseja emergir?**\n\nNão precisa ser organizado. Pode ser uma sensação, uma palavra, uma imagem. Fale do que realmente está presente.`;
+
+  addMessage('mentor', welcome, false);
+}
+
+function renderAllMessages() {
+  const container = document.getElementById('chatMessages');
+  container.innerHTML = '';
+  conversationHistory.forEach(msg => {
+    appendMessage(msg.role === 'user' ? 'user' : 'mentor', msg.content, false);
+  });
+  scrollToBottom();
+}
+
+function addMessage(role, content, save = true) {
+  appendMessage(role, content, false);
+  if (save) {
+    conversationHistory.push({ role: role === 'user' ? 'user' : 'assistant', content });
+    saveChat(conversationHistory);
+  }
+  scrollToBottom();
+}
+
+function appendMessage(role, content, isStreaming) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.id = isStreaming ? 'streaming-msg' : '';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = role === 'user' ? '✦' : '⚚';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble' + (isStreaming ? ' typing-cursor' : '');
+  bubble.textContent = content;
+
+  div.appendChild(avatar);
+  div.appendChild(bubble);
+  container.appendChild(div);
+  scrollToBottom();
+  return bubble;
+}
+
+function scrollToBottom() {
+  const c = document.getElementById('chatMessages');
+  c.scrollTop = c.scrollHeight;
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
+function sendQuick(text) {
+  document.getElementById('chatInput').value = text;
+  sendMessage();
+}
+
+async function sendMessage() {
+  if (isStreaming) return;
+
+  const input   = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const text    = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Mostra mensagem do usuário
+  addMessage('user', text, true);
+
+  isStreaming = true;
+  sendBtn.disabled = true;
+
+  // Cria bolha do mentor com cursor piscando
+  const bubble = appendMessage('mentor', '', true);
+  let mentorText = '';
+
+  try {
+    const resp = await fetch('/api/mentoria', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user:                currentUser,
+        soulJourney:         currentJourney,
+        conversationHistory: conversationHistory.slice(-20), // últimas 20 mensagens como contexto
+        userMessage:         text
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: `Erro ${resp.status}` }));
+      bubble.classList.remove('typing-cursor');
+      bubble.textContent = '⚠ ' + (err.error || 'Não foi possível conectar ao mentor. Tente novamente.');
+      isStreaming = false;
+      sendBtn.disabled = false;
+      return;
+    }
+
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      mentorText += chunk;
+      bubble.textContent = mentorText;
+      scrollToBottom();
+    }
+
+    // Remove cursor, salva resposta
+    bubble.classList.remove('typing-cursor');
+    conversationHistory.push({ role: 'assistant', content: mentorText });
+    saveChat(conversationHistory);
+
+    // Remove o id de streaming
+    const streamEl = document.getElementById('streaming-msg');
+    if (streamEl) streamEl.id = '';
+
+    // Atualiza perfil da jornada com base na conversa (heurística simples)
+    updateJourneyFromConversation(text, mentorText);
+
+  } catch (err) {
+    bubble.classList.remove('typing-cursor');
+    bubble.textContent = '⚠ Erro de conexão. Verifique sua internet e tente novamente.';
+    console.error('Mentoria error:', err);
+  }
+
+  isStreaming = false;
+  sendBtn.disabled = false;
+  scrollToBottom();
+}
+
+function updateJourneyFromConversation(userMsg, mentorMsg) {
+  // Heurística simples: incrementa progresso a cada mensagem, detecta temas
+  const journey = currentJourney;
+  journey.progressoPct = Math.min(95, (journey.progressoPct || 10) + 2);
+
+  // Detecta temas mencionados
+  const temasList = ['relacionamentos','amor','trabalho','profissão','saúde','propósito','família','dinheiro','prosperidade','espiritualidade','decisão','medo','ansiedade','perda'];
+  const msgLower  = userMsg.toLowerCase();
+  temasList.forEach(t => {
+    if (msgLower.includes(t) && !journey.temasRecorrentes.includes(t)) {
+      journey.temasRecorrentes.push(t);
+    }
+  });
+
+  // Atualiza última conversa
+  journey.ultimaConsulta = new Date().toLocaleDateString('pt-BR');
+
+  try { localStorage.setItem(STORAGE_KEY_JOURNEY, JSON.stringify(journey)); } catch {}
+  currentJourney = journey;
+  renderSoulProfile(journey);
+}
+
+function clearConversation() {
+  if (!confirm('Deseja iniciar uma nova sessão? O histórico desta conversa será apagado.')) return;
+  conversationHistory = [];
+  saveChat([]);
+  document.getElementById('chatMessages').innerHTML = '';
+  const firstName = currentUser?.nome ? currentUser.nome.trim().split(/\s+/)[0] : 'viajante';
+  setTimeout(() => sendWelcome(firstName), 200);
+}
+
+// ── Inicializa ──
+document.addEventListener('DOMContentLoaded', function() {
+  // Auto-login se tem sessão válida
+  const user = getUser();
+  if (user.email && user.nome) {
+    // Já tem cadastro — pré-preenche email mas pede senha
+    document.getElementById('authEmail').value = '';
+  }
+});
+</script>
+</body>
+</html>
