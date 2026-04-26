@@ -40,7 +40,7 @@
     }
 
     /* ── Fundo cósmico ── */
-    #cosmicCanvas {
+    #universeCanvas {
       position: fixed;
       top: 0; left: 0;
       width: 100%; height: 100%;
@@ -375,7 +375,7 @@
 </head>
 <body>
 
-<canvas id="cosmicCanvas"></canvas>
+<canvas id="universeCanvas"></canvas>
 
 <div class="container">
 
@@ -451,12 +451,26 @@
         <div class="quick-actions" id="quickActions">
           <button type="button" class="quick-btn" onclick="sendQuick('Como estou evoluindo desde nossas últimas conversas?')">Como estou evoluindo?</button>
           <button type="button" class="quick-btn" onclick="sendQuick('Quais padrões você percebe em minha jornada?')">Meus padrões</button>
-          <button type="button" class="quick-btn" onclick="sendQuick('Preciso de uma prática espiritual para este momento.')">Prática espiritual</button>
+          <button type="button" class="quick-btn" onclick="showPastReadingsModal()">📋 Escolher pergunta anterior</button>
           <button type="button" class="quick-btn" onclick="sendQuick('O que os registros akáshicos revelam sobre meu propósito de vida?')">Meu propósito</button>
           <button type="button" class="quick-btn" onclick="sendQuick('Estou em um momento de decisão difícil. Pode me ajudar a ver com mais clareza?')">Decisão difícil</button>
         </div>
 
-        <div class="chat-container">
+        <!-- Modal de seleção de pergunta anterior -->
+        <div id="pastReadingsModal" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(7,5,16,.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;">
+          <div style="background:rgba(18,13,38,.98);border:1px solid rgba(196,181,253,.25);border-radius:20px;padding:28px;max-width:520px;width:calc(100%-32px);max-height:80vh;overflow-y:auto;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+              <div style="font-family:var(--font-display);font-size:.8rem;letter-spacing:.12em;color:var(--gold);">SUAS CONSULTAS ANTERIORES</div>
+              <span onclick="hidePastReadingsModal()" style="cursor:pointer;color:var(--muted);font-size:1.2rem;">✕</span>
+            </div>
+            <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px;">Selecione uma consulta anterior para aprofundar a mentoria sobre ela:</p>
+            <div id="pastReadingsList" style="display:flex;flex-direction:column;gap:10px;">
+              <!-- preenchido pelo JS -->
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-container" style="height:600px;">
           <div class="chat-messages" id="chatMessages">
             <!-- mensagens aparecem aqui -->
           </div>
@@ -484,104 +498,37 @@
 
 <script>
 // ═══════════════════════════════════
-// FUNDO CÓSMICO — idêntico ao Portal
+// FUNDO CÓSMICO (idêntico ao Portal)
 // ═══════════════════════════════════
-(function initCanvas() {
-  const canvas = document.getElementById('cosmicCanvas');
-  const ctx    = canvas.getContext('2d');
-  let W, H, stars = [], nebulas = [], shootingStars = [];
-  let frame = 0;
-
-  function resize() {
-    W = canvas.width  = window.innerWidth;
-    H = canvas.height = window.innerHeight;
+(function(){
+  const canvas=document.getElementById('universeCanvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,stars=[],nebulae=[],galaxies=[],spaceships=[],starClusters=[],t=0;
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;initScene();}
+  function rand(a,b){return a+Math.random()*(b-a);}
+  function initScene(){
+    stars=[];
+    const count=Math.floor((W*H)/600);
+    for(let i=0;i<count;i++){const spd=rand(0.3,1.2);stars.push({x:rand(0,W),y:rand(0,H),r:rand(0.5,2.2),alpha:rand(0.4,1),speed:rand(0.0003,0.0012),phase:rand(0,Math.PI*2),color:Math.random()<0.20?`hsl(${rand(200,280)},85%,92%)`:'#fff',dx:spd*0.7,dy:spd*0.2});}
+    const bc=Math.floor((W*H)/80000);
+    for(let i=0;i<bc;i++){const spd=rand(0.2,0.8),size=rand(2.5,7);stars.push({x:rand(0,W),y:rand(0,H),r:size,alpha:1,speed:rand(0.0005,0.0015),phase:rand(0,Math.PI*2),color:'#ffffff',dx:spd*0.5,dy:spd*0.15,isBright:true});}
+    starClusters=[];
+    if(Math.random()<0.3){const cl={x:rand(0,W),y:rand(H*0.2,H*0.8),radius:rand(40,100),dx:rand(0.3,0.8),stars:[]};for(let s=0;s<Math.floor(rand(12,25));s++){const a=Math.random()*Math.PI*2,d=Math.random()*cl.radius;cl.stars.push({offsetX:Math.cos(a)*d,offsetY:Math.sin(a)*d,size:rand(0.3,1.0),alpha:rand(0.2,0.5),color:Math.random()<0.3?`hsl(${rand(200,280)},70%,85%)`:'rgba(255,255,255,0.6)'});}starClusters.push(cl);}
+    nebulae=[];
+    const cols=[[120,70,200],[60,100,255],[200,80,160],[30,120,220],[160,60,220],[80,160,255],[255,140,80],[100,200,255]];
+    for(let i=0;i<15;i++){const[r,g,b]=cols[i%cols.length];nebulae.push({x:rand(0,W),y:rand(0,H),rx:rand(W*.15,W*.5),ry:rand(H*.12,H*.4),alpha:rand(0.08,0.18),angle:rand(0,Math.PI),r,g,b,driftX:rand(-0.03,0.03),driftY:rand(-0.02,0.02),rotSpeed:rand(-0.00005,0.00005),pulseSpeed:rand(0.0003,0.0008),pulsePhase:rand(0,Math.PI*2)});}
+    spaceships=[];
   }
-
-  function randomBetween(a, b) { return a + Math.random() * (b - a); }
-
-  function initObjects() {
-    // Estrelas
-    stars = Array.from({ length: 220 }, () => ({
-      x: Math.random() * W, y: Math.random() * H,
-      r: randomBetween(0.2, 1.4),
-      alpha: randomBetween(0.3, 1),
-      speed: randomBetween(0.003, 0.012),
-      phase: Math.random() * Math.PI * 2,
-      color: Math.random() > 0.8 ? [196, 181, 253] : [255, 255, 255]
-    }));
-
-    // Nebulosas
-    nebulas = [
-      { x: W * 0.2,  y: H * 0.3,  r: W * 0.35, c: [109, 40, 217], a: 0.06 },
-      { x: W * 0.8,  y: H * 0.6,  r: W * 0.30, c: [76,  29, 149], a: 0.05 },
-      { x: W * 0.5,  y: H * 0.15, r: W * 0.25, c: [167, 139, 250], a: 0.04 },
-      { x: W * 0.65, y: H * 0.85, r: W * 0.28, c: [139, 92, 246], a: 0.04 }
-    ];
-
-    shootingStars = [];
-  }
-
-  function spawnShootingStar() {
-    if (shootingStars.length < 2 && Math.random() < 0.003) {
-      shootingStars.push({
-        x: Math.random() * W, y: Math.random() * H * 0.5,
-        vx: randomBetween(4, 8), vy: randomBetween(2, 5),
-        len: randomBetween(60, 120), life: 1
-      });
-    }
-  }
-
-  function draw(t) {
-    frame++;
-    ctx.clearRect(0, 0, W, H);
-
-    // Fundo base
-    const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, '#050310');
-    bg.addColorStop(0.5, '#080618');
-    bg.addColorStop(1, '#060412');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, W, H);
-
-    // Nebulosas
-    nebulas.forEach(n => {
-      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
-      g.addColorStop(0, `rgba(${n.c[0]},${n.c[1]},${n.c[2]},${n.a})`);
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, W, H);
-    });
-
-    // Estrelas
-    stars.forEach(s => {
-      const a = s.alpha * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${s.color[0]},${s.color[1]},${s.color[2]},${a})`;
-      ctx.fill();
-    });
-
-    // Estrelas cadentes
-    spawnShootingStar();
-    shootingStars = shootingStars.filter(ss => ss.life > 0);
-    shootingStars.forEach(ss => {
-      const tail = ctx.createLinearGradient(ss.x, ss.y, ss.x - ss.vx * ss.len / ss.vx, ss.y - ss.vy * ss.len / ss.vx);
-      tail.addColorStop(0, `rgba(255,255,255,${ss.life * 0.8})`);
-      tail.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.beginPath();
-      ctx.moveTo(ss.x, ss.y);
-      ctx.lineTo(ss.x - ss.len, ss.y - ss.len * (ss.vy / ss.vx));
-      ctx.strokeStyle = tail;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ss.x += ss.vx; ss.y += ss.vy; ss.life -= 0.04;
-    });
-
-    requestAnimationFrame(draw);
-  }
-
-  window.addEventListener('resize', () => { resize(); initObjects(); });
-  resize(); initObjects(); draw(0);
+  function createSpaceship(){if(Math.random()<0.004&&spaceships.length<2){const dir=Math.random()<0.5?1:-1;spaceships.push({x:dir>0?-50:W+50,y:rand(H*0.2,H*0.8),size:rand(8,14),speed:rand(15,25)*dir,lightPhase:rand(0,Math.PI*2),lightSpeed:rand(0.2,0.3),color:Math.random()<0.5?[100,200,255]:[200,100,255],trail:[]});}}
+  function drawSpaceships(){spaceships.forEach((ship,idx)=>{ship.trail.push({x:ship.x,y:ship.y,alpha:1});if(ship.trail.length>15)ship.trail.shift();ship.trail.forEach((p,i)=>{const al=(i/ship.trail.length)*p.alpha,sz=ship.size*0.3*(i/ship.trail.length);ctx.save();ctx.globalAlpha=al*0.6;const gr=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,sz*3);gr.addColorStop(0,`rgba(255,255,255,${al*0.8})`);gr.addColorStop(0.5,`rgba(${ship.color[0]},${ship.color[1]},${ship.color[2]},${al*0.6})`);gr.addColorStop(1,`rgba(${ship.color[0]},${ship.color[1]},${ship.color[2]},0)`);ctx.fillStyle=gr;ctx.beginPath();ctx.arc(p.x,p.y,sz*3,0,Math.PI*2);ctx.fill();ctx.restore();p.alpha*=0.95;});ctx.save();ctx.translate(ship.x,ship.y);ctx.fillStyle=`rgba(${ship.color[0]},${ship.color[1]},${ship.color[2]},0.9)`;ctx.shadowBlur=12;ctx.shadowColor=`rgba(${ship.color[0]},${ship.color[1]},${ship.color[2]},0.8)`;ctx.beginPath();ctx.ellipse(0,-ship.size*0.15,ship.size*0.5,ship.size*0.25,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=`rgba(${ship.color[0]-30},${ship.color[1]-30},${ship.color[2]-30},0.8)`;ctx.beginPath();ctx.ellipse(0,0,ship.size*0.8,ship.size*0.3,0,0,Math.PI*2);ctx.fill();const lb=Math.sin(ship.lightPhase)*0.5+0.5;ctx.fillStyle=`rgba(255,255,200,${lb})`;ctx.shadowBlur=8;ctx.shadowColor=`rgba(255,255,200,${lb})`;ctx.beginPath();ctx.arc(0,0,ship.size*0.15,0,Math.PI*2);ctx.fill();ctx.restore();ship.x+=ship.speed;ship.lightPhase+=ship.lightSpeed;if(ship.x<-100||ship.x>W+100)spaceships.splice(idx,1);});}
+  function drawBg(){const bg=ctx.createRadialGradient(W*.5,H*.4,0,W*.5,H*.5,Math.max(W,H)*.8);bg.addColorStop(0,'#0d0820');bg.addColorStop(0.4,'#060314');bg.addColorStop(1,'#020108');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);}
+  function drawStarClusters(){starClusters.forEach((cl,idx)=>{cl.x+=cl.dx;if(cl.x>W+cl.radius*2)starClusters.splice(idx,1);cl.stars.forEach(s=>{const sx=cl.x+s.offsetX,sy=cl.y+s.offsetY;ctx.globalAlpha=s.alpha;ctx.fillStyle=s.color;ctx.beginPath();ctx.arc(sx,sy,s.size,0,Math.PI*2);ctx.fill();if(s.size>0.7){const gw=ctx.createRadialGradient(sx,sy,0,sx,sy,s.size*2);gw.addColorStop(0,`rgba(255,255,255,${s.alpha*0.3})`);gw.addColorStop(1,'transparent');ctx.fillStyle=gw;ctx.beginPath();ctx.arc(sx,sy,s.size*2,0,Math.PI*2);ctx.fill();}});ctx.globalAlpha=1;});}
+  function createStarCluster(){if(Math.random()<0.0015&&starClusters.length<2){const cl={x:-100,y:rand(H*0.2,H*0.8),radius:rand(40,100),dx:rand(0.3,0.8),stars:[]};for(let s=0;s<Math.floor(rand(12,25));s++){const a=Math.random()*Math.PI*2,d=Math.random()*cl.radius;cl.stars.push({offsetX:Math.cos(a)*d,offsetY:Math.sin(a)*d,size:rand(0.3,1.0),alpha:rand(0.2,0.5),color:Math.random()<0.3?`hsl(${rand(200,280)},70%,85%)`:'rgba(255,255,255,0.6)'});}starClusters.push(cl);}}
+  function drawNebulae(){nebulae.forEach(n=>{const pulse=Math.sin(t*n.pulseSpeed+n.pulsePhase)*0.4+0.8;ctx.save();ctx.translate(n.x,n.y);ctx.rotate(n.angle);ctx.shadowBlur=50;ctx.shadowColor=`rgba(${n.r},${n.g},${n.b},${n.alpha*0.5})`;const g=ctx.createRadialGradient(0,0,0,0,0,n.rx),a=n.alpha*pulse;g.addColorStop(0,`rgba(${n.r},${n.g},${n.b},${a})`);g.addColorStop(0.3,`rgba(${n.r},${n.g},${n.b},${a*0.7})`);g.addColorStop(0.6,`rgba(${n.r},${n.g},${n.b},${a*0.4})`);g.addColorStop(1,`rgba(${n.r},${n.g},${n.b},0)`);ctx.scale(1,n.ry/n.rx);ctx.beginPath();ctx.arc(0,0,n.rx,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();ctx.restore();n.x+=n.driftX;n.y+=n.driftY;n.angle+=n.rotSpeed;if(n.x<-n.rx)n.x=W+n.rx;if(n.x>W+n.rx)n.x=-n.rx;if(n.y<-n.ry)n.y=H+n.ry;if(n.y>H+n.ry)n.y=-n.ry;});}
+  function drawStars(){stars.forEach(s=>{s.x+=s.dx;s.y+=s.dy;if(s.x<-2)s.x=W+2;if(s.x>W+2)s.x=-2;if(s.y<-2)s.y=H+2;if(s.y>H+2)s.y=-2;if(s.isBright){const bg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*8);bg.addColorStop(0,'rgba(255,255,255,0.4)');bg.addColorStop(0.3,'rgba(200,220,255,0.2)');bg.addColorStop(1,'transparent');ctx.fillStyle=bg;ctx.beginPath();ctx.arc(s.x,s.y,s.r*8,0,Math.PI*2);ctx.fill();ctx.shadowBlur=20;ctx.shadowColor='rgba(255,255,255,1)';ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle='#ffffff';ctx.globalAlpha=1;ctx.fill();ctx.shadowBlur=0;ctx.globalAlpha=1;}else{const fl=Math.sin(t*s.speed*1000+s.phase)*0.35+0.65;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=s.color;ctx.globalAlpha=s.alpha*fl;ctx.fill();if(s.r>1.2){const gw=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*4);gw.addColorStop(0,`rgba(255,255,255,${0.15*fl})`);gw.addColorStop(1,'transparent');ctx.beginPath();ctx.arc(s.x,s.y,s.r*4,0,Math.PI*2);ctx.fillStyle=gw;ctx.fill();}ctx.globalAlpha=1;}});}
+  function drawVignette(){const v=ctx.createRadialGradient(W*.5,H*.5,H*.2,W*.5,H*.5,Math.max(W,H)*.75);v.addColorStop(0,'transparent');v.addColorStop(1,'rgba(2,1,8,0.72)');ctx.fillStyle=v;ctx.fillRect(0,0,W,H);}
+  function loop(ts){t=ts;ctx.clearRect(0,0,W,H);drawBg();createStarCluster();drawStarClusters();drawNebulae();drawStars();createSpaceship();drawSpaceships();drawVignette();requestAnimationFrame(loop);}
+  window.addEventListener('resize',resize);resize();requestAnimationFrame(loop);
 })();
 
 // ═══════════════════════════════════
@@ -946,6 +893,38 @@ async function sendMessage() {
   isStreaming = false;
   sendBtn.disabled = false;
   scrollToBottom();
+}
+
+function showPastReadingsModal() {
+  if (!currentReadings || currentReadings.length === 0) {
+    alert('Você ainda não possui consultas anteriores registradas no Portal.');
+    return;
+  }
+  const list = document.getElementById('pastReadingsList');
+  const label = currentReadings.length === 1 ? 'consulta anterior' : 'consultas anteriores';
+  list.innerHTML = currentReadings.map((r, i) => `
+    <div onclick="selectPastReading(${i})" style="cursor:pointer;background:rgba(139,92,246,.08);border:1px solid rgba(196,181,253,.15);border-radius:12px;padding:14px 16px;transition:all .2s;"
+      onmouseover="this.style.background='rgba(139,92,246,.2)';this.style.borderColor='rgba(196,181,253,.35)'"
+      onmouseout="this.style.background='rgba(139,92,246,.08)';this.style.borderColor='rgba(196,181,253,.15)'">
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px;">${r.date || '—'} · ${r.theme || '—'}</div>
+      <div style="font-size:.9rem;color:var(--accent-bright);font-weight:500;">"${(r.question || '').slice(0, 120)}${r.question?.length > 120 ? '…' : ''}"</div>
+    </div>
+  `).join('');
+  document.getElementById('pastReadingsModal').style.display = 'flex';
+}
+
+function hidePastReadingsModal() {
+  document.getElementById('pastReadingsModal').style.display = 'none';
+}
+
+function selectPastReading(index) {
+  hidePastReadingsModal();
+  const r = currentReadings[index];
+  if (!r) return;
+  const msg = `Quero aprofundar a mentoria sobre minha consulta de ${r.date || 'data anterior'}, tema "${r.theme || '—'}", onde perguntei: "${r.question}"`;
+  document.getElementById('chatInput').value = msg;
+  document.getElementById('chatInput').focus();
+  autoResize(document.getElementById('chatInput'));
 }
 
 function updateJourneyFromConversation(userMsg, mentorMsg) {
