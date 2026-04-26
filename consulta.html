@@ -3378,7 +3378,14 @@
             <div class="actions">
               <button id="startRitualBtn" class="btn-blink" type="button">✦ Iniciar Protocolo Akáshico</button>
             </div>
-            <div id="ritualStatus" class="status" style="text-align:center;color:#7dd3fc;font-weight:600;letter-spacing:.08em;">BEM VINDO AO PORTAL</div>
+            <div id="ritualStatus" class="status" style="text-align:center;">
+              <a href="/mentoria" onclick="sessionStorage.setItem('akashic_portal_session','ok')"
+                style="display:inline-flex;align-items:center;gap:8px;font-family:var(--font-display);font-size:.78rem;letter-spacing:.1em;color:rgba(196,181,253,.7);text-decoration:none;border:1px solid rgba(196,181,253,.2);border-radius:20px;padding:9px 20px;transition:all .25s;background:rgba(139,92,246,.08);"
+                onmouseover="this.style.color='#c4b5fd';this.style.borderColor='rgba(196,181,253,.4)';this.style.background='rgba(139,92,246,.18)'"
+                onmouseout="this.style.color='rgba(196,181,253,.7)';this.style.borderColor='rgba(196,181,253,.2)';this.style.background='rgba(139,92,246,.08)'">
+                ⚚ Mentoria Akáshica
+              </a>
+            </div>
           </div>
         </div>
 
@@ -5257,8 +5264,13 @@ document.getElementById('resetAppBtn').addEventListener('click', function() {
   clearDraft();
 
   setStatus(openStatus, '', 'Formulário limpo. Nenhuma consulta aberta ainda.');
-  setStatus(ritualStatus, '', 'BEM VINDO AO PORTAL');
-  ritualStatus.style.cssText += ';text-align:center;color:#7dd3fc;font-weight:600;letter-spacing:.08em;';
+  setStatus(ritualStatus, '', '');
+  ritualStatus.innerHTML = `<a href="/mentoria" onclick="sessionStorage.setItem('akashic_portal_session','ok')"
+    style="display:inline-flex;align-items:center;gap:8px;font-family:var(--font-display);font-size:.78rem;letter-spacing:.1em;color:rgba(196,181,253,.7);text-decoration:none;border:1px solid rgba(196,181,253,.2);border-radius:20px;padding:9px 20px;transition:all .25s;background:rgba(139,92,246,.08);"
+    onmouseover="this.style.color='#c4b5fd';this.style.borderColor='rgba(196,181,253,.4)';this.style.background='rgba(139,92,246,.18)'"
+    onmouseout="this.style.color='rgba(196,181,253,.7)';this.style.borderColor='rgba(196,181,253,.2)';this.style.background='rgba(139,92,246,.08)'">
+    ⚚ Mentoria Akáshica
+  </a>`;
 
   pillTema.textContent = 'Tema: —';
   pillEstado.textContent = 'Estado: —';
