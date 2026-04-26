@@ -378,8 +378,8 @@
     input:focus, textarea:focus { border-color: rgba(196,181,253,.5); }
     input::placeholder { color: rgba(155,148,196,.45); }
     button {
-      width: 100%;
-      padding: 15px;
+      width: auto;
+      padding: 15px 20px;
       border-radius: var(--radius-sm);
       border: 1px solid rgba(196,181,253,.25);
       background: linear-gradient(135deg, rgba(109,40,217,.35), rgba(139,92,246,.2));
@@ -391,6 +391,8 @@
       cursor: pointer;
       transition: all .25s;
     }
+    /* Botões de login/auth que devem ocupar largura total */
+    .auth-btn-full { width: 100% !important; }
     button:hover { background: linear-gradient(135deg, rgba(109,40,217,.55), rgba(139,92,246,.4)); }
     button:disabled { opacity: .4; cursor: not-allowed; }
     label { font-size: .85rem; color: rgba(196,181,253,.8); display: block; margin-bottom: 6px; }
@@ -440,8 +442,8 @@
         <span onclick="toggleEye('authSenha',this)" style="position:absolute;right:12px;bottom:13px;cursor:pointer;font-size:.95rem;color:rgba(196,181,253,.5);">👁</span>
       </div>
       <div id="authStatus" class="status"></div>
-      <button type="button" onclick="handleAuthLogin()">✦ Entrar na Mentoria</button>
-      <a href="/" class="nav-link" style="justify-content:center;">← Voltar ao Portal</a>
+      <button type="button" onclick="handleAuthLogin()" class="auth-btn-full">✦ Entrar na Mentoria</button>
+      <a href="/" class="nav-link" style="justify-content:center;display:flex;">← Voltar ao Portal</a>
     </div>
   </div>
 
