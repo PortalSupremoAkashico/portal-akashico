@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
   try {
     const { name, birthdate, theme, state, question, level, cosmicMode, gender,
-            historyContext, similarContext, hasSimilar } = req.body;
+            historyContext, similarContext, hasSimilar, awakeningContext } = req.body;
 
     // Extrai apenas o primeiro nome para uso nas respostas
     const firstName = name ? name.trim().split(/\s+/)[0] : name;
@@ -344,6 +344,7 @@ ${reading1}
 PERSPECTIVA ${secondary.toUpperCase()} (FOCO SECUNDÁRIO):
 ${reading2}
 ${historyContext || ''}${similarContext || ''}
+${awakeningContext ? `\nINTUIÇÕES PRÉ-CONSULTA DO CONSULENTE (respondidas antes de formular a pergunta — use como chave de profundidade):\n${awakeningContext}\nEssas respostas revelam o que ${firstName} já sabe inconscientemente. Use-as como fio condutor — elas apontam para a resposta que a alma já conhece.\n` : ''}
 
 INSTRUÇÃO CRÍTICA — SINTETIZE em UMA leitura coesa, profunda e inesquecível:
 
