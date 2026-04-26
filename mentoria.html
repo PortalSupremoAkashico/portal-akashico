@@ -845,11 +845,16 @@ function clearConversation() {
 
 // ── Inicializa ──
 document.addEventListener('DOMContentLoaded', function() {
-  // Auto-login se tem sessão válida
   const user = getUser();
-  if (user.email && user.nome) {
-    // Já tem cadastro — pré-preenche email mas pede senha
-    document.getElementById('authEmail').value = '';
+  // Se veio do Portal (sessionStorage marca a sessão) e tem cadastro — entra direto
+  const fromPortal = sessionStorage.getItem('akashic_portal_session') === 'ok';
+  if (fromPortal && user.email && user.nome) {
+    initMentoria(user);
+    return;
+  }
+  // Senão mostra tela de login
+  if (user.email) {
+    document.getElementById('authEmail').value = user.email;
   }
 });
 </script>
