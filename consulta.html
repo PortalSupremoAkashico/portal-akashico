@@ -5517,6 +5517,10 @@ async function generatePDFBase64() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
+  // Garante suporte a caracteres portugueses (Latin-1 / ISO-8859-1)
+  // A fonte helvetica do jsPDF suporta este conjunto de caracteres
+  doc.setLanguage('pt-BR');
+
   const pageW = 210;
   const pageH = 297;
   const margin = 25;
@@ -5526,10 +5530,10 @@ async function generatePDFBase64() {
   let currentPage = 1;
 
   // COR ROXA DO SITE (#6d28d9)
-  const PRIMARY = [109, 40, 217];      // Roxo principal do site
+  const PRIMARY = [109, 40, 217];
   const TEXT_DARK = [30, 30, 30];
   const TEXT_LIGHT = [100, 100, 100];
-  const SEPARATOR = [167, 139, 250];   // Roxo claro
+  const SEPARATOR = [167, 139, 250];
 
   const SECTION_LABELS = {
     revelation:         'REVELAÇÃO',
@@ -5580,24 +5584,28 @@ async function generatePDFBase64() {
     y = margin;
   }
 
-  // Função para limpar caracteres problemáticos
+  // Normaliza o texto mantendo TODOS os caracteres portugueses
+  // Apenas converte sequências UTF-8 mal interpretadas que às vezes chegam corrompidas
   function cleanText(text) {
-    // Remove caracteres problemáticos de encoding e substitui por versões seguras
+    if (!text) return '';
     return text
-      .replace(/[Ã"»]/g, '')  // Remove caracteres corrompidos
-      .replace(/â€"/g, '-')   // Travessão
-      .replace(/â€™/g, "'")   // Apóstrofo
-      .replace(/â€œ/g, '"')   // Aspas abertura
-      .replace(/â€/g, '"')    // Aspas fechamento
-      .replace(/Ã§/g, 'ç')    // ç
-      .replace(/Ã£/g, 'ã')    // ã
-      .replace(/Ã©/g, 'é')    // é
-      .replace(/Ãª/g, 'ê')    // ê
-      .replace(/Ã­/g, 'í')    // í
-      .replace(/Ã³/g, 'ó')    // ó
-      .replace(/Ãº/g, 'ú')    // ú
-      .replace(/Ã/g, 'Á')     // Á
-      .replace(/[^\x00-\x7F]/g, ''); // Remove outros caracteres não-ASCII problemáticos
+      // Corrige travessão e aspas tipográficas que chegam como sequências corrompidas
+      .replace(/â€"/g, '–')
+      .replace(/â€"/g, '—')
+      .replace(/â€™/g, '\u2019')
+      .replace(/â€œ/g, '\u201C')
+      .replace(/â€\x9D/g, '\u201D')
+      // Caracteres especiais que às vezes chegam como sequências duplas
+      .replace(/Ã§/g, 'ç').replace(/Ã£/g, 'ã').replace(/Ã©/g, 'é')
+      .replace(/Ãª/g, 'ê').replace(/Ã­/g, 'í').replace(/Ã³/g, 'ó')
+      .replace(/Ãº/g, 'ú').replace(/Ã\x81/g, 'Á').replace(/Ã\x87/g, 'Ç')
+      // Substitui aspas tipográficas por aspas simples (mais seguro no PDF)
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2013\u2014]/g, '-')
+      // Remove apenas caracteres de controle (abaixo de 32, exceto newline e tab)
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+      .trim();
   }
 
   const date = currentReading.date || new Date().toLocaleString('pt-BR');
@@ -5750,13 +5758,14 @@ async function generatePDFBase64() {
 
     y += 10;
 
-    // TEXTO PORTUGUÊS CENTRALIZADO
+    // TEXTO — alinhado à esquerda para melhor leitura
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...TEXT_DARK);
-    
+
     textLines.forEach(line => {
-      doc.text(line, pageW / 2, y, { align: 'center' });
+      if (y > maxY) newPage();
+      doc.text(line, margin + 10, y);
       y += lineHeight;
     });
 
