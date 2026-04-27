@@ -4752,41 +4752,31 @@ function restaurarBotaoMentoria() {
   </a>`;
 }
 
-function voltarParaRitual() {
-  // Formulário → Ritual (restaura o ritualCard com botão Mentoria)
+function voltarParaRitual() { voltarAoInicio(); }
+function voltarParaFormulario() { voltarAoInicio(); }
+function voltarParaProtocolo() { voltarAoInicio(); }
+
+function voltarAoInicio() {
+  // Para o som com fade out
+  stopAmbientSound();
+  if (soundBtn) soundBtn.style.display = 'none';
+
+  // Esconde todas as seções
+  document.getElementById('ritualCard').style.display        = 'none';
   document.getElementById('abertura-consulta').style.display = 'none';
-  document.getElementById('abertura-consulta').classList.remove('section-fade-in');
   document.getElementById('btnVoltarFormulario').style.display = 'none';
-  document.getElementById('ritualCard').style.display = '';
+  document.getElementById('section2').style.display          = 'none';
+  document.getElementById('section2').classList.remove('section-fade-in');
+  document.getElementById('consulta').style.display          = 'none';
+  document.getElementById('consulta').classList.remove('section-fade-in');
+
+  // Mostra o login
+  document.getElementById('authCard').style.display = '';
+  document.getElementById('section1').style.display = 'block';
+
+  // Restaura o botão Mentoria para quando voltar
   restaurarBotaoMentoria();
-  // Reativa o startRitualBtn
-  const btn = document.getElementById('startRitualBtn');
-  if (btn) { btn.classList.remove('btn-solid'); btn.classList.add('btn-blink'); btn.disabled = false; }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
 
-function voltarParaFormulario() {
-  // Protocolo → Formulário (mostra o ritualCard com botão Mentoria)
-  const section2 = document.getElementById('section2');
-  section2.style.display = 'none';
-  section2.classList.remove('section-fade-in');
-  const formCard = document.getElementById('abertura-consulta');
-  if (formCard) {
-    formCard.style.display = '';
-    formCard.classList.add('section-fade-in');
-  }
-  document.getElementById('btnVoltarFormulario').style.display = '';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function voltarParaProtocolo() {
-  // Consulta → Protocolo
-  const consulta = document.getElementById('consulta');
-  consulta.style.display = 'none';
-  consulta.classList.remove('section-fade-in');
-  const section2 = document.getElementById('section2');
-  section2.style.display = 'block';
-  section2.classList.add('section-fade-in');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
