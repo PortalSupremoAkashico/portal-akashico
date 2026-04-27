@@ -3445,12 +3445,14 @@
           </div>
         </div>
 
+        <!-- Botão Voltar do formulário (visível junto com abertura-consulta) -->
+        <div id="btnVoltarFormulario" class="nav-voltar" style="display:none;">
+          <button type="button" class="btn-voltar" onclick="voltarParaLogin()">← Voltar</button>
+        </div>
+
         <!-- FORMULÁRIO -->
         <div class="card" id="abertura-consulta">
           <div class="card-body">
-            <div class="nav-voltar">
-              <button type="button" class="btn-voltar" onclick="voltarParaLogin()">← Voltar</button>
-            </div>
             <h2>Formulário da Consulta</h2>
             <p class="section-desc">Preencha os campos e conecte-se à rede universal para canalizar sua resposta.</p>
 
@@ -4659,9 +4661,9 @@ function resetStreamingState() {
 }
 
 function voltarParaLogin() {
-  // Formulário → tela de autenticação
   document.getElementById('ritualCard').style.display = 'none';
   document.getElementById('abertura-consulta').style.display = 'none';
+  document.getElementById('btnVoltarFormulario').style.display = 'none';
   document.getElementById('authCard').style.display = '';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -4820,6 +4822,7 @@ function enterPortal(user) {
   document.getElementById('authCard').style.display = 'none';
   document.getElementById('ritualCard').style.display = '';
   document.getElementById('abertura-consulta').style.display = '';
+  document.getElementById('btnVoltarFormulario').style.display = '';
 }
 
 // Tentativas erradas por email — resetado ao entrar com sucesso
