@@ -3252,6 +3252,48 @@
   })();
   </script>
 
+  <!-- Funções de auth disponíveis antes do HTML dos campos -->
+  <script>
+    // Essas funções precisam existir quando o HTML carrega os campos de auth.
+    // As versões completas são definidas abaixo no script principal e
+    // sobrescrevem estas quando carregadas.
+
+    function validarEmailCampo(input, statusId) {
+      const v = input.value.trim();
+      if (!v) return;
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      const st = document.getElementById(statusId);
+      if (st) {
+        if (!ok) {
+          st.className = 'status error';
+          st.textContent = 'E-mail inválido. Verifique o formato (ex: nome@dominio.com).';
+          input.focus();
+        } else if (st.textContent.includes('inválido')) {
+          st.className = 'status';
+          st.textContent = '';
+        }
+      }
+    }
+
+    function toggleSenha(inputId, olho) {
+      const inp = document.getElementById(inputId);
+      if (!inp) return;
+      inp.type = inp.type === 'text' ? 'password' : 'text';
+      olho.textContent = inp.type === 'text' ? '🙈' : '👁';
+    }
+
+    function filtrarSenha(input) {
+      const limpa = input.value.replace(/[\x00-\x1F\x7F ]/g, '');
+      if (limpa !== input.value) input.value = limpa;
+    }
+
+    // Delegam para as funções reais quando o script principal já carregou
+    function handleEntrar()   { if (window._authFns) window._authFns.entrar();   }
+    function handleCadastro() { if (window._authFns) window._authFns.cadastro(); }
+    function abrirCadastro()  { if (window._authFns) window._authFns.abrir();    }
+    function fecharCadastro() { if (window._authFns) window._authFns.fechar();   }
+  </script>
+
   <main class="container">
 
     <!-- SECÇÃO 1: RITUAL + FORMULÁRIO -->
@@ -4708,38 +4750,6 @@ document.getElementById('cadData').addEventListener('input', (e) => {
   e.target.value = value;
 });
 
-// ── Validação de e-mail ao sair do campo ──
-function validarEmailCampo(input, statusId) {
-  const v = input.value.trim();
-  if (!v) return; // vazio — deixa a validação principal cuidar
-  const ok = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-  if (!ok) {
-    const st = document.getElementById(statusId);
-    if (st) setStatus(st, 'error', 'E-mail inválido. Verifique o formato (ex: nome@dominio.com).');
-    input.focus();
-  } else {
-    const st = document.getElementById(statusId);
-    if (st && st.textContent.includes('inválido')) setStatus(st, '', '');
-  }
-}
-
-// ── Olhinho: mostrar / ocultar senha ──
-function toggleSenha(inputId, olho) {
-  const inp = document.getElementById(inputId);
-  if (!inp) return;
-  const visivel = inp.type === 'text';
-  inp.type = visivel ? 'password' : 'text';
-  olho.textContent = visivel ? '👁' : '🙈';
-}
-
-// ── Filtro de senha: só alfanuméricos + símbolos, máx 12 chars ──
-// Bloqueia espaços e caracteres de controle; o maxlength já limita o tamanho.
-function filtrarSenha(input) {
-  // Remove espaços e caracteres de controle (abaixo de ASCII 33)
-  const limpa = input.value.replace(/[\x00-\x1F\x7F ]/g, '');
-  if (limpa !== input.value) input.value = limpa;
-}
-
 // ═══════════════════════════════════════════════════════
 //  AUTH — ENTRAR / CADASTRO
 // ═══════════════════════════════════════════════════════
@@ -4763,7 +4773,7 @@ function saveStoredUser(obj) {
   try { localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(obj)); } catch {}
 }
 
-function abrirCadastro() {
+function abrirCadastroReal() {
   const email = document.getElementById('loginEmail').value.trim();
   if (email) document.getElementById('cadEmail').value = email;
   document.getElementById('authMain').style.display = 'none';
@@ -4774,7 +4784,7 @@ function abrirCadastro() {
   setTimeout(() => document.getElementById('painelCadastro').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
 }
 
-function fecharCadastro() {
+function fecharCadastroReal() {
   document.getElementById('painelCadastro').style.display = 'none';
   document.getElementById('cadastroStatus').textContent = '';
   document.getElementById('authMain').style.display = '';
@@ -4791,7 +4801,7 @@ function enterPortal(user) {
 // Tentativas erradas por email — resetado ao entrar com sucesso
 const loginAttempts = {};
 
-async function handleEntrar() {
+async function handleEntrarReal() {
   const email  = document.getElementById('loginEmail').value.trim();
   const senha  = document.getElementById('loginSenha').value;
   const status = document.getElementById('authStatus');
@@ -4811,7 +4821,7 @@ async function handleEntrar() {
   // E-mail não cadastrado — abre cadastro com email pré-preenchido
   if (!saved.email || saved.email.toLowerCase() !== email.toLowerCase()) {
     setStatus(status, 'warn', 'E-mail não encontrado. Preencha o cadastro para continuar.');
-    abrirCadastro();
+    abrirCadastroReal();
     return;
   }
 
@@ -4992,7 +5002,7 @@ async function validarCodigo() {
   }, 1000);
 }
 
-async function handleCadastro() {
+async function handleCadastroReal() {
   const nome      = document.getElementById('cadNome').value.trim();
   const data      = document.getElementById('cadData').value.trim();
   const sexo      = document.getElementById('cadSexo').value;
@@ -5042,7 +5052,7 @@ async function handleCadastro() {
   setStatus(status, 'ok', `Cadastro realizado! Faça login para continuar.`);
 
   setTimeout(() => {
-    fecharCadastro();
+    fecharCadastroReal();
     document.getElementById('loginEmail').value = '';
     document.getElementById('loginSenha').value = '';
     document.getElementById('loginEmail').focus();
@@ -5051,6 +5061,14 @@ async function handleCadastro() {
 }
 
 // Ao carregar: sempre mostra tela de login, só pré-preenche o email se já cadastrado
+// Registra as funções reais para que os stubs do script inicial possam delegá-las
+window._authFns = {
+  entrar:   () => handleEntrarReal(),
+  cadastro: () => handleCadastroReal(),
+  abrir:    () => abrirCadastroReal(),
+  fechar:   () => fecharCadastroReal()
+};
+
 document.addEventListener('DOMContentLoaded', function initAuth() {
   // Formata data no campo cadData
   document.getElementById('cadData').addEventListener('input', (e) => {
@@ -5871,4 +5889,59 @@ async function sendEmailWithPDF(toEmail, pdfBase64) {
 
 Segue em anexo sua leitura akáshica completa realizada em ${date}.
 
-Que a luz
+Que a luz dos Registros Akáshicos ilumine seu caminho.
+
+Com gratidão,
+Portal Supremo dos Registros Akáshicos`,
+    fileName: filename,
+    fileData: pdfBase64,
+    mimeType: 'application/pdf'
+  };
+
+  // Dispara o envio do e-mail E o salvamento pra mala direta EM PARALELO.
+  // O usuário só espera pelo mais lento dos dois (geralmente o envio).
+  // Se o save-email falhar, NÃO afeta o envio principal (é opcional).
+  const sendPromise = fetch('/api/email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(emailData)
+  });
+
+  const savePromise = fetch('/api/save-email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      email: toEmail,
+      nome: name
+    })
+  }).catch(err => {
+    // Falha no save-email é silenciosa — não afeta o envio
+    console.warn('⚠️ Erro ao salvar e-mail para mala direta (não crítico):', err);
+    return null;
+  });
+
+  // Aguarda os dois em paralelo
+  const [response, saveResponse] = await Promise.all([sendPromise, savePromise]);
+
+  if (!response.ok) {
+    throw new Error(`Erro HTTP: ${response.status}`);
+  }
+
+  const result = await response.json();
+
+  if (!result.success) {
+    throw new Error(result.message || 'Erro ao enviar e-mail');
+  }
+
+  if (saveResponse) console.log('✅ E-mail salvo para mala direta');
+
+  return { success: true, method: 'gmail-auto' };
+}
+// === HANDLER DO BOTÃO (mantém-se como está) ===
+</script>
+</body>
+</html>
