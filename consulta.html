@@ -3447,7 +3447,7 @@
 
         <!-- Botão Voltar do formulário (visível junto com abertura-consulta) -->
         <div id="btnVoltarFormulario" class="nav-voltar" style="display:none;">
-          <button type="button" class="btn-voltar" onclick="voltarParaLogin()">← Voltar</button>
+          <button type="button" class="btn-voltar" onclick="voltarParaRitual()">← Voltar</button>
         </div>
 
         <!-- FORMULÁRIO -->
@@ -4660,16 +4660,32 @@ function resetStreamingState() {
   };
 }
 
-function voltarParaLogin() {
-  document.getElementById('ritualCard').style.display = 'none';
+function restaurarBotaoMentoria() {
+  const el = document.getElementById('ritualStatus');
+  if (!el) return;
+  el.className = 'status';
+  el.style.textAlign = 'center';
+  el.innerHTML = `<a href="/mentoria" onclick="sessionStorage.setItem('akashic_portal_session','ok')"
+    style="display:inline-flex;align-items:center;gap:8px;font-family:var(--font-display);font-size:.78rem;letter-spacing:.1em;color:#fff;text-decoration:none;border:1px solid var(--accent);border-radius:var(--radius-sm);padding:15px 20px;transition:all .25s;background:rgba(167,139,250,.1);animation:btnPulse 2s ease-in-out infinite;font-weight:600;text-transform:uppercase;">
+    ⚚ Mentoria Akáshica
+  </a>`;
+}
+
+function voltarParaRitual() {
+  // Formulário → Ritual (restaura o ritualCard com botão Mentoria)
   document.getElementById('abertura-consulta').style.display = 'none';
+  document.getElementById('abertura-consulta').classList.remove('section-fade-in');
   document.getElementById('btnVoltarFormulario').style.display = 'none';
-  document.getElementById('authCard').style.display = '';
+  document.getElementById('ritualCard').style.display = '';
+  restaurarBotaoMentoria();
+  // Reativa o startRitualBtn
+  const btn = document.getElementById('startRitualBtn');
+  if (btn) { btn.classList.remove('btn-solid'); btn.classList.add('btn-blink'); btn.disabled = false; }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function voltarParaFormulario() {
-  // Protocolo → Formulário
+  // Protocolo → Formulário (mostra o ritualCard com botão Mentoria)
   const section2 = document.getElementById('section2');
   section2.style.display = 'none';
   section2.classList.remove('section-fade-in');
@@ -4678,6 +4694,7 @@ function voltarParaFormulario() {
     formCard.style.display = '';
     formCard.classList.add('section-fade-in');
   }
+  document.getElementById('btnVoltarFormulario').style.display = '';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -5403,6 +5420,7 @@ document.getElementById('resetAppBtn').addEventListener('click', function() {
 
   section1.style.display = 'block';
   ritualCard.style.display = '';
+  restaurarBotaoMentoria();
   formCard.style.display = 'none';
   formCard.classList.remove('section-fade-in');
   section2.style.display = 'none';
