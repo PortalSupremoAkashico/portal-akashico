@@ -3318,6 +3318,20 @@
     function fecharCadastro() { if (window._authFns) window._authFns.fechar();   }
   </script>
 
+  <!-- Player de música ambiente -->
+  <audio id="ambientAudio" loop preload="auto" src="/soul-frequencies.mp3"></audio>
+
+  <!-- Botão de controle de som (canto inferior direito) -->
+  <button id="soundToggleBtn" type="button" onclick="toggleAmbientSound()"
+    style="display:none;position:fixed;bottom:24px;right:24px;z-index:999;
+           width:44px;height:44px;border-radius:50%;padding:0;
+           background:rgba(18,13,38,.85);border:1px solid rgba(196,181,253,.25);
+           color:rgba(196,181,253,.7);font-size:1.1rem;cursor:pointer;
+           backdrop-filter:blur(10px);transition:all .3s;box-shadow:0 4px 20px rgba(0,0,0,.4);"
+    title="Controlar música ambiente">
+    🔊
+  </button>
+
   <main class="container">
 
     <!-- SECÇÃO 1: RITUAL + FORMULÁRIO -->
@@ -4660,6 +4674,73 @@ function resetStreamingState() {
   };
 }
 
+// ═══════════════════════════════════════════════════════
+//  MÚSICA AMBIENTE — fade in/out suave
+// ═══════════════════════════════════════════════════════
+const ambientAudio = document.getElementById('ambientAudio');
+const soundBtn     = document.getElementById('soundToggleBtn');
+let   soundEnabled = true;
+let   fadeInterval = null;
+
+function fadeAudio(targetVolume, duration, onComplete) {
+  if (fadeInterval) clearInterval(fadeInterval);
+  const startVolume = ambientAudio.volume;
+  const steps       = 30;
+  const stepTime    = duration / steps;
+  const stepSize    = (targetVolume - startVolume) / steps;
+  let   current     = 0;
+
+  fadeInterval = setInterval(() => {
+    current++;
+    ambientAudio.volume = Math.max(0, Math.min(1, startVolume + stepSize * current));
+    if (current >= steps) {
+      clearInterval(fadeInterval);
+      fadeInterval = null;
+      if (onComplete) onComplete();
+    }
+  }, stepTime);
+}
+
+function startAmbientSound() {
+  if (!soundEnabled) return;
+  ambientAudio.volume = 0;
+  ambientAudio.play().then(() => {
+    fadeAudio(0.35, 3000); // fade in até 35% de volume em 3 segundos
+    soundBtn.style.display = '';
+  }).catch(() => {
+    // Autoplay bloqueado pelo navegador — mostra botão para o usuário iniciar
+    soundBtn.style.display = '';
+    soundBtn.textContent = '🔇';
+    soundEnabled = false;
+  });
+}
+
+function stopAmbientSound(callback) {
+  if (ambientAudio.paused) { if (callback) callback(); return; }
+  fadeAudio(0, 1500, () => {
+    ambientAudio.pause();
+    ambientAudio.currentTime = 0;
+    if (callback) callback();
+  });
+}
+
+function toggleAmbientSound() {
+  if (ambientAudio.paused) {
+    soundEnabled = true;
+    ambientAudio.volume = 0;
+    ambientAudio.play().then(() => {
+      fadeAudio(0.35, 1500);
+      soundBtn.textContent = '🔊';
+      soundBtn.style.borderColor = 'rgba(196,181,253,.25)';
+    }).catch(() => {});
+  } else {
+    fadeAudio(0, 800, () => { ambientAudio.pause(); });
+    soundBtn.textContent = '🔇';
+    soundBtn.style.borderColor = 'rgba(196,181,253,.1)';
+    soundEnabled = false;
+  }
+}
+
 function restaurarBotaoMentoria() {
   const el = document.getElementById('ritualStatus');
   if (!el) return;
@@ -4838,9 +4919,10 @@ function enterPortal(user) {
   saveStoredUser(user);
   document.getElementById('authCard').style.display = 'none';
   document.getElementById('ritualCard').style.display = '';
-  // abertura-consulta e seu botão Voltar só aparecem quando o ritual libera
   document.getElementById('abertura-consulta').style.display = 'none';
   document.getElementById('btnVoltarFormulario').style.display = 'none';
+  // Inicia música ambiente com fade in
+  startAmbientSound();
 }
 
 // Tentativas erradas por email — resetado ao entrar com sucesso
@@ -5417,6 +5499,10 @@ document.getElementById('resetAppBtn').addEventListener('click', function() {
   const section1 = document.getElementById('section1');
   const section2 = document.getElementById('section2');
   const consultaSection = document.getElementById('consulta');
+
+  stopAmbientSound();
+  soundBtn.style.display = 'none';
+  soundEnabled = true;
 
   section1.style.display = 'block';
   ritualCard.style.display = '';
