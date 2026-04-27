@@ -2054,7 +2054,31 @@
       }
     }
 
-/* ===== CONTROLE DE FLUXO DE TELAS ===== */
+    .btn-voltar {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .75rem;
+      font-family: var(--font-display);
+      letter-spacing: .08em;
+      padding: 7px 16px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(196,181,253,.2);
+      border-radius: 20px;
+      color: rgba(196,181,253,.7);
+      cursor: pointer;
+      transition: all .2s;
+      text-transform: none;
+      width: auto;
+    }
+    .btn-voltar:hover {
+      background: rgba(139,92,246,.15);
+      color: #c4b5fd;
+      border-color: rgba(196,181,253,.4);
+    }
+    .nav-voltar {
+      margin-bottom: 12px;
+    } */
     #abertura-consulta { display: none; }
     #consulta { display: none; }
 
@@ -3424,7 +3448,9 @@
         <!-- FORMULÁRIO -->
         <div class="card" id="abertura-consulta">
           <div class="card-body">
-            
+            <div class="nav-voltar">
+              <button type="button" class="btn-voltar" onclick="voltarParaLogin()">← Voltar</button>
+            </div>
             <h2>Formulário da Consulta</h2>
             <p class="section-desc">Preencha os campos e conecte-se à rede universal para canalizar sua resposta.</p>
 
@@ -3466,13 +3492,8 @@
     <div class="section" id="section2" style="display:none;">
 
         <!-- Botão Voltar -->
-        <div style="margin-bottom:12px;">
-          <button type="button" onclick="voltarParaFormulario()"
-            style="font-size:.75rem;padding:7px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(196,181,253,.2);border-radius:20px;color:rgba(196,181,253,.7);letter-spacing:.06em;cursor:pointer;transition:all .2s;"
-            onmouseover="this.style.background='rgba(139,92,246,.15)';this.style.color='#c4b5fd'"
-            onmouseout="this.style.background='rgba(255,255,255,.04)';this.style.color='rgba(196,181,253,.7)'">
-            ← Voltar
-          </button>
+        <div class="nav-voltar">
+          <button type="button" class="btn-voltar" onclick="voltarParaFormulario()">← Voltar</button>
         </div>
 
         <!-- PROTOCOLO -->
@@ -3538,13 +3559,8 @@
       <div class="card-body">
 
         <!-- Botão Voltar -->
-        <div style="margin-bottom:12px;">
-          <button type="button" onclick="voltarParaProtocolo()"
-            style="font-size:.75rem;padding:7px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(196,181,253,.2);border-radius:20px;color:rgba(196,181,253,.7);letter-spacing:.06em;cursor:pointer;transition:all .2s;"
-            onmouseover="this.style.background='rgba(139,92,246,.15)';this.style.color='#c4b5fd'"
-            onmouseout="this.style.background='rgba(255,255,255,.04)';this.style.color='rgba(196,181,253,.7)'">
-            ← Voltar
-          </button>
+        <div class="nav-voltar">
+          <button type="button" class="btn-voltar" onclick="voltarParaProtocolo()">← Voltar</button>
         </div>
         
         <h2>Leitura Akáshica Suprema</h2>
@@ -4640,6 +4656,14 @@ function resetStreamingState() {
     lastFrameTs: 0,
     streamEnded: false
   };
+}
+
+function voltarParaLogin() {
+  // Formulário → tela de autenticação
+  document.getElementById('ritualCard').style.display = 'none';
+  document.getElementById('abertura-consulta').style.display = 'none';
+  document.getElementById('authCard').style.display = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function voltarParaFormulario() {
