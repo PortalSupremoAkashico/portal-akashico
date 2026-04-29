@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seu Perfil — Portal dos Registros Akáshicos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-deep: #070510;
+      --bg-card: rgba(18,13,38,.92);
+      --border: rgba(147,109,255,.18);
+      --text: #ede9ff;
+      --muted: #9b94c4;
+      --accent: #a78bfa;
+      --accent-bright: #c4b5fd;
+      --accent-dark: #6d28d9;
+      --gold: #f0c96b;
+      --radius: 20px;
+      --radius-sm: 12px;
+      --font-display: 'Cinzel', serif;
+      --font-body: 'Inter', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-body); color: var(--text); background: var(--bg-deep); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    #universeCanvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+    .container { width: min(720px, calc(100% - 24px)); margin: 0 auto; padding: 24px 0 0; position: relative; z-index: 1; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); backdrop-filter: blur(20px); margin-bottom: 16px; }
+    .card-body { padding: 24px 28px; }
+    @media(max-width:600px){ .card-body { padding: 18px 16px; } }
+
+    .site-header { text-align: center; padding: 28px 20px 16px; }
+    .header-badge { display: inline-block; font-family: var(--font-display); font-size: .65rem; letter-spacing: .18em; color: var(--gold); border: 1px solid rgba(240,201,107,.3); border-radius: 20px; padding: 4px 14px; margin-bottom: 10px; }
+    .site-header h1 { font-family: var(--font-display); font-size: clamp(1.1rem,3vw,1.6rem); font-weight: 600; letter-spacing: .08em; background: linear-gradient(135deg,#e0d4ff,#a78bfa,#c4b5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    .nav-link { display: inline-flex; align-items: center; gap: 6px; font-size: .8rem; color: var(--muted); text-decoration: none; padding: 7px 14px; border: 1px solid rgba(196,181,253,.15); border-radius: 20px; transition: all .2s; }
+    .nav-link:hover { color: var(--accent-bright); border-color: rgba(196,181,253,.35); }
+
+    /* Avatar */
+    .avatar { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, rgba(109,40,217,.4), rgba(167,139,250,.2)); border: 2px solid rgba(196,181,253,.3); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 1.6rem; color: var(--accent-bright); flex-shrink: 0; }
+
+    /* Info rows */
+    .info-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(196,181,253,.08); gap: 12px; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-size: .75rem; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; flex-shrink: 0; }
+    .info-value { font-size: .9rem; color: var(--accent-bright); text-align: right; }
+
+    /* Soul items */
+    .soul-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media(max-width:500px){ .soul-grid { grid-template-columns: 1fr; } }
+    .soul-item { background: rgba(139,92,246,.07); border: 1px solid rgba(196,181,253,.1); border-radius: var(--radius-sm); padding: 12px 14px; }
+    .soul-label { font-size: .65rem; letter-spacing: .12em; color: var(--gold); text-transform: uppercase; margin-bottom: 4px; }
+    .soul-value { font-size: .85rem; color: rgba(237,233,255,.85); line-height: 1.5; }
+
+    /* Stats */
+    .stats-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .stat-box { flex: 1; min-width: 100px; background: rgba(139,92,246,.08); border: 1px solid rgba(196,181,253,.12); border-radius: var(--radius-sm); padding: 14px; text-align: center; }
+    .stat-num { font-family: var(--font-display); font-size: 1.6rem; color: var(--accent-bright); font-weight: 600; }
+    .stat-label { font-size: .7rem; color: var(--muted); margin-top: 4px; letter-spacing: .06em; }
+
+    /* Botões */
+    .btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-display); font-size: .78rem; letter-spacing: .1em; color: #fff; text-decoration: none; border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 13px 22px; background: rgba(167,139,250,.12); animation: btnPulse 2s ease-in-out infinite; font-weight: 600; text-transform: uppercase; cursor: pointer; width: 100%; text-align: center; }
+    @keyframes btnPulse { 0%,100%{box-shadow:0 0 8px rgba(167,139,250,.2);background:rgba(167,139,250,.1);}50%{box-shadow:0 0 28px rgba(167,139,250,.5);background:rgba(167,139,250,.2);} }
+    .btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-display); font-size: .75rem; letter-spacing: .08em; color: rgba(196,181,253,.7); border: 1px solid rgba(196,181,253,.2); border-radius: var(--radius-sm); padding: 10px 18px; background: rgba(255,255,255,.03); cursor: pointer; width: 100%; transition: all .2s; text-transform: uppercase; }
+    .btn-secondary:hover { background: rgba(139,92,246,.15); color: var(--accent-bright); }
+
+    /* Modal senha */
+    .modal-overlay { display: none; position: fixed; inset: 0; z-index: 9998; background: rgba(7,5,16,.92); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
+    .modal-box { background: rgba(18,13,38,.98); border: 1px solid rgba(196,181,253,.2); border-radius: 20px; padding: 28px; max-width: 400px; width: calc(100% - 32px); }
+    input[type="password"], input[type="text"] { width: 100%; background: rgba(255,255,255,.05); border: 1px solid rgba(196,181,253,.2); border-radius: var(--radius-sm); color: var(--text); font-size: .9rem; padding: 11px 14px; outline: none; margin-bottom: 10px; font-family: var(--font-body); }
+    input:focus { border-color: rgba(196,181,253,.5); }
+    .status { font-size: .82rem; min-height: 20px; margin-bottom: 8px; }
+    .status.ok { color: #86efac; }
+    .status.error { color: #fca5a5; }
+  </style>
+</head>
+<body>
+
+<canvas id="universeCanvas"></canvas>
+
+<audio id="ambientAudio" loop preload="auto" src="/soul-frequencies.mp3"></audio>
+
+<div class="container">
+  <header class="site-header">
+    <div class="header-badge">Portal dos Registros Akáshicos</div>
+    <h1>Seu Perfil</h1>
+  </header>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+    <a href="/consulta.html" class="nav-link">← Voltar</a>
+    <span id="userGreeting" style="font-size:.82rem;color:var(--muted);"></span>
+  </div>
+
+  <!-- Dados pessoais -->
+  <div class="card">
+    <div class="card-body">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+        <div class="avatar" id="avatarInitial">?</div>
+        <div>
+          <div style="font-family:var(--font-display);font-size:.7rem;letter-spacing:.12em;color:var(--gold);margin-bottom:4px;">CONSULENTE</div>
+          <div style="font-size:1.1rem;color:var(--accent-bright);font-weight:500;" id="profileNome">—</div>
+        </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-label">E-mail</div>
+        <div class="info-value" id="profileEmail">—</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Data de nascimento</div>
+        <div class="info-value" id="profileData">—</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Signo</div>
+        <div class="info-value" id="profileSigno">—</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Dias de vida</div>
+        <div class="info-value" id="profileDiasVida">—</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Sexo</div>
+        <div class="info-value" id="profileSexo">—</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Membro desde</div>
+        <div class="info-value" id="profileMembro">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estatísticas -->
+  <div class="card">
+    <div class="card-body">
+      <div style="font-family:var(--font-display);font-size:.7rem;letter-spacing:.12em;color:var(--gold);margin-bottom:14px;">JORNADA EM NÚMEROS</div>
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-num" id="statConsultas">—</div>
+          <div class="stat-label">Consultas</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="statMentorias">—</div>
+          <div class="stat-label">Mentorias</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="statDias" style="font-size:1rem;">—</div>
+          <div class="stat-label">Primeira consulta</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Jornada da Alma -->
+  <div class="card" id="soulCard" style="display:none;">
+    <div class="card-body">
+      <div style="font-family:var(--font-display);font-size:.7rem;letter-spacing:.12em;color:var(--gold);margin-bottom:14px;">JORNADA DA ALMA</div>
+      <div class="soul-grid" id="soulGrid"></div>
+    </div>
+  </div>
+
+  <!-- Ações -->
+  <div class="card">
+    <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+      <a href="/historico" class="btn-primary">📂 Meu Histórico</a>
+      <a href="/mentoria" onclick="sessionStorage.setItem('akashic_portal_session','ok')" class="btn-primary">⚚ Mentoria Akáshica</a>
+      <button type="button" class="btn-secondary" onclick="abrirModalSenha()">🔒 Alterar Senha</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal alterar senha -->
+<div class="modal-overlay" id="senhaModal" onclick="if(event.target===this)fecharModalSenha()">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div style="font-family:var(--font-display);font-size:.8rem;letter-spacing:.12em;color:var(--gold);">🔒 ALTERAR SENHA</div>
+      <span onclick="fecharModalSenha()" style="cursor:pointer;color:rgba(196,181,253,.5);font-size:1.2rem;">✕</span>
+    </div>
+    <input type="password" id="senhaAtual" placeholder="Senha atual" maxlength="20" />
+    <input type="password" id="senhaNova" placeholder="Nova senha" maxlength="20" />
+    <input type="password" id="senhaConf" placeholder="Confirmar nova senha" maxlength="20" />
+    <div class="status" id="senhaStatus"></div>
+    <button type="button" class="btn-primary" style="animation:none;" onclick="alterarSenha()">Salvar nova senha</button>
+  </div>
+</div>
+
+<footer style="text-align:center;padding:12px 16px 16px;font-size:.72rem;color:rgba(155,148,196,.45);position:relative;z-index:1;">
+  <div style="margin-bottom:8px;">© 2026 Portal dos Registros Akáshicos</div>
+  <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">
+    <span style="cursor:pointer;color:rgba(196,181,253,.5);text-decoration:underline;text-underline-offset:3px;" onclick="document.getElementById('privacyModal').style.display='flex'">Privacidade</span>
+    <span style="color:rgba(155,148,196,.2);">·</span>
+    <span style="cursor:pointer;color:rgba(196,181,253,.5);text-decoration:underline;text-underline-offset:3px;" onclick="document.getElementById('termosModal').style.display='flex'">Termos de Uso</span>
+    <span style="color:rgba(155,148,196,.2);">·</span>
+    <a href="mailto:portalsupremoakashico@gmail.com" style="color:rgba(196,181,253,.5);text-decoration:underline;text-underline-offset:3px;">Contato</a>
+    <span style="color:rgba(155,148,196,.2);">·</span>
+    <span style="cursor:pointer;color:rgba(196,181,253,.5);text-decoration:underline;text-underline-offset:3px;" onclick="document.getElementById('segurancaModal').style.display='flex'">Segurança</span>
+  </div>
+</footer>
+
+<div id="privacyModal" onclick="if(event.target===this)this.style.display='none'" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(7,5,16,.92);backdrop-filter:blur(8px);align-items:center;justify-content:center;"><div style="background:rgba(18,13,38,.98);border:1px solid rgba(196,181,253,.2);border-radius:20px;padding:28px;max-width:500px;width:calc(100% - 32px);max-height:82vh;overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"><div style="font-family:'Cinzel',serif;font-size:.8rem;letter-spacing:.12em;color:rgba(240,201,107,.8);">🔒 POLÍTICA DE PRIVACIDADE</div><span onclick="document.getElementById('privacyModal').style.display='none'" style="cursor:pointer;color:rgba(196,181,253,.5);font-size:1.2rem;">✕</span></div><div style="font-size:.84rem;color:rgba(196,181,253,.75);line-height:1.85;"><p style="margin-bottom:14px;">Suas consultas são armazenadas com segurança em servidores em São Paulo para personalizar suas próximas sessões.</p><p style="margin-bottom:14px;"><strong style="color:#c4b5fd;">Seus dados não são compartilhados com terceiros</strong> nem usados para fins publicitários.</p><p style="margin-bottom:14px;">Senhas protegidas com SHA-256. Nenhuma senha trafega em texto aberto.</p><p style="margin-bottom:14px;">Cumprimos a <strong style="color:#c4b5fd;">LGPD (Lei nº 13.709/2018)</strong>.</p><p>Contato: <a href="mailto:portalsupremoakashico@gmail.com" style="color:#a78bfa;">portalsupremoakashico@gmail.com</a></p></div></div></div>
+<div id="termosModal" onclick="if(event.target===this)this.style.display='none'" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(7,5,16,.92);backdrop-filter:blur(8px);align-items:center;justify-content:center;"><div style="background:rgba(18,13,38,.98);border:1px solid rgba(196,181,253,.2);border-radius:20px;padding:28px;max-width:500px;width:calc(100% - 32px);max-height:82vh;overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"><div style="font-family:'Cinzel',serif;font-size:.8rem;letter-spacing:.12em;color:rgba(240,201,107,.8);">✦ TERMOS DE USO</div><span onclick="document.getElementById('termosModal').style.display='none'" style="cursor:pointer;color:rgba(196,181,253,.5);font-size:1.2rem;">✕</span></div><div style="font-size:.84rem;color:rgba(196,181,253,.75);line-height:1.85;"><p style="margin-bottom:10px;color:rgba(196,181,253,.4);font-size:.75rem;">Última atualização: Abril de 2026</p><p style="margin-bottom:12px;"><strong style="color:#c4b5fd;">1. O que é o Portal</strong><br>Plataforma de autoconhecimento com Inteligência Universal para leituras espirituais e sessões de mentoria personalizadas.</p><p style="margin-bottom:12px;"><strong style="color:#c4b5fd;">2. Como usar</strong><br>Crie sua conta, preencha o formulário, receba sua leitura. Aprofunde na Mentoria e acesse tudo em "Meu Histórico".</p><p style="margin-bottom:12px;"><strong style="color:#c4b5fd;">3. Natureza das leituras</strong><br>As leituras têm caráter orientativo. Não substituem acompanhamento profissional.</p><p style="margin-bottom:12px;"><strong style="color:#c4b5fd;">4. Responsabilidade</strong><br>Ao criar conta, o usuário declara ter 18 anos ou mais.</p><p><strong style="color:#c4b5fd;">5. Contato</strong><br><a href="mailto:portalsupremoakashico@gmail.com" style="color:#a78bfa;">portalsupremoakashico@gmail.com</a></p></div></div></div>
+<div id="segurancaModal" onclick="if(event.target===this)this.style.display='none'" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(7,5,16,.92);backdrop-filter:blur(8px);align-items:center;justify-content:center;"><div style="background:rgba(18,13,38,.98);border:1px solid rgba(196,181,253,.2);border-radius:20px;padding:28px;max-width:500px;width:calc(100% - 32px);max-height:82vh;overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"><div style="font-family:'Cinzel',serif;font-size:.8rem;letter-spacing:.12em;color:rgba(240,201,107,.8);">🛡 SEGURANÇA</div><span onclick="document.getElementById('segurancaModal').style.display='none'" style="cursor:pointer;color:rgba(196,181,253,.5);font-size:1.2rem;">✕</span></div><div style="font-size:.84rem;color:rgba(196,181,253,.75);line-height:1.85;"><p style="margin-bottom:12px;"><strong style="color:#c4b5fd;">🔐 Senhas protegidas</strong><br>Criptografia SHA-256.</p><p style="margin-bottom:12px;"><strong style="color:#c4b5fd;">🌐 Conexão segura</strong><br>HTTPS em todas as páginas.</p><p style="margin-bottom:12px;"><strong style="color:#c4b5fd;">🗄 Armazenamento no Brasil</strong><br>Servidores em São Paulo, dentro da LGPD.</p><p><strong style="color:#c4b5fd;">📧 Reporte</strong><br><a href="mailto:portalsupremoakashico@gmail.com" style="color:#a78bfa;">portalsupremoakashico@gmail.com</a></p></div></div></div>
+
+<script>
+// ── Fundo cósmico ──
+(function(){
+  const canvas=document.getElementById('universeCanvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,stars=[],nebulae=[],t=0;
+  function rand(a,b){return a+Math.random()*(b-a);}
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;init();}
+  function init(){
+    stars=[];
+    const count=Math.floor((W*H)/700);
+    for(let i=0;i<count;i++){const spd=rand(0.3,1.2);stars.push({x:rand(0,W),y:rand(0,H),r:rand(0.4,2),alpha:rand(0.4,1),speed:rand(0.0004,0.001),phase:rand(0,Math.PI*2),color:Math.random()<0.2?`hsl(${rand(200,280)},85%,92%)`:'#fff',dx:spd*0.7,dy:spd*0.2});}
+    nebulae=[];
+    const cols=[[120,70,200],[60,100,255],[200,80,160]];
+    for(let i=0;i<6;i++){const[r,g,b]=cols[i%cols.length];nebulae.push({x:rand(0,W),y:rand(0,H),rx:rand(W*.2,W*.4),ry:rand(H*.15,H*.3),alpha:rand(0.06,0.12),angle:rand(0,Math.PI),r,g,b,driftX:rand(-0.03,0.03),driftY:rand(-0.02,0.02),rotSpeed:rand(-0.00005,0.00005),pulseSpeed:rand(0.0003,0.0008),pulsePhase:rand(0,Math.PI*2)});}
+  }
+  function loop(ts){t=ts;ctx.clearRect(0,0,W,H);
+    const bg=ctx.createRadialGradient(W*.5,H*.4,0,W*.5,H*.5,Math.max(W,H)*.8);bg.addColorStop(0,'#0d0820');bg.addColorStop(1,'#020108');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+    nebulae.forEach(n=>{const pulse=Math.sin(t*n.pulseSpeed+n.pulsePhase)*0.4+0.8;ctx.save();ctx.translate(n.x,n.y);ctx.rotate(n.angle);const g=ctx.createRadialGradient(0,0,0,0,0,n.rx),a=n.alpha*pulse;g.addColorStop(0,`rgba(${n.r},${n.g},${n.b},${a})`);g.addColorStop(1,`rgba(${n.r},${n.g},${n.b},0)`);ctx.scale(1,n.ry/n.rx);ctx.beginPath();ctx.arc(0,0,n.rx,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();ctx.restore();n.x+=n.driftX;n.y+=n.driftY;n.angle+=n.rotSpeed;});
+    stars.forEach(s=>{s.x+=s.dx;s.y+=s.dy;if(s.x<-2)s.x=W+2;if(s.x>W+2)s.x=-2;if(s.y<-2)s.y=H+2;if(s.y>H+2)s.y=-2;const fl=Math.sin(t*s.speed*1000+s.phase)*0.35+0.65;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=s.color;ctx.globalAlpha=s.alpha*fl;ctx.fill();ctx.globalAlpha=1;});
+    const v=ctx.createRadialGradient(W*.5,H*.5,H*.2,W*.5,H*.5,Math.max(W,H)*.75);v.addColorStop(0,'transparent');v.addColorStop(1,'rgba(2,1,8,0.72)');ctx.fillStyle=v;ctx.fillRect(0,0,W,H);
+    requestAnimationFrame(loop);
+  }
+  window.addEventListener('resize',resize);resize();requestAnimationFrame(loop);
+})();
+
+// ── Som ──
+(function(){
+  const audio=document.getElementById('ambientAudio');
+  let playing=false;
+  function updateBtns(icon){document.querySelectorAll('.btn-som-inject').forEach(b=>b.textContent=icon);}
+  function fadeIn(){let v=0;const t=setInterval(()=>{v=Math.min(0.35,v+0.015);audio.volume=v;if(v>=0.35)clearInterval(t);},100);}
+  function tryPlay(){audio.volume=0;audio.play().then(()=>{fadeIn();updateBtns('🔊');playing=true;}).catch(()=>{updateBtns('🔇');});}
+  window.toggleSound=function(){if(playing){audio.pause();updateBtns('🔇');playing=false;}else{tryPlay();}};
+  function injetarBotoes(){document.querySelectorAll('.card').forEach(card=>{if(card.querySelector('.btn-som-inject'))return;const wrap=document.createElement('div');wrap.style.cssText='text-align:right;margin-top:10px;';const btn=document.createElement('button');btn.className='btn-som-inject';btn.style.cssText='font-size:.7rem;padding:2px 7px;border-radius:20px;background:rgba(18,13,38,.6);border:1px solid rgba(196,181,253,.15);color:rgba(196,181,253,.5);cursor:pointer;transition:all .2s;line-height:1.4;';btn.textContent='🔇';btn.onclick=window.toggleSound;wrap.appendChild(btn);(card.querySelector('.card-body')||card).appendChild(wrap);});}
+  document.addEventListener('DOMContentLoaded',()=>{injetarBotoes();tryPlay();});
+})();
+
+// ── Auth ──
+const STORAGE_KEY_USER = 'akashic_user';
+function getUser(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY_USER)||'{}'); }catch{ return {}; } }
+
+function calcularSigno(data) {
+  if (!data) return '—';
+  const parts = data.includes('/') ? data.split('/') : [];
+  if (parts.length !== 3) return '—';
+  const d = parseInt(parts[0]), m = parseInt(parts[1]);
+  const signos = [
+    { nome: '♑ Capricórnio', fim: [1,19] }, { nome: '♒ Aquário',    fim: [2,18] },
+    { nome: '♓ Peixes',      fim: [3,20] }, { nome: '♈ Áries',      fim: [4,19] },
+    { nome: '♉ Touro',       fim: [5,20] }, { nome: '♊ Gêmeos',     fim: [6,20] },
+    { nome: '♋ Câncer',      fim: [7,22] }, { nome: '♌ Leão',       fim: [8,22] },
+    { nome: '♍ Virgem',      fim: [9,22] }, { nome: '♎ Libra',      fim: [10,22] },
+    { nome: '♏ Escorpião',   fim: [11,21] },{ nome: '♐ Sagitário',  fim: [12,21] },
+    { nome: '♑ Capricórnio', fim: [12,31] }
+  ];
+  for (const s of signos) {
+    if (m < s.fim[0] || (m === s.fim[0] && d <= s.fim[1])) return s.nome;
+  }
+  return '♑ Capricórnio';
+}
+
+function calcularDiasVida(data) {
+  if (!data) return '—';
+  const parts = data.includes('/') ? data.split('/') : [];
+  if (parts.length !== 3) return '—';
+  const nasc = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+  if (isNaN(nasc)) return '—';
+  const dias = Math.floor((new Date() - nasc) / (1000*60*60*24));
+  return dias.toLocaleString('pt-BR') + ' dias';
+}
+
+async function hashPassword(password) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Carrega perfil ──
+async function loadProfile() {
+  const user = getUser();
+  if (!user.email) { window.location.href = '/consulta.html'; return; }
+
+  const firstName = (user.nome||'').trim().split(/\s+/)[0] || 'Consulente';
+  document.getElementById('userGreeting').textContent = firstName;
+  document.getElementById('profileNome').textContent = user.nome || '—';
+  document.getElementById('profileEmail').textContent = user.email || '—';
+  document.getElementById('profileData').textContent = user.data || '—';
+  document.getElementById('profileSigno').textContent = calcularSigno(user.data);
+  document.getElementById('profileDiasVida').textContent = calcularDiasVida(user.data);
+  document.getElementById('profileSexo').textContent = user.sexo || '—';
+  document.getElementById('avatarInitial').textContent = firstName.charAt(0).toUpperCase();
+
+  // Data de membro (do Supabase)
+  try {
+    const resp = await fetch('/api/auth', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'check_email', email: user.email, senha_hash: '' })
+    });
+    const data = await resp.json();
+    if (data.created_at) {
+      const d = new Date(data.created_at);
+      document.getElementById('profileMembro').textContent = d.toLocaleDateString('pt-BR');
+    }
+  } catch {}
+
+  // Estatísticas
+  try {
+    const resp = await fetch(`/api/consultas?email=${encodeURIComponent(user.email)}`);
+    const data = await resp.json();
+    const consultas = data.consultas || [];
+    document.getElementById('statConsultas').textContent = consultas.length;
+
+    // Primeira consulta
+    if (consultas.length > 0) {
+      const primeira = consultas[consultas.length - 1];
+      if (primeira.created_at) {
+        const d = new Date(primeira.created_at);
+        document.getElementById('statDias').textContent = d.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+      }
+    }
+
+    // Jornada da Alma
+    if (consultas.length > 0) {
+      const temas = [...new Set(consultas.map(c=>c.tema).filter(Boolean))];
+      const estados = consultas.map(c=>c.estado).filter(Boolean);
+      const ec = {};
+      estados.forEach(e=>{ ec[e]=(ec[e]||0)+1; });
+      const sorted = Object.entries(ec).sort((a,b)=>b[1]-a[1]);
+      const padrao = sorted.length === 1 ? `Consistentemente ${sorted[0][0].toLowerCase()}` :
+                     sorted.length <= 2 ? `Oscila entre ${sorted.map(([e])=>e.toLowerCase()).join(' e ')}` :
+                     `Diversificado — predomina ${sorted[0][0].toLowerCase()}`;
+
+      const items = [
+        { label: 'Temas explorados', value: temas.slice(0,4).join(', ') || 'Em mapeamento' },
+        { label: 'Padrão emocional', value: padrao },
+        { label: 'Última consulta', value: consultas[0]?.created_at ? new Date(consultas[0].created_at).toLocaleDateString('pt-BR') : '—' },
+        { label: 'Pergunta mais recente', value: consultas[0]?.pergunta ? `"${consultas[0].pergunta.slice(0,60)}${consultas[0].pergunta.length>60?'…':''}"` : '—' }
+      ];
+
+      document.getElementById('soulCard').style.display = '';
+      document.getElementById('soulGrid').innerHTML = items.map(i=>`
+        <div class="soul-item">
+          <div class="soul-label">${i.label}</div>
+          <div class="soul-value">${i.value}</div>
+        </div>
+      `).join('');
+    }
+  } catch {}
+
+  // Mentorias
+  try {
+    const resp = await fetch(`/api/mentorias?email=${encodeURIComponent(user.email)}`);
+    const data = await resp.json();
+    document.getElementById('statMentorias').textContent = (data.messages||[]).length;
+  } catch {}
+}
+
+// ── Modal senha ──
+function abrirModalSenha() {
+  document.getElementById('senhaModal').style.display = 'flex';
+  document.getElementById('senhaAtual').focus();
+}
+function fecharModalSenha() {
+  document.getElementById('senhaModal').style.display = 'none';
+  document.getElementById('senhaAtual').value = '';
+  document.getElementById('senhaNova').value = '';
+  document.getElementById('senhaConf').value = '';
+  document.getElementById('senhaStatus').textContent = '';
+}
+
+async function alterarSenha() {
+  const atual = document.getElementById('senhaAtual').value;
+  const nova  = document.getElementById('senhaNova').value;
+  const conf  = document.getElementById('senhaConf').value;
+  const status = document.getElementById('senhaStatus');
+  const user   = getUser();
+
+  if (!atual) { status.className='status error'; status.textContent='Digite a senha atual.'; return; }
+  if (!nova || nova.length < 4) { status.className='status error'; status.textContent='A nova senha deve ter pelo menos 4 caracteres.'; return; }
+  if (nova !== conf) { status.className='status error'; status.textContent='As senhas não conferem.'; return; }
+
+  status.className='status'; status.textContent='Verificando...';
+
+  const atualHash = await hashPassword(atual);
+  const novaHash  = await hashPassword(nova);
+
+  // Verifica senha atual
+  try {
+    const check = await fetch('/api/auth', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'login', email: user.email, senha_hash: atualHash })
+    });
+    const data = await check.json();
+    if (!check.ok) { status.className='status error'; status.textContent='Senha atual incorreta.'; return; }
+
+    // Atualiza senha
+    await fetch('/api/auth', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'reset_senha', email: user.email, senha_hash: novaHash })
+    });
+
+    // Atualiza localStorage
+    user.senha = novaHash;
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+
+    status.className='status ok'; status.textContent='✅ Senha alterada com sucesso!';
+    setTimeout(fecharModalSenha, 1500);
+  } catch {
+    status.className='status error'; status.textContent='Erro de conexão. Tente novamente.';
+  }
+}
+
+// ── Sair ──
+function sair() {
+  if (!confirm('Deseja sair da sua conta?')) return;
+  localStorage.removeItem(STORAGE_KEY_USER);
+  window.location.href = '/consulta.html';
+}
+
+document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+</body>
+</html>
