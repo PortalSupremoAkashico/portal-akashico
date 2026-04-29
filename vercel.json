@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/mentoria",  "destination": "/mentoria.html" },
+    { "source": "/historico", "destination": "/historico.html" },
+    { "source": "/perfil",    "destination": "/perfil.html" }
+  ]
+}
