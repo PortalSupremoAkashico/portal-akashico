@@ -504,11 +504,7 @@
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
             <div class="panel-title-m">Memórias Akáshicas</div>
             <div style="display:flex;align-items:center;gap:8px;">
-              <button id="btnModoOuvir" type="button" onclick="setModoVoz(modoVoz==='ouvir'?'ler':'ouvir')"
-                style="width:auto;padding:7px 14px;font-size:.72rem;background:rgba(240,201,107,0.08);border:1px solid rgba(240,201,107,0.3);color:rgba(240,201,107,0.7);border-radius:20px;letter-spacing:.06em;cursor:pointer;transition:all .2s;"
-                title="Ativar/desativar leitura em voz">
-                ▶ Ouvir
-              </button>
+
               <button type="button" onclick="clearConversation()"
                 style="width:auto;padding:7px 16px;font-size:.72rem;background:rgba(255,255,255,.04);border:1px solid rgba(196,181,253,.18);color:rgba(196,181,253,.7);border-radius:20px;letter-spacing:.06em;cursor:pointer;transition:all .2s;"
                 onmouseover="this.style.background='rgba(139,92,246,.2)';this.style.color='#c4b5fd'"
@@ -1024,7 +1020,6 @@ function sendWelcome(firstName) {
     const welcome = `${firstName}, que bom te encontrar aqui.\n\nEste espaço foi criado para ir além das perguntas que você traz — para encontrar o que está por trás delas. Ao longo das nossas conversas, vou ouvir não apenas as palavras, mas os padrões, as repetições, o que ainda não foi dito.\n\nTrabalho na interseção entre neurociência, psicologia profunda, filosofia e espiritualidade. Jung, Frankl, Marco Aurélio, Buda, Chico Xavier — cada um com uma chave diferente para as mesmas portas interiores. Uso todas elas.\n\nNão estou aqui para te dar respostas prontas. Estou aqui para fazer as perguntas certas — aquelas que só você pode responder.\n\nEntão, sem pressa: o que está ocupando seu coração agora?`;
     addMessage('mentor', welcome, false);
     // Se modo ouvir ativo, fala as boas-vindas
-    if (modoVoz === 'ouvir' && window.akSpeak) window.akSpeak(welcome, null);
   }, 2800);
 }
 
@@ -1191,7 +1186,6 @@ function mostrarEscolhaMentoria(text, container) {
 
   bar.querySelector('.ouv').onclick = function() {
     bar.remove();
-    window.akSpeak(text, null);
   };
   bar.querySelector('.ler').onclick = function() {
     bar.remove();
@@ -1200,13 +1194,6 @@ function mostrarEscolhaMentoria(text, container) {
 }
 
     // Barra de escolha após streaming
-    if (bubble && mentorText.trim()) {
-      // Fala simultaneamente se modo ouvir ativo
-    // Fala simultânea com modo ouvir
-    if (modoVoz === 'ouvir' && window.akSpeak && mentorText.trim()) {
-      window.akSpeak(mentorText, null);
-    }
-    }
     // Atualiza perfil da jornada
     updateJourneyFromConversation(text, mentorText);
 
