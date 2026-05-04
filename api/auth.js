@@ -1,0 +1,174 @@
+import { argon2id } from 'hash-wasm';
+import { createHash } from 'node:crypto';
+
+const SUPABASE_URL = 'https://opykejeaxehvzogrrwto.supabase.co';
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+
+export const config = { maxDuration: 30 };
+
+// Argon2id — parâmetros OWASP 2024
+const A2_OPTS = { iterations: 3, memorySize: 65536, parallelism: 4, hashLength: 32, outputType: 'encoded' };
+
+async function supabaseFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...(options.headers || {})
+    }
+  });
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = text; }
+  if (!res.ok) console.error(`Supabase ${res.status}:`, JSON.stringify(data).slice(0,200));
+  return { ok: res.ok, status: res.status, data };
+}
+
+function sha256(text) {
+  return createHash('sha256').update(text, 'utf8').digest('hex');
+}
+
+function hashType(h) {
+  if (typeof h !== 'string') return 'unknown';
+  if (h.startsWith('$argon2id$')) return 'argon2id';
+  if (/^[a-f0-9]{64}$/i.test(h)) return 'sha256';
+  return 'unknown';
+}
+
+async function makeArgon2id(password) {
+  const salt = new Uint8Array(16);
+  crypto.getRandomValues(salt);
+  return argon2id({ password, salt, ...A2_OPTS });
+}
+
+async function verifyArgon2id(encoded, password) {
+  try {
+    const parts = encoded.split('$');
+    if (parts.length < 6) return false;
+    const saltBytes = Uint8Array.from(atob(parts[4]), c => c.charCodeAt(0));
+    const recomputed = await argon2id({ password, salt: saltBytes, ...A2_OPTS });
+    return recomputed === encoded;
+  } catch { return false; }
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (!SUPABASE_KEY) return res.status(500).json({ error: 'Configuração do servidor incompleta.' });
+
+  const { action, nome, email, senha, senha_hash, data_nascimento, sexo } = req.body;
+  if (!action || !email) return res.status(400).json({ error: 'Dados obrigatórios ausentes' });
+
+  // Aceita senha em texto (novo) ou SHA-256 do cliente (legado)
+  const senhaTexto  = senha      || null;
+  const senhaLegacy = senha_hash || null;
+
+  // ── CADASTRO ──
+  if (action === 'cadastro') {
+    if (!nome) return res.status(400).json({ error: 'Nome obrigatório' });
+    if (!senhaTexto && !senhaLegacy) return res.status(400).json({ error: 'Senha obrigatória' });
+    if (senhaTexto && senhaTexto.length < 8) return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres.' });
+
+    const check = await supabaseFetch(`/consulentes?email=eq.${encodeURIComponent(email)}&select=id`, { method: 'GET' });
+    if (check.ok && Array.isArray(check.data) && check.data.length > 0) {
+      return res.status(409).json({ error: 'E-mail já cadastrado. Faça login.' });
+    }
+
+    // Novo usuário → Argon2id. Legado → armazena SHA-256 (migra no primeiro login)
+    const finalHash = senhaTexto ? await makeArgon2id(senhaTexto) : senhaLegacy;
+
+    const insert = await supabaseFetch('/consulentes', {
+      method: 'POST',
+      body: JSON.stringify({ nome, email, senha_hash: finalHash, data_nascimento, sexo })
+    });
+    if (!insert.ok) return res.status(500).json({ error: 'Erro ao criar conta. Tente novamente.' });
+
+    const user = Array.isArray(insert.data) ? insert.data[0] : insert.data;
+    return res.status(200).json({
+      success: true,
+      user: { id: user.id, nome: user.nome, email: user.email, data: user.data_nascimento, sexo: user.sexo }
+    });
+  }
+
+  // ── LOGIN ──
+  if (action === 'login') {
+    const result = await supabaseFetch(
+      `/consulentes?email=eq.${encodeURIComponent(email)}&select=id,nome,email,senha_hash,data_nascimento,sexo`,
+      { method: 'GET' }
+    );
+    if (!result.ok || !Array.isArray(result.data) || result.data.length === 0) {
+      return res.status(401).json({ error: 'E-mail não encontrado. Verifique ou cadastre-se.' });
+    }
+
+    const user = result.data[0];
+    const stored = user.senha_hash;
+    const tipo = hashType(stored);
+    let ok = false;
+    let migrar = false;
+
+    if (tipo === 'argon2id') {
+      if (senhaTexto) ok = await verifyArgon2id(stored, senhaTexto);
+      else if (senhaLegacy) {
+        // Cliente legado com Argon2id no servidor — não consegue verificar sem a senha original
+        // Retorna erro orientando a usar o novo cliente
+        ok = false;
+      }
+    } else if (tipo === 'sha256') {
+      // Hash legado — verifica por SHA-256
+      const inputHash = senhaTexto ? sha256(senhaTexto) : senhaLegacy;
+      ok = inputHash === stored;
+      if (ok && senhaTexto) migrar = true; // migra para Argon2id silenciosamente
+    }
+
+    if (!ok) return res.status(401).json({ error: 'Senha incorreta.' });
+
+    // Migração silenciosa SHA-256 → Argon2id
+    if (migrar) {
+      try {
+        const novoHash = await makeArgon2id(senhaTexto);
+        await supabaseFetch(`/consulentes?id=eq.${user.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ senha_hash: novoHash })
+        });
+        console.log(`✅ Migração Argon2id: ${email}`);
+      } catch (e) { console.error('Migração falhou:', e.message); }
+    }
+
+    await supabaseFetch(`/consulentes?id=eq.${user.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ last_login: new Date().toISOString() })
+    });
+
+    return res.status(200).json({
+      success: true,
+      user: { id: user.id, nome: user.nome, email: user.email, data: user.data_nascimento, sexo: user.sexo }
+    });
+  }
+
+  // ── VERIFICAR EMAIL ──
+  if (action === 'check_email') {
+    const result = await supabaseFetch(`/consulentes?email=eq.${encodeURIComponent(email)}&select=id,nome`, { method: 'GET' });
+    const exists = result.ok && Array.isArray(result.data) && result.data.length > 0;
+    return res.status(200).json({ exists, nome: exists ? result.data[0].nome : null });
+  }
+
+  // ── REDEFINIR SENHA ──
+  if (action === 'reset_senha') {
+    if (!senhaTexto && !senhaLegacy) return res.status(400).json({ error: 'Senha obrigatória.' });
+    const finalHash = senhaTexto ? await makeArgon2id(senhaTexto) : senhaLegacy;
+    const update = await supabaseFetch(
+      `/consulentes?email=eq.${encodeURIComponent(email)}`,
+      { method: 'PATCH', body: JSON.stringify({ senha_hash: finalHash }) }
+    );
+    if (!update.ok) return res.status(500).json({ error: 'Erro ao redefinir senha.' });
+    return res.status(200).json({ success: true });
+  }
+
+  return res.status(400).json({ error: 'Ação desconhecida' });
+}
