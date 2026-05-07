@@ -1,0 +1,11 @@
+{
+  "routes": [
+    { "src": "/login",         "dest": "/login.html" },
+    { "src": "/consulta",      "dest": "/consulta.html" },
+    { "src": "/mentoria",      "dest": "/mentoria.html" },
+    { "src": "/historico",     "dest": "/historico.html" },
+    { "src": "/perfil",        "dest": "/perfil.html" },
+    { "src": "/mapa-akashico", "dest": "/mapa-akashico.html" },
+    { "src": "/reflexoes",     "dest": "/reflexoes.html" }
+  ]
+}
