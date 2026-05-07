@@ -26,7 +26,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: var(--font-body); color: var(--text); background: var(--bg-deep); min-height: 100vh; -webkit-font-smoothing: antialiased; }
     #universeCanvas { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
-    .container { width: min(1100px, calc(100% - 24px)); margin: 0 auto; padding: 24px 0 0; position: relative; z-index: 1; }
+    .container { width: min(720px, calc(100% - 24px)); margin: 0 auto; padding: 24px 0 0; position: relative; z-index: 1; }
     .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); backdrop-filter: blur(20px); margin-bottom: 16px; }
     .card-body { padding: 24px 28px; }
     @media(max-width:600px){ .card-body { padding: 18px 16px; } }
@@ -68,9 +68,8 @@
 
     /* Modal senha */
     .modal-overlay { display: none; position: fixed; inset: 0; z-index: 9998; background: rgba(7,5,16,.92); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
-    .modal-box { background: rgba(18,13,38,.98); border: 1px solid rgba(196,181,253,.2); border-radius: 20px; padding: 40px; max-width: 520px; width: calc(100% - 32px); }
-    input[type="password"], input[type="text"] { width: 100%; background: rgba(7,5,15,.85) !important; border: 1px solid rgba(196,181,253,.2); border-radius: var(--radius-sm); color: var(--text) !important; font-size: .9rem; padding: 11px 14px; outline: none; margin-bottom: 10px; font-family: var(--font-body); -webkit-text-fill-color: var(--text) !important; }
-    input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 1000px rgba(7,5,15,.95) inset !important; -webkit-text-fill-color: #e2e0f0 !important; caret-color: #e2e0f0; }
+    .modal-box { background: rgba(18,13,38,.98); border: 1px solid rgba(196,181,253,.2); border-radius: 20px; padding: 28px; max-width: 400px; width: calc(100% - 32px); }
+    input[type="password"], input[type="text"] { width: 100%; background: rgba(255,255,255,.05); border: 1px solid rgba(196,181,253,.2); border-radius: var(--radius-sm); color: var(--text); font-size: .9rem; padding: 11px 14px; outline: none; margin-bottom: 10px; font-family: var(--font-body); }
     input:focus { border-color: rgba(196,181,253,.5); }
     .status { font-size: .82rem; min-height: 20px; margin-bottom: 8px; }
     .status.ok { color: #86efac; }
@@ -289,18 +288,6 @@
       animation: sendPulse 1.5s ease-in-out infinite;
     }
 
-    
-    button {
-      border: 1px solid rgba(147, 109, 255, 0.3) !important;
-      box-shadow: 0 0 8px rgba(139,92,246,0.08);
-      transition: all .25s ease;
-    }
-    button:hover:not(:disabled) {
-      border-color: rgba(196,181,253,0.75) !important;
-      box-shadow: 0 0 18px rgba(139,92,246,0.35), 0 0 36px rgba(139,92,246,0.15) !important;
-      transform: translateY(-1px) scale(1.02) !important;
-    }
-
     </style>
 </head>
 <body>
@@ -327,121 +314,90 @@
   </header>
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-    <a href="/consulta.html" class="nav-link" onclick="var u=JSON.parse(localStorage.getItem('akashic_user')||'{}');sessionStorage.setItem('akashic_auth_token',u.email||'')"><svg width="18" height="18" viewBox="-26 -20 52 40" style="display:inline-block;vertical-align:middle;"><path d="M8,-14 L-12,0 L8,14" fill="none" stroke="rgba(196,181,253,0.9)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="-12" y1="0" x2="14" y2="0" stroke="rgba(196,181,253,0.55)" stroke-width="1.5" stroke-linecap="round"/></svg> Voltar</a>
+    <a href="/consulta.html" class="nav-link"><svg width="18" height="18" viewBox="-26 -20 52 40" style="display:inline-block;vertical-align:middle;"><path d="M8,-14 L-12,0 L8,14" fill="none" stroke="rgba(196,181,253,0.9)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="-12" y1="0" x2="14" y2="0" stroke="rgba(196,181,253,0.55)" stroke-width="1.5" stroke-linecap="round"/></svg> Voltar</a>
     <span id="userGreeting" style="font-size:.82rem;color:var(--muted);"></span>
   </div>
 
-  <!-- Layout 2 colunas -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
-
-    <!-- COLUNA ESQUERDA: Consulente + Dados Complementares -->
-    <div>
-      <div class="card">
-        <div class="card-body">
-          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
-            <div class="avatar" id="avatarInitial" onclick="document.getElementById('fotoInput').click()"
-              style="cursor:pointer;" title="Clique para trocar sua foto">?</div>
-            <input type="file" id="fotoInput" accept="image/*" style="display:none;" onchange="uploadFoto(this)" />
-            <div>
-              <div id="uploadStatus" style="font-size:.72rem;color:rgba(196,181,253,.5);margin-top:4px;"></div>
-              <div style="font-family:var(--font-display);font-size:.7rem;letter-spacing:.12em;color:var(--gold);margin-bottom:4px;">CONSULENTE</div>
-              <div style="font-size:1.1rem;color:var(--accent-bright);font-weight:500;" id="profileNome">—</div>
-            </div>
-          </div>
-          <div class="info-row"><div class="info-label">E-mail</div><div class="info-value" id="profileEmail">—</div></div>
-          <div class="info-row"><div class="info-label">Data de nascimento</div><div class="info-value" id="profileData">—</div></div>
-          <div class="info-row"><div class="info-label">Signo</div><div class="info-value" id="profileSigno">—</div></div>
-          <div class="info-row"><div class="info-label">Dias de vida</div><div class="info-value" id="profileDiasVida">—</div></div>
-          <div class="info-row"><div class="info-label">Numerologia</div><div class="info-value" id="profileNumerologia">—</div></div>
-          <div class="info-row"><div class="info-label">Sexo</div><div class="info-value" id="profileSexo">—</div></div>
-          <div class="info-row"><div class="info-label">Membro desde</div><div class="info-value" id="profileMembro">—</div></div>
-
-          <div style="border-top:1px solid rgba(196,181,253,.08);margin:16px 0 14px;"></div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <div style="font-family:var(--font-display);font-size:.65rem;letter-spacing:.12em;color:rgba(240,201,107,.6);">DADOS COMPLEMENTARES</div>
-            <button id="btnEditarCad" type="button" onclick="alternarEdicaoCadastro()" style="padding:4px 12px;font-size:.7rem;background:rgba(196,181,253,0.08);border:1px solid rgba(196,181,253,0.2);color:rgba(196,181,253,0.6);border-radius:14px;cursor:pointer;transition:all .2s;">&#9999;&#65039; Editar</button>
-          </div>
-          <div id="cadVisualizar">
-            <div class="info-row"><div class="info-label">Cidade natal</div><div class="info-value" id="cadVCidade">—</div></div>
-            <div class="info-row"><div class="info-label">Estado natal</div><div class="info-value" id="cadVEstado">—</div></div>
-            <div class="info-row"><div class="info-label">País natal</div><div class="info-value" id="cadVPais">—</div></div>
-            <div class="info-row"><div class="info-label">Nome do pai</div><div class="info-value" id="cadVPai">—</div></div>
-            <div class="info-row"><div class="info-label">Nome da mãe</div><div class="info-value" id="cadVMae">—</div></div>
-          </div>
-          <div id="cadEditar" style="display:none;">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-              <div>
-                <label style="font-size:.75rem;color:rgba(196,181,253,.6);display:block;margin-bottom:4px;">Cidade natal</label>
-                <input id="editCidade" type="text" placeholder="Ex: São Paulo" style="width:100%;box-sizing:border-box;" />
-              </div>
-              <div>
-                <label style="font-size:.75rem;color:rgba(196,181,253,.6);display:block;margin-bottom:4px;">Estado natal</label>
-                <input id="editEstado" type="text" placeholder="Ex: SP" style="width:100%;box-sizing:border-box;" />
-              </div>
-            </div>
-            <div style="margin-bottom:10px;">
-              <label style="font-size:.75rem;color:rgba(196,181,253,.6);display:block;margin-bottom:4px;">País natal</label>
-              <input id="editPais" type="text" placeholder="Ex: Brasil" style="width:100%;box-sizing:border-box;" />
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
-              <div>
-                <label style="font-size:.75rem;color:rgba(196,181,253,.6);display:block;margin-bottom:4px;">Nome do pai</label>
-                <input id="editPai" type="text" placeholder="Nome do pai" style="width:100%;box-sizing:border-box;" />
-              </div>
-              <div>
-                <label style="font-size:.75rem;color:rgba(196,181,253,.6);display:block;margin-bottom:4px;">Nome da mãe</label>
-                <input id="editMae" type="text" placeholder="Nome da mãe" style="width:100%;box-sizing:border-box;" />
-              </div>
-            </div>
-            <div id="cadEditStatus" style="font-size:.78rem;min-height:18px;margin-bottom:10px;"></div>
-            <div style="display:flex;gap:10px;">
-              <button type="button" onclick="salvarCadastro()" style="flex:1;padding:8px;font-size:.78rem;background:linear-gradient(135deg,rgba(240,201,107,.2),rgba(240,201,107,.1));border:1px solid rgba(240,201,107,.4);color:#f0c96b;border-radius:12px;cursor:pointer;">&#128190; Salvar</button>
-              <button type="button" onclick="cancelarEdicao()" style="padding:8px 14px;font-size:.78rem;background:rgba(196,181,253,0.05);border:1px solid rgba(196,181,253,0.15);color:rgba(196,181,253,0.6);border-radius:12px;cursor:pointer;">Cancelar</button>
-            </div>
-          </div>
-          <div style="margin-top:16px;">
-            <span onclick="abrirModalSenha()" style="font-size:.95rem;color:rgba(196,181,253,.6);cursor:pointer;text-decoration:underline;text-underline-offset:3px;transition:color .2s;" onmouseover="this.style.color='#c4b5fd'" onmouseout="this.style.color='rgba(196,181,253,.6)'">🔒 Alterar Senha</span>
-          </div>
+  <!-- Dados pessoais -->
+  <div class="card">
+    <div class="card-body">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+        <div class="avatar" id="avatarInitial" onclick="document.getElementById('fotoInput').click()" 
+          style="cursor:pointer;" title="Clique para trocar sua foto">?</div>
+        <input type="file" id="fotoInput" accept="image/*" style="display:none;" onchange="uploadFoto(this)" />
+        <div style="position:relative;">
+          <div id="uploadStatus" style="font-size:.72rem;color:rgba(196,181,253,.5);margin-top:4px;"></div>
+          <div style="font-family:var(--font-display);font-size:.7rem;letter-spacing:.12em;color:var(--gold);margin-bottom:4px;">CONSULENTE</div>
+          <div style="font-size:1.1rem;color:var(--accent-bright);font-weight:500;" id="profileNome">—</div>
         </div>
+      </div>
+
+      <div class="info-row">
+        <div class="info-label">E-mail</div>
+        <div class="info-value" id="profileEmail">—</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Data de nascimento</div>
+        <div class="info-value" id="profileData">—</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Signo</div>
+        <div class="info-value" id="profileSigno">—</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Dias de vida</div>
+        <div class="info-value" id="profileDiasVida">—</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Sexo</div>
+        <div class="info-value" id="profileSexo">—</div>
+      </div>
+      <div class="info-row">
+        <div class="info-label">Membro desde</div>
+        <div class="info-value" id="profileMembro">—</div>
       </div>
     </div>
+  </div>
 
-    <!-- COLUNA DIREITA -->
-    <div>
-      <div class="card">
-        <div class="card-body">
-          <div style="font-family:var(--font-display);font-size:.7rem;letter-spacing:.12em;color:var(--gold);margin-bottom:14px;">ACESSO RÁPIDO</div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <a href="/historico" class="btn-primary">📜 Meu Histórico</a>
-            <a href="/mentoria" onclick="sessionStorage.setItem('akashic_portal_session','ok')" class="btn-primary">✦ Mentoria Akáshica</a>
-            <a href="/consulta.html" onclick="sessionStorage.setItem('akashic_portal_session','ok');" class="btn-primary">⟡ Consulta Akáshica</a>
-            <a href="/mapa-akashico" onclick="sessionStorage.setItem('akashic_auth_token',(JSON.parse(localStorage.getItem('akashic_user')||'{}')).email||'')" class="btn-primary">🌌 Mapa Akáshico</a>
-          </div>
+  <!-- Estatísticas -->
+  <div class="card">
+    <div class="card-body">
+      <div style="font-family:var(--font-display);font-size:.7rem;letter-spacing:.12em;color:var(--gold);margin-bottom:14px;">JORNADA EM NÚMEROS</div>
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-num" id="statConsultas">—</div>
+          <div class="stat-label">Consultas</div>
         </div>
-      </div>
-
-      <div class="card">
-        <div class="card-body">
-          <div style="font-family:var(--font-display);font-size:.7rem;letter-spacing:.12em;color:var(--gold);margin-bottom:14px;">JORNADA EM NÚMEROS</div>
-          <div class="stats-row">
-            <div class="stat-box"><div class="stat-num" id="statConsultas">—</div><div class="stat-label">Consultas</div></div>
-            <div class="stat-box"><div class="stat-num" id="statMentorias">—</div><div class="stat-label">Mentorias</div></div>
-            <div class="stat-box"><div class="stat-num" id="statMapas">—</div><div class="stat-label">Mapas</div></div>
-          </div>
+        <div class="stat-box">
+          <div class="stat-num" id="statMentorias">—</div>
+          <div class="stat-label">Mentorias</div>
         </div>
-      </div>
-
-      <div class="card" id="soulCard">
-        <div class="card-body">
-          <div style="font-family:var(--font-display);font-size:.7rem;letter-spacing:.12em;color:var(--gold);margin-bottom:14px;">JORNADA DA ALMA</div>
-          <div class="soul-grid" id="soulGrid"></div>
+        <div class="stat-box">
+          <div class="stat-num" id="statDias" style="font-size:1rem;">—</div>
+          <div class="stat-label">Primeira consulta</div>
         </div>
       </div>
     </div>
   </div>
-  <style>@media(max-width:680px){.container > div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;}}</style>
 
-</div>iv>
+  <!-- Jornada da Alma -->
+  <div class="card" id="soulCard" style="display:none;">
+    <div class="card-body">
+      <div style="font-family:var(--font-display);font-size:.7rem;letter-spacing:.12em;color:var(--gold);margin-bottom:14px;">JORNADA DA ALMA</div>
+      <div class="soul-grid" id="soulGrid"></div>
+    </div>
+  </div>
+
+  <!-- Ações -->
+  <div class="card">
+    <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+      <a href="/historico" class="btn-primary"><svg width="22" height="22" viewBox="-30 -38 60 64" style="display:inline-block;vertical-align:middle;"><rect x="-26" y="-20" width="52" height="44" rx="5" fill="rgba(107,33,200,0.2)" stroke="rgba(196,181,253,0.85)" stroke-width="1.8"/><rect x="-26" y="-36" width="28" height="18" rx="4" fill="rgba(107,33,200,0.3)" stroke="rgba(196,181,253,0.7)" stroke-width="1.4"/><line x1="-16" y1="-6" x2="16" y2="-6" stroke="rgba(196,181,253,0.75)" stroke-width="1.8" stroke-linecap="round"/><line x1="-16" y1="4" x2="16" y2="4" stroke="rgba(196,181,253,0.55)" stroke-width="1.4" stroke-linecap="round"/><line x1="-16" y1="14" x2="4" y2="14" stroke="rgba(196,181,253,0.4)" stroke-width="1.2" stroke-linecap="round"/><circle cx="16" cy="14" r="7" fill="rgba(180,120,0,0.5)" stroke="rgba(240,201,107,0.9)" stroke-width="1.4"/><circle cx="16" cy="14" r="2.8" fill="rgba(255,250,180,0.9)"/></svg> Meu Histórico</a>
+      <a href="/mentoria" onclick="sessionStorage.setItem('akashic_portal_session','ok')" class="btn-primary"><svg width="28" height="18" viewBox="-36 -28 72 56" style="display:inline-block;vertical-align:middle;"><path d="M-26,0 Q-26,-20 -13,-20 Q0,-20 0,0 Q0,20 13,20 Q26,20 26,0 Q26,-20 13,-20 Q0,-20 0,0 Q0,20 -13,20 Q-26,20 -26,0" fill="none" stroke="rgba(240,201,107,0.9)" stroke-width="2.4" stroke-linecap="round"/><circle cx="-26" cy="0" r="7" fill="rgba(60,20,120,0.7)" stroke="rgba(196,181,253,0.85)" stroke-width="1.5"/><circle cx="-26" cy="0" r="2.5" fill="rgba(196,181,253,0.85)"/><circle cx="26" cy="0" r="7" fill="rgba(140,80,0,0.7)" stroke="rgba(240,201,107,0.85)" stroke-width="1.5"/><circle cx="26" cy="0" r="2.5" fill="rgba(255,248,160,0.9)"/><circle cx="0" cy="0" r="5" fill="rgba(240,201,107,0.18)" stroke="rgba(240,201,107,0.8)" stroke-width="1.4"/><circle cx="0" cy="0" r="2" fill="white"/></svg> Mentoria Akáshica</a>
+      <button type="button" class="btn-secondary" onclick="abrirModalSenha()"><svg width="20" height="22" viewBox="-24 -38 48 72" style="display:inline-block;vertical-align:middle;"><rect x="-20" y="-6" width="40" height="36" rx="6" fill="rgba(160,100,0,0.35)" stroke="rgba(240,201,107,0.9)" stroke-width="2"/><rect x="-14" y="-6" width="28" height="24" rx="4" fill="rgba(50,22,0,0.55)"/><path d="M-14,-6 Q-14,-32 0,-32 Q14,-32 14,-6" fill="none" stroke="rgba(240,201,107,0.95)" stroke-width="2.6" stroke-linecap="round"/><circle cx="0" cy="10" r="8" fill="rgba(240,180,40,0.3)" stroke="rgba(240,200,50,0.85)" stroke-width="1.6"/><circle cx="0" cy="10" r="3.5" fill="rgba(255,240,140,0.85)"/><line x1="0" y1="10" x2="0" y2="18" stroke="rgba(180,110,0,0.8)" stroke-width="1.8" stroke-linecap="round"/></svg> Alterar Senha</button>
+    </div>
+  </div>
+
+</div>
 
 <!-- Modal alterar senha -->
 <div class="modal-overlay" id="senhaModal" onclick="if(event.target===this)fecharModalSenha()">
@@ -450,18 +406,9 @@
       <div style="font-family:var(--font-display);font-size:.8rem;letter-spacing:.12em;color:var(--gold);">🔒 ALTERAR SENHA</div>
       <span onclick="fecharModalSenha()" style="cursor:pointer;color:rgba(196,181,253,.5);font-size:1.2rem;"><svg width="16" height="16" viewBox="-18 -18 36 36" style="display:inline-block;vertical-align:middle;"><line x1="-10" y1="-10" x2="10" y2="10" stroke="rgba(196,181,253,0.8)" stroke-width="2.4" stroke-linecap="round"/><line x1="10" y1="-10" x2="-10" y2="10" stroke="rgba(196,181,253,0.8)" stroke-width="2.4" stroke-linecap="round"/></svg></span>
     </div>
-    <div style="position:relative;">
-      <input type="password" id="senhaAtual" placeholder="Senha atual" maxlength="72" style="padding-right:42px;" />
-      <span onclick="var i=document.getElementById('senhaAtual');i.type=i.type==='password'?'text':'password';this.style.opacity=i.type==='text'?'1':'.4';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:rgba(196,181,253,.4);font-size:1rem;user-select:none;">👁</span>
-    </div>
-    <div style="position:relative;">
-      <input type="password" id="senhaNova" placeholder="Nova senha" maxlength="72" style="padding-right:42px;" />
-      <span onclick="var i=document.getElementById('senhaNova');i.type=i.type==='password'?'text':'password';this.style.opacity=i.type==='text'?'1':'.4';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:rgba(196,181,253,.4);font-size:1rem;user-select:none;">👁</span>
-    </div>
-    <div style="position:relative;">
-      <input type="password" id="senhaConf" placeholder="Confirmar nova senha" maxlength="72" style="padding-right:42px;" />
-      <span onclick="var i=document.getElementById('senhaConf');i.type=i.type==='password'?'text':'password';this.style.opacity=i.type==='text'?'1':'.4';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:rgba(196,181,253,.4);font-size:1rem;user-select:none;">👁</span>
-    </div>
+    <input type="password" id="senhaAtual" placeholder="Senha atual" maxlength="72" />
+    <input type="password" id="senhaNova" placeholder="Nova senha" maxlength="72" />
+    <input type="password" id="senhaConf" placeholder="Confirmar nova senha" maxlength="72" />
     <div class="status" id="senhaStatus"></div>
     <button type="button" class="btn-primary" style="animation:none;" onclick="alterarSenha()">Salvar nova senha</button>
   </div>
@@ -1011,7 +958,7 @@ function calcularDiasVida(data) {
 }
 
 async function hashPassword(password) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+  const buf = await crypto.subtle.digest('Argon2id', new TextEncoder().encode(password));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
@@ -1028,18 +975,6 @@ async function loadProfile() {
   document.getElementById('profileSigno').textContent = calcularSigno(user.data);
   document.getElementById('profileDiasVida').textContent = calcularDiasVida(user.data);
   document.getElementById('profileSexo').textContent = user.sexo || '—';
-
-  // Preenche campos do cadastro
-  const cadCidade = user.cidade || '—';
-  const cadEstado = user.estado || '—';
-  const cadPais   = user.pais   || '—';
-  const cadPai    = user.nome_pai || '—';
-  const cadMae    = user.nome_mae || '—';
-  document.getElementById('cadVCidade').textContent = cadCidade;
-  document.getElementById('cadVEstado').textContent = cadEstado;
-  document.getElementById('cadVPais').textContent   = cadPais;
-  document.getElementById('cadVPai').textContent    = cadPai;
-  document.getElementById('cadVMae').textContent    = cadMae;
   // Avatar — tenta foto do Supabase, fallback para Gravatar, fallback para inicial
   const email = user.email || '';
   const initial = firstName.charAt(0).toUpperCase();
@@ -1054,7 +989,7 @@ async function loadProfile() {
     imgSupabase.onerror = () => {
       // Fallback: Gravatar
       async function md5(str) {
-        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str.trim().toLowerCase()));
+        const buf = await crypto.subtle.digest('Argon2id', new TextEncoder().encode(str.trim().toLowerCase()));
         return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
       }
       md5(email).then(hash => {
@@ -1108,6 +1043,7 @@ async function loadProfile() {
         { label: 'Pergunta mais recente', value: consultas[0]?.pergunta ? `"${consultas[0].pergunta.slice(0,60)}${consultas[0].pergunta.length>60?'…':''}"` : '—' }
       ];
 
+      document.getElementById('soulCard').style.display = '';
       document.getElementById('soulGrid').innerHTML = items.map(i=>`
         <div class="soul-item">
           <div class="soul-label">${i.label}</div>
@@ -1130,92 +1066,10 @@ async function loadProfile() {
     // Se não há consulta_pergunta, conta como 1 sessão por conjunto de mensagens
     const total = sessoes.size || (msgs.length > 0 ? 1 : 0);
     document.getElementById('statMentorias').textContent = total;
-
-    // Conta mapas
-    try {
-      const respMapas = await fetch(`/api/mapas?email=${encodeURIComponent(email)}`);
-      const dadosMapas = await respMapas.json();
-      if (dadosMapas.success) {
-        document.getElementById('statMapas').textContent = dadosMapas.mapas?.length || 0;
-      }
-    } catch(e) {
-      document.getElementById('statMapas').textContent = '0';
-    }
   } catch {}
 }
 
 // ── Modal senha ──
-// ── Edição do cadastro ──
-function alternarEdicaoCadastro() {
-  const ver = document.getElementById('cadVisualizar');
-  const edit = document.getElementById('cadEditar');
-  const user = JSON.parse(sessionStorage.getItem('akashic_user') || localStorage.getItem('akashic_user') || '{}');
-  // Preenche campos com valores atuais
-  document.getElementById('editCidade').value = user.cidade || '';
-  document.getElementById('editEstado').value = user.estado || '';
-  document.getElementById('editPais').value   = user.pais   || '';
-  document.getElementById('editPai').value    = user.nome_pai || '';
-  document.getElementById('editMae').value    = user.nome_mae || '';
-  ver.style.display  = 'none';
-  edit.style.display = '';
-  document.getElementById('btnEditarCad').style.display = 'none';
-}
-
-function cancelarEdicao() {
-  document.getElementById('cadVisualizar').style.display = '';
-  document.getElementById('cadEditar').style.display     = 'none';
-  document.getElementById('btnEditarCad').style.display  = '';
-  document.getElementById('cadEditStatus').textContent   = '';
-}
-
-async function salvarCadastro() {
-  const user = JSON.parse(sessionStorage.getItem('akashic_user') || localStorage.getItem('akashic_user') || '{}');
-  if (!user.email) return;
-
-  const cidade   = document.getElementById('editCidade').value.trim();
-  const estado   = document.getElementById('editEstado').value.trim();
-  const pais     = document.getElementById('editPais').value.trim();
-  const nome_pai = document.getElementById('editPai').value.trim();
-  const nome_mae = document.getElementById('editMae').value.trim();
-  const status   = document.getElementById('cadEditStatus');
-
-  status.style.color = 'rgba(196,181,253,0.7)';
-  status.textContent = 'Salvando...';
-
-  try {
-    const resp = await fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'atualizar_cadastro', email: user.email, cidade, estado, pais, nome_pai, nome_mae })
-    });
-    const data = await resp.json();
-    if (!data.success) throw new Error(data.error || 'Erro ao salvar.');
-
-    // Atualiza localStorage
-    user.cidade   = cidade;
-    user.estado   = estado;
-    user.pais     = pais;
-    user.nome_pai = nome_pai;
-    user.nome_mae = nome_mae;
-    localStorage.setItem('akashic_user', JSON.stringify(user));
-    sessionStorage.setItem('akashic_user', JSON.stringify(user));
-
-    // Atualiza visualização
-    document.getElementById('cadVCidade').textContent = cidade || '—';
-    document.getElementById('cadVEstado').textContent = estado || '—';
-    document.getElementById('cadVPais').textContent   = pais   || '—';
-    document.getElementById('cadVPai').textContent    = nome_pai || '—';
-    document.getElementById('cadVMae').textContent    = nome_mae || '—';
-
-    status.style.color = '#6ee7b7';
-    status.textContent = '✓ Dados atualizados com sucesso.';
-    setTimeout(cancelarEdicao, 1200);
-  } catch(e) {
-    status.style.color = '#fca5a5';
-    status.textContent = 'Erro: ' + e.message;
-  }
-}
-
 function abrirModalSenha() {
   document.getElementById('senhaModal').style.display = 'flex';
   document.getElementById('senhaAtual').focus();
