@@ -112,51 +112,60 @@ Responda APENAS em JSON válido sem markdown:
     const { cartas, tiragem, pergunta } = body;
     if (!cartas || !cartas.length) return res.status(400).json({ error: 'Cartas obrigatórias.' });
 
-    const cartasTexto = cartas.map((c, i) =>
-      `Posição ${i+1} — "${c.posicao}": ${c.nome}${c.invertida ? ' (INVERTIDA)' : ''}\nSignificado tradicional: ${c.invertida ? c.significadoInvertido : c.significadoNormal}`
-    ).join('\n\n');
+    const cartasDetalhadas = cartas.map((c, i) => {
+      const sig = c.invertida ? c.significadoInvertido : c.significadoNormal;
+      return `Posição ${i+1} — "${c.posicao}": ${c.nome}${c.invertida ? ' (INVERTIDA)' : ''}\nSignificado base: ${sig}`;
+    }).join('\n\n');
 
     const perguntaReal = pergunta || 'leitura livre sem pergunta específica';
 
-    prompt = `Você é um tarólogo akáshico experiente. Sua leitura é precisa, lógica e profundamente conectada à realidade do consulente.
+    prompt = `Você é um tarólogo akáshico experiente. Faça uma leitura profunda, lógica e convincente.
 
-TARÔ AKÁSHICO — SISTEMA DE NAIPES:
-- CHAMAS = Fogo (Paus): ação, criatividade, vontade, projetos, ambição, energia vital
-- CÁLICES = Água (Copas): emoções, amor, relacionamentos, intuição, sonhos
-- CRISTAIS = Ar (Espadas): pensamentos, conflitos, decisões, comunicação, verdades difíceis
-- ESTRELAS = Terra (Ouros): trabalho, dinheiro, corpo, saúde, manifestação, recursos
-- ARCANOS MAIORES: forças universais, lições kármicas profundas
+TARÔ AKÁSHICO — NAIPES:
+- CHAMAS (Fogo/Paus): ação, criatividade, vontade, projetos, paixão
+- CÁLICES (Água/Copas): emoções, amor, relacionamentos, intuição
+- CRISTAIS (Ar/Espadas): mente, conflitos, decisões, verdades difíceis
+- ESTRELAS (Terra/Ouros): trabalho, dinheiro, manifestação, recursos
+- ARCANOS MAIORES: forças kármicas universais da alma
 
-LEITURA PARA: ${firstName}${sexo ? ' ('+sexo+')' : ''}
+CONSULENTE: ${firstName}${sexo ? ' (' + sexo + ')' : ''}
 TIRAGEM: ${tiragem || 'Leitura Livre'}
 PERGUNTA: "${perguntaReal}"
 
-CARTAS REVELADAS (com seus significados base):
-${cartasTexto}
+CARTAS (com significados base):
+${cartasDetalhadas}
 
-INSTRUÇÕES PARA INTERPRETAÇÃO CRÍVEL E CONVINCENTE:
-1. Para cada carta: PRIMEIRO explique o significado tradicional da carta de forma clara e educativa — o que esta carta representa no tarô e por quê. DEPOIS conecte esse significado à situação específica de ${firstName} e à pergunta.
-2. Use o significado base fornecido como fundamento — expanda-o, aprofunde-o, torne-o vivo
-3. Cite os símbolos da carta (ex: "A espada desta carta representa...", "A água dos Cálices indica...")
-4. Seja lógico e coerente — a interpretação deve fazer sentido intelectual E espiritual
-5. Posições da tiragem: respeite o que cada posição significa (passado=influências, presente=situação atual, futuro=tendência, desafio=obstáculo, etc.)
-6. Cartas invertidas: energia presente mas bloqueada ou voltada para dentro
-7. Cada interpretação deve ser DIFERENTE e específica para sua posição
+INSTRUÇÕES:
+Para cada carta escreva 5 a 6 parágrafos SEPARADOS POR \n (quebra de linha):
+- Parágrafo 1: O que esta carta é e o que representa no tarô
+- Parágrafo 2: A simbologia e arquétipo específico desta carta
+- Parágrafo 3: Como sua energia se manifesta na posição que ocupa nesta tiragem
+- Parágrafo 4: Conexão direta com a pergunta "${perguntaReal}" de ${firstName}
+- Parágrafo 5: O que os Registros Akáshicos revelam para ${firstName} através desta carta
+- Parágrafo 6 (opcional): Conselho prático e específico desta carta
 
-Responda APENAS em JSON válido sem markdown:
+REGRAS CRÍTICAS:
+- Use \n entre cada parágrafo para separação
+- Cada carta deve ter interpretação única e diferente das demais
+- Conecte SEMPRE à pergunta específica
+- Cartas invertidas = energia bloqueada ou interna
+- Use o nome ${firstName} naturalmente
+- Seja rico, profundo e convincente — não genérico
+
+Responda APENAS em JSON válido:
 {
-  "titulo": "Título poético específico que reflita a essência da pergunta de ${firstName}",
+  "titulo": "Título poético que reflita a pergunta de ${firstName}",
   "cartas": [
     {
-      "posicao": "nome exato da posição",
+      "posicao": "nome da posição",
       "carta": "nome da carta",
       "invertida": false,
-      "interpretacao": "§1 — O SIGNIFICADO DA CARTA: explique claramente o que esta carta representa no Tarô Akáshico, sua simbologia e energia essencial. §2 — A HISTÓRIA DESTA CARTA: descreva o que os símbolos visuais e arquétipos desta carta revelam sobre sua natureza profunda. §3 — NA POSIÇÃO '${c.posicao}': como a energia desta carta se manifesta especificamente nesta posição da tiragem. §4 — CONEXÃO COM A PERGUNTA: como tudo isso se aplica diretamente à pergunta '${perguntaReal}' de ${firstName}. §5 — O QUE OS REGISTROS REVELAM: a mensagem akáshica específica para ${firstName} neste momento de sua jornada. §6 — O CONSELHO: orientação prática e concreta que esta carta oferece para a situação atual."
+      "interpretacao": "Parágrafo 1 completo sobre o significado da carta\n\nParágrafo 2 completo sobre a simbologia\n\nParágrafo 3 completo sobre a posição\n\nParágrafo 4 completo sobre a conexão com a pergunta\n\nParágrafo 5 completo com a mensagem dos Registros\n\nParágrafo 6 com o conselho prático"
     }
   ],
-  "sintese": "§1 — O padrão geral revelado pelas cartas em conjunto sobre a pergunta. §2 — A verdade central que os Registros mostram para ${firstName}. §3 — O caminho indicado e o próximo passo.",
-  "acao_sagrada": "Ação prática e específica — conectada à pergunta e às cartas — que ${firstName} pode tomar nos próximos dias."
-}`;
+  "sintese": "Parágrafo 1 sobre o padrão geral\n\nParágrafo 2 sobre a verdade central para ${firstName}\n\nParágrafo 3 sobre o caminho indicado",
+  "acao_sagrada": "Ação prática específica para ${firstName} baseada nesta leitura"
+}\`;`;
   } else {
     return res.status(400).json({ error: 'Tipo inválido.' });
   }
