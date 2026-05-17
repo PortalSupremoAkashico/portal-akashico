@@ -2018,5 +2018,42 @@ button:not([disabled]):not(.tab):hover { animation:btnPulseGoldHover .8s ease-in
 a.nav-link, a[class*="btn"] { border-color:rgba(240,201,107,.35) !important; animation:btnPulseGold 2s ease-in-out infinite !important; }
 a.nav-link:hover, a[class*="btn"]:hover { animation:btnPulseGoldHover .8s ease-in-out infinite !important; border-color:#f0c96b !important; color:#f0c96b !important; }
 </style>
+
+<script>
+// ── Boas-vindas TTS ──
+(function(){
+  var u = JSON.parse(localStorage.getItem('akashic_user')||sessionStorage.getItem('akashic_user')||'{}');
+  var firstName = u.nome ? u.nome.trim().split(/\s+/)[0] : '';
+  var frase = (firstName ? firstName + ', ' : '') + 'Bem vindo à Mentoria Akáshica, Qual Pergunta Anterior Deseja Mentoria?';
+  fetch('/api/tts', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ text: frase, speed: 0.85 })
+  }).then(function(r){ return r.ok ? r.blob() : null; })
+  .then(function(blob){
+    if(!blob) return;
+    var url = URL.createObjectURL(blob);
+    var a = new Audio(url);
+    a.addEventListener('ended', function(){ URL.revokeObjectURL(url); });
+    a.play().catch(function(){});
+  }).catch(function(){});
+})();
+</script>
+<script>
+// ── Som ambiente ──
+(function(){
+  var audio = document.getElementById('ambientAudio');
+  if(!audio) return;
+  var tocando = false;
+  var SOM_ON = '<svg width="18" height="18" viewBox="-28 -28 56 56" style="display:inline-block;vertical-align:middle;"><polygon points="-18,-12 -18,12 -6,12 8,22 8,-22 -6,-12" fill="rgba(196,181,253,0.85)" stroke="rgba(196,181,253,0.5)" stroke-width="1"/><path d="M12,-14 Q22,0 12,14" fill="none" stroke="rgba(240,201,107,0.9)" stroke-width="2.2" stroke-linecap="round"/><path d="M18,-22 Q34,0 18,22" fill="none" stroke="rgba(240,201,107,0.55)" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  var SOM_OFF = '<svg width="18" height="18" viewBox="-28 -24 56 48" style="display:inline-block;vertical-align:middle;"><polygon points="-18,-12 -18,12 -6,12 8,22 8,-22 -6,-12" fill="rgba(196,181,253,0.65)" stroke="rgba(196,181,253,0.5)" stroke-width="1"/><line x1="12" y1="-12" x2="22" y2="12" stroke="rgba(255,100,100,0.9)" stroke-width="2.5" stroke-linecap="round"/><line x1="22" y1="-12" x2="12" y2="12" stroke="rgba(255,100,100,0.9)" stroke-width="2.5" stroke-linecap="round"/></svg>';
+  function atualizar(){ var b=document.getElementById('iconSom_mentoria'); if(b) b.innerHTML = tocando?SOM_ON:SOM_OFF; }
+  function fadeIn(){ var v=0; var t=setInterval(function(){ v=Math.min(0.35,v+0.015); audio.volume=v; if(v>=0.35)clearInterval(t); },100); }
+  window.toggleSom_mentoria = function(){
+    if(tocando){ audio.pause(); tocando=false; } else { audio.volume=0; audio.play().then(function(){ fadeIn(); tocando=true; }).catch(function(){}); }
+    atualizar();
+  };
+  audio.volume=0; audio.play().then(function(){ fadeIn(); tocando=true; atualizar(); }).catch(function(){ atualizar(); });
+})();
+</script>
 </body>
 </html>
