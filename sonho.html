@@ -31,9 +31,9 @@
     .sonho-input{min-height:130px;}
     .emocao-input{min-height:70px;margin-top:8px;}
 
-    .emocoes-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
-    .emocao-tag{padding:6px 14px;background:rgba(139,92,246,.08);border:1px solid rgba(240,201,107,.3);border-radius:20px;color:rgba(196,181,253,.7);font-size:.78rem;cursor:pointer;transition:all .2s;animation:btnPulseGoldPage 2s ease-in-out infinite;}
-    .emocao-tag:hover{animation:btnPulseGoldHover .8s ease-in-out infinite;color:#f0c96b;background:rgba(139,92,246,.2);}.emocao-tag.ativo{background:linear-gradient(135deg,rgba(109,40,217,.7),rgba(167,139,250,.4));border:2px solid #f0c96b;color:#fff8d0;box-shadow:0 0 20px rgba(240,201,107,.5),0 0 40px rgba(240,201,107,.2);font-weight:600;animation:btnPulseGoldHover .8s ease-in-out infinite;}
+    .emocoes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;max-width:480px;margin-left:auto;margin-right:auto;}
+    .emocao-tag{padding:18px 6px;background:rgba(139,92,246,.08);border:1px solid rgba(240,201,107,.3);border-radius:12px;color:rgba(196,181,253,.7);font-size:.82rem;cursor:pointer;transition:all .2s;text-align:center;font-family:var(--fd);letter-spacing:.04em;animation:btnPulseGoldPage 2s ease-in-out infinite;}
+    .emocao-tag:hover{animation:btnPulseGoldHover .8s ease-in-out infinite;color:#f0c96b;background:rgba(139,92,246,.2);}.emocao-tag.ativo{background:rgba(109,40,217,.5);border:2px solid #f0c96b;color:#fff8d0;box-shadow:0 0 20px rgba(240,201,107,.5),0 0 40px rgba(240,201,107,.2);font-weight:600;animation:btnPulseGoldHover .8s ease-in-out infinite;}
 
     .btn-gerar{display:block;width:auto;padding:12px 28px;background:linear-gradient(135deg,rgba(109,40,217,.4),rgba(167,139,250,.2));border:1px solid rgba(240,201,107,.4);border-radius:14px;color:var(--text);font-family:var(--fd);font-size:.82rem;letter-spacing:.1em;cursor:pointer;transition:all .25s;margin:20px auto 0;animation:btnPulseGoldPage 2s ease-in-out infinite;}
     .btn-gerar:hover{animation:btnPulseGoldHover .8s ease-in-out infinite;background:linear-gradient(135deg,rgba(109,40,217,.6),rgba(167,139,250,.3));}
@@ -76,14 +76,14 @@
       <a href="/perfil" class="back-link" style="position:absolute;left:0;margin-bottom:0;white-space:nowrap;">← Voltar</a>
       <h1 style="margin-bottom:0;text-align:center;">Sonho Akáshico</h1>
     </div>
-    <p>Descreva seu sonho e os Registros revelarão seus símbolos, mensagens e conexões com a sua alma.</p>
+    <p style="text-align:center;">Descreva seu sonho e os Registros revelarão seus símbolos, mensagens e conexões com a sua alma.</p>
   </div>
 
   <div class="form-card" id="formCard">
-    <label class="form-label">Descreva seu sonho</label>
+    <label class="form-label" style="text-align:center;">Descreva seu sonho</label>
     <textarea id="sonhoInput" class="sonho-input" placeholder="Conte o sonho com o máximo de detalhes que lembrar — pessoas, lugares, objetos, ações, cores, sensações..."></textarea>
 
-    <label class="form-label" style="margin-top:20px;">Como você acordou?</label>
+    <label class="form-label" style="margin-top:20px;text-align:center;">Como você acordou?</label>
     <div class="emocoes-grid">
       <span class="emocao-tag" onclick="selecionarEmocao(this,'Perturbado')">😟 Perturbado</span>
       <span class="emocao-tag" onclick="selecionarEmocao(this,'Calmo')">😌 Calmo</span>
@@ -93,9 +93,10 @@
       <span class="emocao-tag" onclick="selecionarEmocao(this,'Em paz')">🙏 Em paz</span>
       <span class="emocao-tag" onclick="selecionarEmocao(this,'Nostálgico')">💭 Nostálgico</span>
       <span class="emocao-tag" onclick="selecionarEmocao(this,'Esperançoso')">✨ Esperançoso</span>
+      <span class="emocao-tag" onclick="selecionarEmocao(this,'Ansioso')">😰 Ansioso</span>
     </div>
 
-    <label class="form-label">Ou descreva como se sentiu <span style="color:rgba(196,181,253,.4);font-size:.7rem;">(opcional)</span></label>
+    <label class="form-label" style="text-align:center;">Ou descreva como se sentiu <span style="color:rgba(196,181,253,.4);font-size:.7rem;">(opcional)</span></label>
     <textarea id="emocaoInput" class="emocao-input" placeholder="Acrescentar algo sobre como se sentiu ao acordar..."></textarea>
 
     <button class="btn-gerar" id="btnGerar" onclick="gerarSonho()">
