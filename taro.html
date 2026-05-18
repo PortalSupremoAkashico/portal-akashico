@@ -927,16 +927,36 @@ function puxar(){
   var btnEmb=document.getElementById('btnEmbaralhar');
   if(btnEmb){btnEmb.disabled=true;btnEmb.style.opacity='0.3';btnEmb.style.cursor='not-allowed';btnEmb.title='Não é possível embaralhar após escolher cartas';}
 
-  // Criar carta voadora
+  // Criar carta voadora com dorso (esconde o baralho durante a subida)
   var fly=document.createElement('div');
-  fly.style.cssText='position:fixed;z-index:8000;pointer-events:none;border-radius:12px;overflow:hidden;border:2.5px solid #f0c96b;box-shadow:0 0 40px rgba(240,201,107,.7);';
+  fly.style.cssText='position:fixed;z-index:8000;pointer-events:none;border-radius:12px;overflow:hidden;border:2.5px solid #f0c96b;box-shadow:0 0 40px rgba(240,201,107,.7);perspective:1000px;background:#05040f;';
   fly.style.width=rect.width+'px';fly.style.height=rect.height+'px';
   fly.style.left=rect.left+'px';fly.style.top=rect.top+'px';
-  // Frente da carta
-  var imgEl=document.createElement('img');
-  imgEl.src=carta.img;imgEl.style.cssText='width:100%;height:100%;object-fit:cover;display:block;';
-  if(inv)imgEl.style.transform='rotate(180deg)';
-  fly.appendChild(imgEl);
+
+  // Container que vai girar
+  var flipper=document.createElement('div');
+  flipper.style.cssText='position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:none;';
+
+  // Face frente (dorso) — visível primeiro
+  var faceFrente=document.createElement('div');
+  faceFrente.style.cssText='position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;';
+  var dorsoImg=document.createElement('img');
+  dorsoImg.src=SB+'/dorso-carta.png';
+  dorsoImg.style.cssText='width:100%;height:100%;object-fit:cover;display:block;border-radius:10px;';
+  faceFrente.appendChild(dorsoImg);
+
+  // Face verso (figura da carta) — começa de costas
+  var faceVerso=document.createElement('div');
+  faceVerso.style.cssText='position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);';
+  var cartaImg=document.createElement('img');
+  cartaImg.src=carta.img;
+  cartaImg.style.cssText='width:100%;height:100%;object-fit:cover;display:block;border-radius:10px;';
+  if(inv)cartaImg.style.transform='rotate(180deg)';
+  faceVerso.appendChild(cartaImg);
+
+  flipper.appendChild(faceFrente);
+  flipper.appendChild(faceVerso);
+  fly.appendChild(flipper);
   document.body.appendChild(fly);
 
   // FASE 1: crescer e vir para o centro
@@ -948,10 +968,10 @@ function puxar(){
     fly.style.boxShadow='0 0 120px rgba(240,201,107,.9),0 0 200px rgba(109,40,217,.5)';
   },10);
 
-  // FASE 2: virar 360° como página
+  // FASE 2: virar — dorso some e figura aparece
   setTimeout(function(){
-    fly.style.transition='transform 0.5s ease-in-out';
-    fly.style.transform='perspective(1000px) rotateY(360deg)';
+    flipper.style.transition='transform 0.6s ease-in-out';
+    flipper.style.transform='rotateY(180deg)';
   },450);
 
   // FASE 3: mostrar figura por 2000ms — nada acontece, carta fica exposta
