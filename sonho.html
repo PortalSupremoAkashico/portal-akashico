@@ -195,6 +195,86 @@ function selecionarEmocao(el, emocao) {
   document.getElementById('btnGerar').disabled = false;
 }
 
+// ── Renderização progressiva (lógica idêntica ao mapa-akashico) ──
+var renderedSonho = new Set();
+var dadosSonho = {};
+
+function extrairSonhoDisponiveis(texto) {
+  var secoes = ['revelacao', 'simbolos', 'karma', 'mensagem', 'acao'];
+  for (var i = 0; i < secoes.length; i++) {
+    var key = secoes[i];
+    if (renderedSonho.has(key)) continue;
+    var regex = new RegExp('"' + key + '"\s*:\s*"((?:[^"\\]|\\.)*)"');
+    var match = texto.match(regex);
+    if (match) {
+      var valor = match[1]
+        .replace(/\n/g, '\n')
+        .replace(/\"/g, '"')
+        .replace(/\\/g, '\\');
+      dadosSonho[key] = valor;
+      sonhoData[key] = valor;
+      renderSecaoSonho(key, valor);
+      renderedSonho.add(key);
+    }
+  }
+  // Título
+  var tMatch = texto.match(/"titulo"\s*:\s*"((?:[^"\\]|\\.)*)"/)
+  if (tMatch) {
+    var t = tMatch[1].replace(/\n/g,'\n').replace(/\"/g,'"');
+    document.getElementById('sonhoTitulo').textContent = t;
+  }
+}
+
+function renderSecaoSonho(key, valor) {
+  // Esconde spinner na primeira seção
+  if (renderedSonho.size === 0) {
+    document.getElementById('spinnerWrap').classList.remove('ativo');
+    document.getElementById('resultado').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  var el = document.getElementById('txt-' + key);
+  if (el) typewriterSecao(el, valor, null);
+}
+
+function finalizarSonho(fullText, sonho, emocao) {
+  clearInterval(spinnerInterval);
+  document.getElementById('spinnerWrap').classList.remove('ativo');
+
+  // Garante que todas as seções foram renderizadas
+  extrairSonhoDisponiveis(fullText);
+
+  // Fallback: se nenhuma seção veio via stream, parse completo
+  if (renderedSonho.size === 0) {
+    var m = fullText.match(/\{[\s\S]*\}/);
+    if (m) {
+      try {
+        sonhoData = JSON.parse(m[0]);
+        renderSonho();
+        return;
+      } catch(e) {}
+    }
+    // Erro: volta ao form
+    document.getElementById('formCard').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('resultado').style.display = 'block';
+
+  // Salvar
+  try {
+    var u = JSON.parse(localStorage.getItem('akashic_user') || sessionStorage.getItem('akashic_user') || '{}');
+    if (u.email && Object.keys(dadosSonho).length > 0) {
+      fetch('/api/espiritualidade', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'salvar', tipo: 'sonhos', email: u.email,
+          dados: JSON.stringify(Object.assign({ sonho_descrito: sonho, emocao_descrita: emocao }, dadosSonho)) })
+      }).catch(function(){});
+    }
+  } catch(e) {}
+}
+
+var spinnerInterval;
+
 async function gerarSonho() {
   var sonho = document.getElementById('sonhoInput').value.trim();
   if (!sonho) { alert('Por favor, descreva seu sonho antes de continuar.'); document.getElementById('sonhoInput').focus(); return; }
@@ -204,10 +284,18 @@ async function gerarSonho() {
   document.getElementById('spinnerWrap').classList.add('ativo');
   document.getElementById('resultado').style.display = 'none';
   sonhoData = {};
+  dadosSonho = {};
+  renderedSonho.clear();
+  // Limpa seções anteriores
+  ['revelacao','simbolos','karma','mensagem','acao'].forEach(function(k) {
+    var el = document.getElementById('txt-' + k);
+    if (el) el.innerHTML = '';
+  });
+  document.getElementById('sonhoTitulo').textContent = '';
 
   var spinnerTexts = ['Acessando os Registros...','Decodificando os símbolos...','Consultando os Guardiões...','Revelando as mensagens da sua alma...'];
   var si = 0;
-  var spinnerInterval = setInterval(function() {
+  spinnerInterval = setInterval(function() {
     si = (si+1) % spinnerTexts.length;
     document.getElementById('spinnerText').textContent = spinnerTexts[si];
   }, 2500);
@@ -232,38 +320,23 @@ async function gerarSonho() {
       buffer = lines.pop();
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
-        const raw = line.slice(6).trim();
-        if (!raw) continue;
         try {
-          const ev = JSON.parse(raw);
-          if (ev.delta) fullText += ev.delta;
+          const ev = JSON.parse(line.slice(6));
           if (ev.done) {
-            clearInterval(spinnerInterval);
-            const match = fullText.match(/\{[\s\S]*\}/);
-            if (match) {
-              sonhoData = JSON.parse(match[0]);
-              renderSonho();
-            }
+            finalizarSonho(fullText, sonho, emocao);
+          } else if (ev.delta) {
+            fullText += ev.delta;
+            extrairSonhoDisponiveis(fullText);
           }
         } catch {}
       }
     }
 
-    // Fallback se ev.done não chegou
-    if (document.getElementById('resultado').style.display === 'none' && fullText) {
-      clearInterval(spinnerInterval);
-      const match = fullText.match(/\{[\s\S]*\}/);
-      if (match) {
-        try { sonhoData = JSON.parse(match[0]); renderSonho(); }
-        catch(e) { throw new Error('Erro ao processar resposta'); }
-      }
-    }
   } catch(e) {
     clearInterval(spinnerInterval);
     document.getElementById('spinnerWrap').classList.remove('ativo');
     document.getElementById('formCard').style.display = 'block';
-    var msg = 'Nao foi possivel conectar aos Registros. Tente novamente.';
-    try { var d = JSON.parse(e.message); if(d.error) msg = d.error; } catch {}
+    var msg = 'Não foi possível conectar aos Registros. Tente novamente em instantes.';
     document.getElementById('formCard').insertAdjacentHTML('beforeend',
       '<div style="margin-top:16px;padding:16px;background:rgba(109,40,217,.1);border:1px solid rgba(167,139,250,.2);border-radius:12px;text-align:center;">'
       + '<div style="font-size:.85rem;color:rgba(240,201,107,.8);">🙏 ' + msg + '</div></div>');
