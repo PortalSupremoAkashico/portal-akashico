@@ -46,23 +46,33 @@ export default async function handler(req, res) {
     `"carta${i}": "[interpretação profunda da carta ${i+1} — ${c.nome}${c.invertida ? ' INVERTIDA' : ''} na posição ${c.posicao}]"`
   ).join(',\n  ');
 
-  const prompt = `Você é um Tarólogo Akáshico de elite. Leitura profunda para ${firstName}.
+  const prompt = `Você é um Tarólogo Akáshico de elite. Leitura profunda e altamente personalizada para ${firstName}.
 
-NAIPES: CHAMAS=Fogo/ação | CÁLICES=Água/emoção/amor | CRISTAIS=Ar/mente/conflito | ESTRELAS=Terra/trabalho/dinheiro | ARCANOS MAIORES=Karma/missão
+NAIPES: CHAMAS=Fogo/ação/criatividade | CÁLICES=Água/emoção/amor | CRISTAIS=Ar/mente/conflito | ESTRELAS=Terra/trabalho/dinheiro | ARCANOS MAIORES=Karma/missão de alma
 
-CONSULENTE: ${firstName} | PERGUNTA: "${perguntaReal}"
-CARTAS: ${cartasTexto}
+CONSULENTE: ${firstName}
+PERGUNTA: "${perguntaReal}"
+CARTAS TIRADAS: ${cartasTexto}
 
-Para cada carta escreva 2 parágrafos fluidos:
-§1: Simbolismo e energia desta carta nos Registros Akáshicos + como se manifesta para ${firstName} nesta posição
-§2: Mensagem dos Guardiões para ${firstName} — orientação concreta e amorosa
+DIRETRIZES DE QUALIDADE — LEITURA CRÍVEL:
+- Fale DIRETAMENTE com ${firstName} em segunda pessoa: "você", "sua vida", "o que você sente"
+- Cada carta deve ser interpretada em relação DIRETA com a pergunta "${perguntaReal}" — não de forma genérica
+- Cite a posição da carta e mostre por que ESTA carta em ESTA posição é significativa para ${firstName}
+- A leitura deve fazer ${firstName} pensar: "Como eles sabem disso exatamente?"
+- Varie o tom entre as cartas — não escreva todos os parágrafos com o mesmo estilo
+- Conecte as cartas entre si — mostre o padrão que emerge do conjunto
 
-SINTESE: 2 parágrafos — padrão geral das cartas + caminho indicado para ${firstName}
-ACAO_SAGRADA: 1 frase com ação concreta para ${firstName} nos próximos 7 dias
+Para cada carta escreva 3 parágrafos fluidos e ricos:
+§1: Simbolismo desta carta específica nos Registros Akáshicos — o que ela carrega energeticamente e espiritualmente
+§2: Como esta energia se manifesta ESPECIFICAMENTE para você (${firstName}) nesta posição em relação a "${perguntaReal}" — seja concreto e específico
+§3: Mensagem direta dos Guardiões para você (${firstName}) — orientação amorosa, profunda e acionável
+
+SINTESE: 3 parágrafos — (1) padrão geral que emerge do conjunto de cartas; (2) verdade central que os Registros revelam para ${firstName} sobre "${perguntaReal}"; (3) caminho indicado com confiança e clareza
+ACAO_SAGRADA: 1 ação concreta e específica para ${firstName} nos próximos 7 dias — relacionada diretamente com as cartas tiradas
 
 Responda APENAS em JSON válido sem markdown:
 {
-  "titulo": "título poético desta leitura",
+  "titulo": "título poético desta leitura específica",
   ${cartasJson},
   "sintese": "...",
   "acao_sagrada": "..."
@@ -83,7 +93,7 @@ Responda APENAS em JSON válido sem markdown:
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 6000,
+        max_tokens: 8000,
         stream: true,
         messages: [{ role: 'user', content: prompt }]
       })
