@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+ <meta charset="UTF-8" />
+ <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <title>Portal dos Registros Akáshicos</title>
+ <meta name="description" content="Portal dos Registros Akáshicos: consultas, mapa da alma, mentoria, tarô, runas, I Ching, meditações, sonhos e reflexões para autoconhecimento." />
+ <meta name="theme-color" content="#05040f" />
+ <link rel="preconnect" href="https://fonts.googleapis.com" />
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+ <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+ <style>
+  :root {
+   --bg-deep: #05040f;
+   --bg-card: rgba(14, 12, 28, 0.82);
+   --bg-card-hover: rgba(22, 18, 44, 0.94);
+   --border: rgba(147, 109, 255, 0.20);
+   --border-strong: rgba(240, 201, 107, 0.42);
+   --text: #ede9ff;
+   --muted: rgba(196, 181, 253, 0.72);
+   --soft: rgba(237, 233, 255, 0.86);
+   --accent: #a78bfa;
+   --accent-bright: #c4b5fd;
+   --accent-dark: #6d28d9;
+   --gold: #f0c96b;
+   --gold-soft: #fde68a;
+   --gold-dim: rgba(240, 201, 107, 0.64);
+   --radius: 22px;
+   --radius-sm: 14px;
+   --shadow-card: 0 18px 70px rgba(0,0,0,0.50), 0 0 0 1px var(--border);
+   --font-display: 'Cinzel', serif;
+   --font-body: 'Inter', sans-serif;
+   --font-serif: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+   font-family: var(--font-body);
+   color: var(--text);
+   background: radial-gradient(circle at top, rgba(109,40,217,.18), transparent 42%), var(--bg-deep);
+   min-height: 100vh;
+   overflow-x: hidden;
+   -webkit-font-smoothing: antialiased;
+  }
+
+  #universeCanvas {
+   position: fixed;
+   inset: 0;
+   width: 100%;
+   height: 100%;
+   z-index: 0;
+   pointer-events: none;
+  }
+
+  .page {
+   position: relative;
+   z-index: 1;
+   width: min(1180px, calc(100% - 32px));
+   margin: 0 auto;
+   padding: 20px 0 56px;
+  }
+
+  .topbar {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 16px;
+   padding: 10px 0 22px;
+  }
+
+  .brand-mini {
+   display: inline-flex;
+   align-items: center;
+   gap: 10px;
+   color: var(--gold);
+   text-decoration: none;
+   font-family: var(--font-display);
+   letter-spacing: .12em;
+   font-size: .72rem;
+   text-transform: uppercase;
+   opacity: .92;
+  }
+
+  .brand-orb {
+   width: 28px;
+   height: 28px;
+   border-radius: 50%;
+   background: radial-gradient(circle at 35% 25%, #fff9d4, var(--gold) 32%, #7c3aed 68%, #160a38);
+   box-shadow: 0 0 26px rgba(240,201,107,.42), 0 0 42px rgba(167,139,250,.22);
+  }
+
+  .top-actions {
+   display: flex;
+   gap: 10px;
+   align-items: center;
+   flex-wrap: wrap;
+   justify-content: flex-end;
+  }
+
+  .nav-pill,
+  .cta-small,
+  .cta-button,
+  .ghost-button {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   gap: 8px;
+   text-decoration: none;
+   border-radius: 999px;
+   transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease, color .22s ease;
+   position: relative;
+   overflow: visible;
+   isolation: isolate;
+  }
+
+  .nav-pill {
+   padding: 9px 16px;
+   border: 1px solid rgba(196,181,253,.16);
+   color: rgba(237,233,255,.82);
+   background: rgba(10,8,22,.48);
+   font-size: .8rem;
+  }
+
+  .cta-small {
+   padding: 10px 18px;
+   border: 1px solid rgba(240,201,107,.52);
+   color: var(--gold-soft);
+   background: linear-gradient(135deg, rgba(240,201,107,.12), rgba(124,58,237,.18));
+   font-family: var(--font-display);
+   letter-spacing: .08em;
+   font-size: .76rem;
+   text-transform: uppercase;
+   animation: btnPulseGold 2.2s ease-in-out infinite;
+  }
+
+  .nav-pill:hover,
+  .cta-small:hover,
+  .cta-button:hover,
+  .ghost-button:hover {
+   transform: translateY(-2px);
+   border-color: var(--gold);
+   box-shadow: 0 0 26px rgba(240,201,107,.28), 0 0 58px rgba(167,139,250,.16);
+  }
+
+  .hero {
+   display: grid;
+   grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr);
+   gap: 28px;
+   align-items: center;
+   min-height: 74vh;
+   padding: 10px 0 44px;
+  }
+
+  .hero-copy,
+  .hero-panel,
+  .section-card,
+  .module-card,
+  .trust-card,
+  .quote-card,
+  .faq-item {
+   background: var(--bg-card);
+   border: 1px solid var(--border);
+   border-radius: var(--radius);
+   backdrop-filter: blur(22px);
+   -webkit-backdrop-filter: blur(22px);
+   box-shadow: var(--shadow-card);
+   position: relative;
+   overflow: hidden;
+  }
+
+  .hero-copy::before,
+  .hero-panel::before,
+  .section-card::before,
+  .module-card::before,
+  .trust-card::before,
+  .quote-card::before,
+  .faq-item::before {
+   content: "";
+   position: absolute;
+   inset: 0 0 auto;
+   height: 1px;
+   background: linear-gradient(90deg, transparent, rgba(240,201,107,.62), rgba(196,181,253,.40), transparent);
+   pointer-events: none;
+  }
+
+  .hero-copy {
+   padding: clamp(28px, 5vw, 54px);
+   text-align: center;
+  }
+
+
+
+  .hero-copy .oracle-emblem {
+   width: min(170px, 48vw);
+   height: min(170px, 48vw);
+   margin: 0 auto 18px;
+  }
+
+  .badge {
+   display: inline-flex;
+   align-items: center;
+   gap: 10px;
+   padding: 8px 18px;
+   border-radius: 999px;
+   border: 1px solid rgba(240,201,107,.36);
+   background: rgba(240,201,107,.08);
+   color: var(--gold);
+   font-family: var(--font-display);
+   font-size: .72rem;
+   letter-spacing: .18em;
+   text-transform: uppercase;
+   margin-bottom: 22px;
+   text-shadow: 0 0 22px rgba(240,201,107,.22);
+  }
+
+  h1 {
+   font-family: var(--font-display);
+   font-size: clamp(2rem, 5.2vw, 4.45rem);
+   line-height: 1.06;
+   letter-spacing: .045em;
+   font-weight: 700;
+   margin-bottom: 18px;
+   color: #fff;
+   text-shadow: 0 0 48px rgba(167,139,250,.33);
+  }
+
+  .gradient-title {
+   display: block;
+   background: linear-gradient(135deg, #fff, var(--accent-bright) 34%, var(--gold-soft));
+   -webkit-background-clip: text;
+   -webkit-text-fill-color: transparent;
+   background-clip: text;
+  }
+
+  .hero-subtitle {
+   color: var(--gold);
+   font-family: var(--font-display);
+   text-transform: uppercase;
+   letter-spacing: .20em;
+   font-size: clamp(.72rem, 1.5vw, .92rem);
+   margin-bottom: 24px;
+  }
+
+  .lead {
+   color: var(--soft);
+   font-size: clamp(1.02rem, 1.9vw, 1.18rem);
+   line-height: 1.88;
+   max-width: 62ch;
+   margin: 0 auto 18px;
+   text-align: center;
+  }
+
+  .lead strong,
+  .story strong,
+  .trust-card strong,
+  .faq-item strong {
+   color: var(--accent-bright);
+   font-weight: 600;
+  }
+
+  .hero-actions {
+   display: flex;
+   gap: 14px;
+   flex-wrap: wrap;
+   margin-top: 30px;
+   align-items: center;
+   justify-content: center;
+  }
+
+  .cta-button {
+   padding: 12px 22px;
+   min-height: 42px;
+   border: 1px solid rgba(240,201,107,.78);
+   background: linear-gradient(135deg, rgba(167,139,250,.86), rgba(109,40,217,.72));
+   color: #fff;
+   font-family: var(--font-display);
+   font-size: .78rem;
+   font-weight: 700;
+   letter-spacing: .11em;
+   text-transform: uppercase;
+   animation: btnPulseGold 2.2s ease-in-out infinite;
+  }
+
+  .ghost-button {
+   padding: 11px 19px;
+   min-height: 40px;
+   border: 1px solid rgba(240,201,107,.34);
+   color: rgba(237,233,255,.92);
+   background: rgba(5,4,15,.50);
+   font-size: .82rem;
+  }
+
+  .cta-button::before,
+  .ghost-button::before {
+   content: "";
+   position: absolute;
+   inset: -8px -14px;
+   border-radius: 999px;
+   background: radial-gradient(circle, rgba(255,234,138,.78) 0%, rgba(240,201,107,.38) 35%, rgba(240,201,107,0) 72%);
+   filter: blur(13px);
+   opacity: .52;
+   z-index: -1;
+   pointer-events: none;
+   animation: neonYellowBack 1.55s ease-in-out infinite;
+  }
+
+  .ghost-button::before {
+   opacity: .38;
+   inset: -7px -12px;
+  }
+
+  .microcopy {
+   max-width: 700px;
+   margin: 18px auto 0;
+   color: var(--muted);
+   font-size: .86rem;
+   line-height: 1.7;
+   text-align: center;
+  }
+
+  .hero-panel {
+   padding: 28px;
+   min-height: 430px;
+   display: flex;
+   flex-direction: column;
+   justify-content: center;
+   gap: 20px;
+  }
+
+  .oracle-emblem {
+   width: min(260px, 72vw);
+   height: min(260px, 72vw);
+   margin: 0 auto 8px;
+   display: block;
+   filter: drop-shadow(0 0 34px rgba(240,201,107,.18));
+  }
+
+  .panel-title {
+   font-family: var(--font-display);
+   color: var(--gold-soft);
+   letter-spacing: .10em;
+   text-align: center;
+   font-size: 1.05rem;
+   text-transform: uppercase;
+  }
+
+  .panel-text {
+   text-align: center;
+   color: var(--muted);
+   line-height: 1.85;
+   font-size: .96rem;
+   max-width: 42ch;
+   margin: 0 auto;
+  }
+
+  .quick-stats {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 10px;
+   margin-top: 10px;
+  }
+
+  .stat {
+   padding: 16px 10px;
+   border-radius: 16px;
+   border: 1px solid rgba(240,201,107,.16);
+   background: rgba(5,4,15,.42);
+   text-align: center;
+  }
+
+  .stat-number {
+   font-family: var(--font-display);
+   color: var(--gold-soft);
+   font-size: 1.42rem;
+   font-weight: 700;
+   line-height: 1;
+   margin-bottom: 7px;
+  }
+
+  .stat-label {
+   color: rgba(196,181,253,.68);
+   font-size: .68rem;
+   letter-spacing: .10em;
+   text-transform: uppercase;
+  }
+
+
+  .mini-paths {
+   display: grid;
+   grid-template-columns: repeat(2, minmax(0, 1fr));
+   gap: 10px;
+   margin-top: 8px;
+  }
+
+  .mini-path-card {
+   position: relative;
+   overflow: hidden;
+   min-height: 94px;
+   padding: 14px 12px 13px;
+   border-radius: 16px;
+   border: 1px solid rgba(240,201,107,.20);
+   background: linear-gradient(145deg, rgba(5,4,15,.58), rgba(22,18,44,.46));
+   text-align: center;
+   box-shadow: inset 0 0 18px rgba(255,255,255,.025), 0 0 18px rgba(240,201,107,.035);
+  }
+
+  .mini-path-card::before {
+   content: "";
+   position: absolute;
+   inset: -30px;
+   background: radial-gradient(circle, rgba(240,201,107,.22), transparent 56%);
+   opacity: .34;
+   filter: blur(10px);
+   animation: miniNeonPulse 2.6s ease-in-out infinite;
+   pointer-events: none;
+  }
+
+  .mini-path-icon {
+   position: relative;
+   z-index: 1;
+   display: inline-grid;
+   place-items: center;
+   width: 32px;
+   height: 32px;
+   margin: 0 auto 8px;
+   border-radius: 12px;
+   color: var(--gold-soft);
+   border: 1px solid rgba(240,201,107,.24);
+   background: rgba(240,201,107,.07);
+   font-family: var(--font-display);
+   font-size: 1rem;
+  }
+
+  .mini-path-card h3 {
+   position: relative;
+   z-index: 1;
+   font-family: var(--font-display);
+   color: var(--accent-bright);
+   font-size: .72rem;
+   line-height: 1.35;
+   letter-spacing: .08em;
+   text-transform: uppercase;
+  }
+
+  .panel-note {
+   margin: 0 auto;
+   max-width: 46ch;
+   color: rgba(196,181,253,.66);
+   font-size: .82rem;
+   line-height: 1.65;
+   text-align: center;
+  }
+
+  @keyframes miniNeonPulse {
+   0%,100% { opacity: .18; transform: scale(.94); }
+   50% { opacity: .55; transform: scale(1.05); }
+  }
+
+  .section {
+   margin: 32px 0;
+  }
+
+  .section-header {
+   text-align: center;
+   margin-bottom: 24px;
+  }
+
+  .eyebrow {
+   font-family: var(--font-display);
+   color: var(--gold-dim);
+   text-transform: uppercase;
+   letter-spacing: .20em;
+   font-size: .72rem;
+   margin-bottom: 10px;
+  }
+
+  h2 {
+   font-family: var(--font-display);
+   font-size: clamp(1.45rem, 3vw, 2.35rem);
+   letter-spacing: .06em;
+   color: #fff;
+   line-height: 1.2;
+   text-shadow: 0 0 28px rgba(167,139,250,.22);
+  }
+
+  .section-intro {
+   max-width: 760px;
+   margin: 14px auto 0;
+   color: var(--muted);
+   line-height: 1.85;
+   font-size: 1rem;
+  }
+
+  .section-card {
+   padding: clamp(24px, 4.6vw, 48px);
+  }
+
+  .story {
+   font-family: var(--font-body);
+   color: rgba(237,233,255,.91);
+   font-size: clamp(1.02rem, 1.8vw, 1.18rem);
+   line-height: 1.86;
+   max-width: 860px;
+   margin: 0 auto;
+   text-align: center;
+  }
+
+  .story p + p { margin-top: 18px; }
+
+  .divider {
+   width: 180px;
+   height: 1px;
+   background: linear-gradient(90deg, transparent, var(--gold), transparent);
+   margin: 26px auto;
+   position: relative;
+  }
+
+  .divider::before,
+  .divider::after {
+   content: '✦';
+   position: absolute;
+   top: -9px;
+   color: var(--gold);
+   font-size: 12px;
+  }
+  .divider::before { left: -18px; }
+  .divider::after { right: -18px; }
+
+  .modules-grid {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 16px;
+  }
+
+  .module-card {
+   min-height: 230px;
+   padding: 22px;
+   text-decoration: none;
+   color: inherit;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   text-align: center;
+   transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease;
+  }
+
+  .module-card:hover {
+   transform: translateY(-6px);
+   border-color: rgba(240,201,107,.55);
+   background: var(--bg-card-hover);
+   box-shadow: 0 18px 72px rgba(0,0,0,.52), 0 0 36px rgba(240,201,107,.13);
+  }
+
+  .module-icon {
+   width: 48px;
+   height: 48px;
+   border-radius: 16px;
+   display: grid;
+   place-items: center;
+   background: radial-gradient(circle at 30% 20%, rgba(240,201,107,.24), rgba(167,139,250,.12));
+   border: 1px solid rgba(240,201,107,.22);
+   margin: 0 auto 16px;
+   font-size: 1.45rem;
+   box-shadow: inset 0 0 20px rgba(255,255,255,.03);
+  }
+
+  .module-card h3 {
+   font-family: var(--font-display);
+   color: var(--accent-bright);
+   letter-spacing: .06em;
+   font-size: 1rem;
+   margin-bottom: 9px;
+  }
+
+  .module-card p {
+   color: var(--muted);
+   line-height: 1.7;
+   font-size: .92rem;
+   flex: 1;
+  }
+
+  .module-card span {
+   margin-top: 16px;
+   color: var(--gold);
+   font-family: var(--font-display);
+   font-size: .72rem;
+   letter-spacing: .11em;
+   text-transform: uppercase;
+  }
+
+  .trust-grid {
+   display: grid;
+   grid-template-columns: repeat(4, 1fr);
+   gap: 14px;
+  }
+
+  .trust-card {
+   padding: 22px;
+   min-height: 180px;
+   text-align: center;
+  }
+
+  .trust-card h3 {
+   font-family: var(--font-display);
+   color: var(--gold-soft);
+   letter-spacing: .07em;
+   font-size: .93rem;
+   margin-bottom: 12px;
+   text-transform: uppercase;
+  }
+
+  .trust-card p {
+   color: var(--muted);
+   line-height: 1.75;
+   font-size: .9rem;
+  }
+
+  .steps {
+   display: grid;
+   grid-template-columns: repeat(4, 1fr);
+   gap: 14px;
+   counter-reset: step;
+  }
+
+  .step {
+   padding: 22px;
+   border: 1px solid rgba(196,181,253,.16);
+   border-radius: 18px;
+   background: rgba(5,4,15,.42);
+   position: relative;
+   overflow: hidden;
+   text-align: center;
+  }
+
+  .step::before {
+   counter-increment: step;
+   content: counter(step, decimal-leading-zero);
+   display: block;
+   color: rgba(240,201,107,.82);
+   font-family: var(--font-display);
+   font-size: 1.5rem;
+   margin-bottom: 12px;
+  }
+
+  .step h3 {
+   font-family: var(--font-display);
+   color: var(--accent-bright);
+   font-size: .94rem;
+   letter-spacing: .06em;
+   margin-bottom: 8px;
+  }
+
+  .step p {
+   color: var(--muted);
+   line-height: 1.7;
+   font-size: .9rem;
+  }
+
+  .quotes-grid {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 16px;
+  }
+
+  .quote-card {
+   padding: 24px;
+   text-align: center;
+  }
+
+  .quote-card p {
+   font-family: var(--font-body);
+   color: rgba(237,233,255,.88);
+   font-size: 1.18rem;
+   line-height: 1.65;
+   font-style: italic;
+  }
+
+  .quote-card small {
+   display: block;
+   margin-top: 14px;
+   color: var(--gold-dim);
+   font-size: .76rem;
+   letter-spacing: .08em;
+   text-transform: uppercase;
+  }
+
+  .faq {
+   display: grid;
+   gap: 12px;
+   max-width: 920px;
+   margin: 0 auto;
+  }
+
+  .faq-item {
+   padding: 20px 22px;
+   text-align: center;
+  }
+
+  .faq-item h3 {
+   font-family: var(--font-display);
+   color: var(--gold-soft);
+   font-size: .95rem;
+   letter-spacing: .07em;
+   margin-bottom: 9px;
+  }
+
+  .faq-item p {
+   color: var(--muted);
+   line-height: 1.75;
+   font-size: .94rem;
+  }
+
+  .final-cta {
+   text-align: center;
+   padding: clamp(28px, 5vw, 56px);
+  }
+
+  .final-cta p {
+   max-width: 740px;
+   margin: 16px auto 0;
+   color: var(--muted);
+   line-height: 1.86;
+   font-size: 1.02rem;
+  }
+
+  footer {
+   position: relative;
+   z-index: 1;
+   text-align: center;
+   color: rgba(196,181,253,.45);
+   padding: 28px 20px 10px;
+   font-size: .78rem;
+   line-height: 1.7;
+  }
+
+  @keyframes btnPulseGold {
+   0%,100% { box-shadow: 0 0 6px rgba(240,201,107,.22), 0 0 0 1px rgba(240,201,107,.12); }
+   50% { box-shadow: 0 0 18px rgba(240,201,107,.55), 0 0 34px rgba(240,201,107,.18); }
+  }
+
+  @keyframes neonYellowBack {
+   0%,100% { opacity: .28; transform: scale(.96); }
+   50% { opacity: .78; transform: scale(1.08); }
+  }
+
+  @media (max-width: 980px) {
+   .hero { grid-template-columns: 1fr; min-height: auto; }
+   .hero-panel { min-height: auto; }
+   .modules-grid { grid-template-columns: repeat(2, 1fr); }
+   .trust-grid, .steps { grid-template-columns: repeat(2, 1fr); }
+   .quotes-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 680px) {
+   .page { width: min(100% - 22px, 1180px); padding-top: 16px; }
+   .topbar { align-items: flex-start; }
+   .top-actions .nav-pill { display: none; }
+   .hero-copy { padding: 26px 20px; }
+   .hero-panel { padding: 22px 18px; }
+   .hero-actions { flex-direction: column; align-items: stretch; }
+   .cta-button, .ghost-button { width: 100%; padding: 12px 16px; text-align: center; }
+   .mini-paths { grid-template-columns: 1fr; }
+   .modules-grid, .trust-grid, .steps { grid-template-columns: 1fr; }
+   .module-card { min-height: auto; }
+   .story { text-align: center; }
+  }
+ </style>
+</head>
+
+<body>
+ <canvas id="universeCanvas" aria-hidden="true"></canvas>
+
+ <div class="page">
+  <main>
+
+   <section class="hero" id="inicio">
+    <div class="hero-copy">
+     <canvas id="soberanaCanvas" class="oracle-emblem" width="300" height="300" aria-hidden="true"></canvas>
+     <div class="badge">✦ Inteligência Universal e Autoconhecimento</div>
+     <h1><span class="gradient-title">Portal dos</span> Registros Akáshicos</h1>
+     <p class="hero-subtitle">Uma jornada entre alma, consciência e autoconhecimento</p>
+
+     <p class="lead">
+      Algumas perguntas não nascem da curiosidade. <strong>Nascem da alma.</strong>
+     </p>
+     <p class="lead">
+      O Portal dos Registros Akáshicos foi criado para quem sente que a vida possui camadas mais profundas do que aparece na superfície. Aqui, cada consulta é uma experiência de reflexão, interpretação intuitiva e autoconhecimento, conduzida por tecnologia, sensibilidade e uma linguagem espiritual clara.
+     </p>
+     <p class="lead">
+      Entre com uma pergunta, uma inquietação ou apenas curiosidade. O portal organiza caminhos como Consulta Akáshica, Mapa Akáshicos, Mentorias, Tarô Akáshico, Runas Akáshicas, I Ching, Meditações Guiadas, Análise de Sonhos, Reflexões e Seu Histórico para ajudar você a enxergar padrões, possibilidades e novos sentidos.
+     </p>
+
+     <div class="hero-actions">
+      <a class="cta-button" href="/login.html">Começar minha jornada</a>
+      <a class="ghost-button" href="#caminhos">Conhecer o portal</a>
+     </div>
+     <p class="microcopy">
+      O portal não substitui sua liberdade, sua fé ou seu discernimento. Ele amplia sua percepção e transforma perguntas em reflexão.
+     </p>
+    </div>
+
+    <aside class="hero-panel" aria-label="Resumo do portal">
+     <h2 class="panel-title">Entre com uma pergunta. Saia com uma nova percepção.</h2>
+     <p class="panel-text">
+      Cada experiência foi pensada para unir beleza, profundidade e continuidade: você acessa sua área, realiza leituras, salva sua jornada e pode voltar para aprofundar o que foi revelado.
+     </p>
+     <div class="mini-paths" aria-label="Caminhos principais do portal">
+      <div class="mini-path-card"><div class="mini-path-icon">✦</div><h3>Consulta Akáshica</h3></div>
+      <div class="mini-path-card"><div class="mini-path-icon">◎</div><h3>Mapa Akáshicos</h3></div>
+      <div class="mini-path-card"><div class="mini-path-icon">☉</div><h3>Mentorias</h3></div>
+      <div class="mini-path-card"><div class="mini-path-icon">♢</div><h3>Tarô Akáshico</h3></div>
+      <div class="mini-path-card"><div class="mini-path-icon">ᚱ</div><h3>Runas Akáshicas</h3></div>
+      <div class="mini-path-card"><div class="mini-path-icon">易</div><h3>I Ching</h3></div>
+      <div class="mini-path-card"><div class="mini-path-icon">☽</div><h3>Meditações Guiadas</h3></div>
+      <div class="mini-path-card"><div class="mini-path-icon">◐</div><h3>Análise de Sonhos</h3></div>
+     </div>
+     <p class="panel-note">E ainda: Reflexões e Seu Histórico para acompanhar sua jornada com continuidade.</p>
+    </aside>
+   </section>
+
+   <section class="section" aria-label="Apresentação profunda">
+    <div class="section-card">
+     <div class="story">
+      <p>
+       Existe um momento em que a vida deixa de pedir apenas respostas rápidas — e começa a pedir <strong>compreensão profunda</strong>.
+      </p>
+      <div class="divider"></div>
+      <p>
+       O Portal dos Registros Akáshicos foi criado para quem sente que há algo maior por trás dos acontecimentos, dos padrões repetidos, dos sonhos, dos encontros, das escolhas e até dos bloqueios que parecem não ter explicação.
+      </p>
+      <p>
+       Este não é um espaço de promessas vazias. É um ambiente de escuta, interpretação e autoconhecimento. Cada ferramenta foi pensada para transformar perguntas em percepção, mensagens em clareza e experiências pessoais em caminhos mais conscientes.
+      </p>
+      <p>
+       Talvez você encontre uma resposta. Talvez encontre um sinal. Talvez encontre um caminho. Mas, acima de tudo, talvez encontre uma parte sua que estava esperando para ser ouvida.
+      </p>
+     </div>
+    </div>
+   </section>
+
+   <section class="section" id="caminhos">
+    <div class="section-header">
+     <div class="eyebrow">O que existe dentro do portal</div>
+     <h2>Vários caminhos para uma mesma jornada interior</h2>
+     <p class="section-intro">
+      Cada módulo tem uma função diferente: alguns revelam padrões, outros aprofundam perguntas, outros trazem silêncio, orientação e continuidade.
+     </p>
+    </div>
+
+    <div class="modules-grid">
+     <a class="module-card" href="/consulta.html">
+      <div class="module-icon">✦</div>
+      <h3>Consulta Akáshica</h3>
+      <p>Uma leitura personalizada para investigar temas da alma, padrões repetidos, bloqueios, decisões, propósito, amor, prosperidade e momentos de transição.</p>
+      <span>Acessar consulta</span>
+     </a>
+
+     <a class="module-card" href="/mapa-akashico.html">
+      <div class="module-icon">◎</div>
+      <h3>Mapa Akáshico</h3>
+      <p>Um retrato profundo da sua essência, missão, bloqueios, linha do amor, prosperidade, ancestralidade e caminhos de evolução.</p>
+      <span>Conhecer o mapa</span>
+     </a>
+
+     <a class="module-card" href="/mentoria.html">
+      <div class="module-icon">☉</div>
+      <h3>Mentoria Akáshica</h3>
+      <p>Uma conversa de aprofundamento que transforma leituras anteriores em orientação prática, perguntas poderosas e acompanhamento da sua jornada.</p>
+      <span>Iniciar mentoria</span>
+     </a>
+
+     <a class="module-card" href="/taro.html">
+      <div class="module-icon">♢</div>
+      <h3>Tarô Akáshico</h3>
+      <p>Cartas intuitivas para iluminar escolhas, relações, desafios e possibilidades, sempre conectando cada carta à sua pergunta real.</p>
+      <span>Tirar as cartas</span>
+     </a>
+
+     <a class="module-card" href="/runas.html">
+      <div class="module-icon">ᚱ</div>
+      <h3>Runas Akáshicas</h3>
+      <p>Uma leitura inspirada na tradição nórdica, com mensagens sobre proteção, força, ciclos, destino, coragem e transformação.</p>
+      <span>Consultar runas</span>
+     </a>
+
+     <a class="module-card" href="/iching.html">
+      <div class="module-icon">易</div>
+      <h3>I Ching</h3>
+      <p>O Livro das Mutações em uma leitura oracular clássica, com hexagramas, linhas, movimento, tempo certo e sabedoria milenar chinesa.</p>
+      <span>Lançar moedas</span>
+     </a>
+
+     <a class="module-card" href="/meditacao.html">
+      <div class="module-icon">☽</div>
+      <h3>Meditação Guiada</h3>
+      <p>Jornadas imersivas de respiração, relaxamento, visualização e reconexão interior, criadas de acordo com seu tema e intenção.</p>
+      <span>Meditar agora</span>
+     </a>
+
+     <a class="module-card" href="/sonho.html">
+      <div class="module-icon">◐</div>
+      <h3>Sonho Akáshico</h3>
+      <p>Interpretação profunda dos sonhos para traduzir imagens, emoções e sinais do inconsciente em mensagens compreensíveis.</p>
+      <span>Interpretar sonho</span>
+     </a>
+
+     <a class="module-card" href="/reflexoes.html">
+      <div class="module-icon">❖</div>
+      <h3>Reflexões</h3>
+      <p>Mensagens de sabedoria universal para inspirar presença, coragem, propósito, silêncio, transformação e clareza no dia a dia.</p>
+      <span>Ler reflexões</span>
+     </a>
+
+     <a class="module-card" href="/historico.html">
+      <div class="module-icon">☌</div>
+      <h3>Seu Histórico</h3>
+      <p>Um espaço para revisitar suas consultas, acompanhar sua evolução, recuperar mensagens importantes e aprofundar o que já foi revelado.</p>
+      <span>Ver histórico</span>
+     </a>
+    </div>
+   </section>
+
+   <section class="section" id="credibilidade">
+    <div class="section-header">
+     <div class="eyebrow">Por que este portal é diferente</div>
+     <h2>Não é apenas uma página bonita. É um ambiente de continuidade.</h2>
+    </div>
+
+    <div class="trust-grid">
+     <div class="trust-card">
+      <h3>Área pessoal</h3>
+      <p>O usuário pode acessar uma experiência individual, com cadastro, login e dados organizados para uma jornada mais personalizada.</p>
+     </div>
+     <div class="trust-card">
+      <h3>Histórico</h3>
+      <p>As consultas podem ser revisitadas para acompanhar evolução, padrões, temas recorrentes e novas camadas de compreensão.</p>
+     </div>
+     <div class="trust-card">
+      <h3>Mentoria com contexto</h3>
+      <p>A mentoria pode aprofundar leituras anteriores, conectando perguntas novas com o que já apareceu na jornada do consulente.</p>
+     </div>
+     <div class="trust-card">
+      <h3>Experiência completa</h3>
+      <p>O portal une leitura, texto, voz, e-mail, salvamento e múltiplos oráculos em um único ecossistema espiritual.</p>
+     </div>
+    </div>
+   </section>
+
+   <section class="section" id="como-funciona">
+    <div class="section-card">
+     <div class="section-header" style="margin-bottom: 26px;">
+      <div class="eyebrow">Como funciona</div>
+      <h2>Uma experiência simples, profunda e pessoal</h2>
+     </div>
+
+     <div class="steps">
+      <div class="step">
+       <h3>Entre no portal</h3>
+       <p>Crie seu acesso ou faça login para iniciar sua jornada em uma área pessoal e organizada.</p>
+      </div>
+      <div class="step">
+       <h3>Escolha um caminho</h3>
+       <p>Consulta, Mapa, Mentoria, Tarô, Runas, I Ching, Meditação, Sonhos ou Reflexões.</p>
+      </div>
+      <div class="step">
+       <h3>Faça sua pergunta</h3>
+       <p>Traga um tema real: amor, propósito, bloqueios, escolhas, sonhos, ciclos ou prosperidade.</p>
+      </div>
+      <div class="step">
+       <h3>Revisite sua jornada</h3>
+       <p>Volte ao histórico, compare momentos e aprofunde sua evolução interior com mais clareza.</p>
+      </div>
+     </div>
+    </div>
+   </section>
+
+   <section class="section" aria-label="Mensagens de convite">
+    <div class="quotes-grid">
+     <div class="quote-card">
+      <p>“A resposta nem sempre chega como certeza. Às vezes chega como uma frase que finalmente organiza o que você sentia.”</p>
+      <small>Clareza interior</small>
+     </div>
+     <div class="quote-card">
+      <p>“Uma boa pergunta não obriga você a acreditar. Ela convida você a perceber.”</p>
+      <small>Sabedoria interior</small>
+     </div>
+     <div class="quote-card">
+      <p>“Quando você revisita uma leitura, muitas vezes descobre que ela continuou trabalhando em silêncio dentro de você.”</p>
+      <small>Jornada contínua</small>
+     </div>
+    </div>
+   </section>
+
+   <section class="section">
+    <div class="section-card final-cta">
+     <div class="eyebrow">Comece agora</div>
+     <h2>Entre com uma pergunta. Saia com uma nova percepção.</h2>
+     <p>
+      Acesse o Portal dos Registros Akáshicos e permita que sua jornada seja vista por outro ângulo: mais intuitivo, mais profundo e mais consciente.
+     </p>
+     <div class="hero-actions" style="justify-content:center;">
+      <a class="cta-button" href="/login.html">Entrar no portal</a>
+      <a class="ghost-button" href="#inicio">Voltar ao topo</a>
+     </div>
+    </div>
+   </section>
+  </main>
+ </div>
+
+ <footer>
+  Portal dos Registros Akáshicos · Autoconhecimento, consciência e reflexão interior.<br />
+  As experiências do portal têm finalidade espiritual, reflexiva e de desenvolvimento pessoal.
+ </footer>
+
+ <script>
+  // Fundo cósmico leve e responsivo
+  (function universe() {
+   const canvas = document.getElementById('universeCanvas');
+   if (!canvas) return;
+   const ctx = canvas.getContext('2d');
+   let w, h, stars = [], nebula = [];
+
+   function resize() {
+    w = canvas.width = window.innerWidth * devicePixelRatio;
+    h = canvas.height = window.innerHeight * devicePixelRatio;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    const count = Math.min(190, Math.floor(window.innerWidth * window.innerHeight / 7200));
+    stars = Array.from({ length: count }, () => ({
+     x: Math.random() * w,
+     y: Math.random() * h,
+     r: (Math.random() * 1.25 + .25) * devicePixelRatio,
+     a: Math.random() * .75 + .18,
+     s: Math.random() * .018 + .006
+    }));
+    nebula = Array.from({ length: 7 }, () => ({
+     x: Math.random() * w,
+     y: Math.random() * h,
+     r: (Math.random() * 260 + 180) * devicePixelRatio,
+     hue: Math.random() > .5 ? '167,139,250' : '240,201,107',
+     a: Math.random() * .07 + .025
+    }));
+   }
+
+   function draw() {
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#05040f';
+    ctx.fillRect(0,0,w,h);
+
+    nebula.forEach(n => {
+     const g = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r);
+     g.addColorStop(0, `rgba(${n.hue},${n.a})`);
+     g.addColorStop(.55, `rgba(${n.hue},${n.a * .25})`);
+     g.addColorStop(1, 'rgba(0,0,0,0)');
+     ctx.fillStyle = g;
+     ctx.beginPath();
+     ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+     ctx.fill();
+    });
+
+    stars.forEach(st => {
+     st.a += st.s;
+     if (st.a > .95 || st.a < .16) st.s *= -1;
+     ctx.beginPath();
+     ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+     ctx.fillStyle = `rgba(237,233,255,${st.a})`;
+     ctx.fill();
+    });
+    requestAnimationFrame(draw);
+   }
+
+   window.addEventListener('resize', resize, { passive: true });
+   resize();
+   draw();
+  })();
+
+  // Esfera central preservando a ideia visual do portal
+  (function emblem() {
+   const cv = document.getElementById('soberanaCanvas');
+   if (!cv) return;
+   const ctx = cv.getContext('2d');
+   const W = cv.width, H = cv.height, CX = W / 2, CY = H / 2;
+   let t = 0;
+
+   function star(x, y, r, points) {
+    ctx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+     const a = -Math.PI / 2 + i * Math.PI / points;
+     const rr = i % 2 === 0 ? r : r * .42;
+     ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    }
+    ctx.closePath();
+   }
+
+   function draw() {
+    ctx.clearRect(0,0,W,H);
+    t += .012;
+
+    const glow = ctx.createRadialGradient(CX,CY,8,CX,CY,135);
+    glow.addColorStop(0,'rgba(240,201,107,.20)');
+    glow.addColorStop(.42,'rgba(167,139,250,.10)');
+    glow.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(CX,CY,135,0,Math.PI*2); ctx.fill();
+
+    for (let i = 0; i < 3; i++) {
+     ctx.save();
+     ctx.translate(CX,CY);
+     ctx.rotate(t * (i % 2 ? -1 : 1) + i * Math.PI / 3);
+     ctx.strokeStyle = i === 1 ? 'rgba(240,201,107,.45)' : 'rgba(196,181,253,.24)';
+     ctx.lineWidth = i === 1 ? 1.7 : 1.2;
+     ctx.beginPath();
+     ctx.ellipse(0,0,98,36 + i*7,0,0,Math.PI*2);
+     ctx.stroke();
+     ctx.restore();
+    }
+
+    const sphere = ctx.createRadialGradient(CX-28,CY-32,3,CX,CY,76);
+    sphere.addColorStop(0,'#fff8d7');
+    sphere.addColorStop(.16,'#f0c96b');
+    sphere.addColorStop(.36,'#a78bfa');
+    sphere.addColorStop(.72,'#32116e');
+    sphere.addColorStop(1,'#090316');
+    ctx.fillStyle = sphere;
+    ctx.beginPath(); ctx.arc(CX,CY,72,0,Math.PI*2); ctx.fill();
+
+    ctx.strokeStyle = 'rgba(240,201,107,.60)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(CX,CY,84,0,Math.PI*2); ctx.stroke();
+
+    for (let i = 0; i < 8; i++) {
+     const a = t * .65 + i * Math.PI / 4;
+     const x = CX + Math.cos(a) * 105;
+     const y = CY + Math.sin(a) * 105;
+     star(x, y, i % 2 ? 5 : 7, 4);
+     ctx.fillStyle = i % 2 ? 'rgba(196,181,253,.66)' : 'rgba(240,201,107,.82)';
+     ctx.fill();
+    }
+
+    ctx.fillStyle = 'rgba(255,255,255,.70)';
+    ctx.beginPath(); ctx.arc(CX-24,CY-28,6,0,Math.PI*2); ctx.fill();
+
+    requestAnimationFrame(draw);
+   }
+   draw();
+  })();
+ </script>
+</body>
+</html>
